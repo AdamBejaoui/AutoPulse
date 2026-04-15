@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Listing {
+  id          String    @id @default(cuid())
+  externalId  String    @unique
+  source      String    @default("facebook")
+  make        String
+  model       String
+  year        Int
+  price       Int
+  mileage     Int?
+  city        String?
+  state       String?
+  imageUrl    String?
+  listingUrl  String
+  description String?
+  sellerName  String?
+  postedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // === NEW PARSED FIELDS ===
+  trim          String?    // "SE", "XLT", "Sport", "LX", "Limited", "Touring"
+  bodyStyle     String?    // "sedan", "suv", "truck", "coupe", "van", "convertible", "hatchback"
+  driveType     String?    // "4x4", "AWD", "FWD", "RWD", "4WD"
+  engine        String?    // "V6", "V8", "4-cylinder", "2.5L", "5.0L", "turbocharged"
+  transmission  String?    // "automatic", "manual", "CVT"
+  fuelType      String?    // "gasoline", "hybrid", "electric", "diesel"
+  color         String?    // "black", "white", "red", "silver", "blue", "grey"
+  doors         Int?       // 2, 4
+  
+  titleStatus   String?    // "clean", "salvage", "rebuilt", "lien"
+  condition     String?    // "excellent", "good", "fair", "poor"
+  accidents     Boolean?   // true = has accident history mentioned
+  owners        Int?       // 1, 2, 3
+  
+  features      String[]
+  rawTitle      String?
+  rawDescription String?
+  
+  parseScore    Int?
+  parsedAt      DateTime?
+
+  @@index([postedAt])
+  @@index([make])
+  @@index([model])
+  @@index([price])
+  @@index([year])
+  @@index([city, state])
+  @@index([createdAt])
+  @@index([trim])
+  @@index([bodyStyle])
+  @@index([transmission])
+  @@index([titleStatus])
+  @@index([color])
+  @@index([driveType])
+}
+
+model Subscription {
+  id            String    @id @default(cuid())
+  email         String
+  make          String?
+  model         String?
+  yearMin       Int?
+  yearMax       Int?
+  priceMin      Int?
+  priceMax      Int?
+  mileageMax    Int?
+  city          String?
+  lastCheckedAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  // NEW filter fields
+  trim             String?
+  bodyStyle        String?
+  driveType        String?
+  transmission     String?
+  fuelType         String?
+  color            String?
+  titleStatus      String?
+  maxOwners        Int?
+  noAccidents      Boolean?
+  requiredFeatures String[]
+  keywords         String[]
+
+  @@index([email])
+}
+
+model NotificationLog {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  listingId      String
+  sentAt         DateTime @default(now())
+
+  @@unique([subscriptionId, listingId])
+  @@index([subscriptionId])
+  @@index([listingId])
+}
