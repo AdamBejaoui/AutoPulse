@@ -11,7 +11,8 @@
     "scrape:now": "ts-node --project tsconfig.json -e \"require('./lib/scrapers').runAllScrapers().then(console.log)\"",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
