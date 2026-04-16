@@ -19,7 +19,7 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scratch"],
+  "exclude": ["node_modules", "scratch", "scripts"],
   "ts-node": {
     "transpileOnly": true,
     "compilerOptions": {
