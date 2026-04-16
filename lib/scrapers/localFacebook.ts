@@ -202,21 +202,23 @@ export async function scrapeLocalMarketplace(
         // Broad selector: any 'a' tag linking to an item
         const allLinks = Array.from(document.querySelectorAll('a'));
         
-        const marketplaceLinks = allLinks.filter(a => {
-            const href = a.getAttribute('href') || '';
-            return href.includes('/marketplace/item/');
-        });
+    // 3. Extract IDs and basic data from the grid
+    const listings = await page.evaluate(() => {
+        // Broad search: Anything that could be a link
+        const elements = Array.from(document.querySelectorAll('a, [role="link"], [href]'));
+        
+        console.log(`[local-eval] Total elements found: ${elements.length}`);
 
-        return marketplaceLinks.map(a => {
-            const href = a.getAttribute('href') || '';
-            const idMatch = href.match(/\/item\/(\d{10,20})/);
+        const results = elements.map(el => {
+            const href = el.getAttribute('href') || el.getAttribute('data-href') || '';
+            const idMatch = href.match(/\/item\/(\d{10,20})/) || href.match(/(\d{14,18})/);
             const externalId = idMatch ? idMatch[1] : null;
 
-            const img = a.querySelector("img");
-            
-            // Clean up mashed text from the grid
-            const tileText = (a.textContent || "").replace(/\n/g, " ").trim();
-            const ariaLabel = (a.getAttribute('aria-label') || "").trim();
+            if (!externalId) return null;
+
+            const img = el.querySelector("img") || el.parentElement?.querySelector("img");
+            const tileText = (el.textContent || el.parentElement?.textContent || "").replace(/\n/g, " ").trim();
+            const ariaLabel = (el.getAttribute('aria-label') || "").trim();
 
             return {
                 externalId,
@@ -225,7 +227,15 @@ export async function scrapeLocalMarketplace(
                 title: ariaLabel || tileText.substring(0, 100),
                 tileText
             };
-        }).filter(x => x.externalId);
+        }).filter((x): x is NonNullable<typeof x> => x !== null && x.externalId !== null);
+
+        // Deduplicate by ID
+        const seen = new Set();
+        return results.filter(item => {
+            if (seen.has(item.externalId)) return false;
+            seen.add(item.externalId);
+            return true;
+        });
     });
 
     if (listings.length === 0) {
