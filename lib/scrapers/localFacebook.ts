@@ -224,36 +224,27 @@ export async function scrapeLocalMarketplace(
             if (!linkEl) continue;
 
             const href = linkEl.getAttribute('href') || linkEl.getAttribute('data-href') || '';
-            const idMatch = href.match(/\/item\/(\d{10,20})/) || href.match(/(\d{14,21})/) || text.match(/item\/(\d{10,21})/);
+            const idMatch = href.match(/\/item\/(\d{10,21})/) || href.match(/(\d{14,21})/) || text.match(/item\/(\d{10,21})/);
             const externalId = idMatch ? idMatch[1] : null; if (!externalId || seenIds.has(externalId)) continue;
 
-            // Image detection
-            const findImg = (root: Element): string | null => {
-                const img = root.querySelector("img");
-                if (img && img.src && img.src.startsWith('http') && !img.src.includes('static')) return img.src;
-                const bg = root.querySelector('[style*="background-image"]');
-                if (bg) {
-                    const style = (bg as HTMLElement).style.backgroundImage;
-                    const urlMatch = style.match(/url\("?(.+?)"?\)/);
-                    if (urlMatch && urlMatch[1].startsWith('http')) return urlMatch[1];
-                }
-                return null;
-            };
-            const imageUrl = findImg(el) || findImg(linkEl) || (el.parentElement ? findImg(el.parentElement) : null);
+            const imageUrl = findImg(el) || findImg(linkEl) || (el.offsetParent ? findImg(el.offsetParent) : null);
 
             const ariaLabel = (linkEl.getAttribute('aria-label') || "").trim();
-            // Title logic: Use text after the price symbol
+            // Clean Title: Get everything after the $ but before the location
             let cleanTitle = ariaLabel || text.split("$")[1]?.replace(/^[\d,kK\s]+/, '').trim() || text.substring(0, 100);
             
-            // Clean up titles like "2015 Honda Civic · ..."
+            // Refined cleaner for "2015 Honda Civic · ..."
             cleanTitle = cleanTitle.split('\n')[0].split('·')[0].split('  ')[0].trim();
-            cleanTitle = cleanTitle.replace(/just listed/i, '').trim();
+            
+            // JUNK CHECK: If title is still generic, skip
+            if (cleanTitle.toLowerCase().includes("marketplace listing") || cleanTitle.length < 5) continue;
+
+            console.log(`[local-eval] Matched Car: ${cleanTitle} (ID: ${externalId})`);
 
             results.push({
                 externalId,
-                // FORCE WEB URL to prevent App Store redirects
                 url: `https://www.facebook.com/marketplace/item/${externalId}/`,
-                imageUrl: imageUrl,
+                imageUrl,
                 title: cleanTitle.substring(0, 100),
                 tileText: text
             });
