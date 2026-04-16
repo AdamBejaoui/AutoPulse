@@ -1,9 +1,26 @@
 import "../lib/envBootstrap";
+import http from "http";
 import cron from "node-cron";
 import { getNotificationsQueue, getScrapeQueue } from "../lib/queue";
 import "../workers/scrapeWorker";
 import "../workers/notificationWorker";
 import "../workers/alertMatchWorker";
+
+/**
+ * Hugging Face Spaces (Docker) requires the container to listen on a port
+ * (default is 7860) to stay in the 'Running' state.
+ */
+function startHealthCheckServer(): void {
+  const port = process.env.PORT || "7860";
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("AutoPulse Worker is healthy\n");
+  });
+
+  server.listen(port, () => {
+    console.log(`[workers] Health check server listening on port ${port}`);
+  });
+}
 
 function logStartup(): void {
   const now = new Date();
@@ -46,3 +63,4 @@ cron.schedule("*/15 * * * *", async () => {
 });
 
 logStartup();
+startHealthCheckServer();
