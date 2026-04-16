@@ -126,24 +126,27 @@ export async function scrapeLocalMarketplace(
   const url = `https://m.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
   console.log(`[local-scraper] Searching ${location}...`);
 
-  try {
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 90000 });
-    
-    // --- DIAGNOSTICS ---
-    // --- DIAGNOSTICS ---
-    const finalUrl = page.url();
-    const pageTitle = await page.title();
-    // Wait for the body to actually have some content (Facebook Marketplace is JS heavy)
-    const bodySnippet = await page.evaluate(() => document.body.innerText.substring(0, 500).replace(/\n/g, ' '));
-    if (bodySnippet.length < 500) {
-        await page.waitForFunction(() => document.body.innerText.length > 500, { timeout: 30000 }).catch(() => {
-            console.warn(`[local-scraper] Body still lacks content after 30s.`);
+    try {
+        await page.goto(url, { waitUntil: 'load', timeout: 90000 });
+        
+        // --- DIAGNOSTICS ---
+        const finalUrl = page.url();
+        const pageTitle = await page.title();
+        
+        // Wait for the JS shell to actually hydrate content (must see "Marketplace" or similar)
+        console.log(`[local-scraper] Waiting for JS hydration (checking for Marketplace keywords)...`);
+        await page.waitForFunction(() => {
+            const txt = document.body.innerText;
+            return txt.length > 500 && (txt.includes("Marketplace") || txt.includes("Vehicles"));
+        }, { timeout: 30000 }).catch(() => {
+            console.warn(`[local-scraper] Body still lacks content after 30s wait.`);
         });
-    }
-    console.log(`[local-scraper] Current URL: ${finalUrl}`);
-    console.log(`[local-scraper] Page Title: ${pageTitle}`);
-    console.log(`[local-scraper] Page Snippet length: ${bodySnippet.length}`);
-    console.log(`[local-scraper] Page Snippet: ${bodySnippet}`);
+
+        const bodySnippet = await page.evaluate(() => document.body.innerText.substring(0, 500).replace(/\n/g, ' '));
+        console.log(`[local-scraper] Current URL: ${finalUrl}`);
+        console.log(`[local-scraper] Page Title: ${pageTitle}`);
+        console.log(`[local-scraper] Page Snippet length: ${bodySnippet.length}`);
+        console.log(`[local-scraper] Page Snippet: ${bodySnippet}`);
 
     if (finalUrl.includes("/login/") || pageTitle.includes("Log In") || pageTitle.includes("Connexion")) {
         console.warn(`[local-scraper] ⚠️ REDIRECTED TO LOGIN. Facebook is blocking this IP.`);
