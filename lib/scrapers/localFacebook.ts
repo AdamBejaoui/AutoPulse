@@ -157,10 +157,10 @@ export async function scrapeLocalMarketplace(
     const scrollDelayMs = Math.max(1000, Number(process.env.LOCAL_SCROLL_DELAY_MS ?? 2500));
     
     // Wait for at least one listing or a timeout
-    console.log(`[local-scraper] Waiting for mobile listing items...`);
-    // Mobile selector can be different, so we use a broad search for marketplace item links
-    await page.waitForSelector('a[href*="/marketplace/item/"]', { timeout: 15000 }).catch(() => {
-        console.warn(`[local-scraper] Timed out waiting for items. Checking if redirected...`);
+    // Wait for at least one price symbol to appear
+    console.log(`[local-scraper] Waiting for listing elements ($ symbol)...`);
+    await page.waitForFunction(() => document.body.innerText.includes("$"), { timeout: 15000 }).catch(() => {
+        console.warn(`[local-scraper] No price symbols ($) found on page after 15s.`);
     });
 
     console.log(`[local-scraper] Starting robust infinite scroll for ${scrollSteps} steps...`);
@@ -197,8 +197,12 @@ export async function scrapeLocalMarketplace(
 
         
         if (i % 5 === 0) {
-          const count = await page.evaluate(() => document.querySelectorAll('a[href*="/marketplace/item/"], [role="link"]').length);
-          console.log(`[local-scraper] Scroll step ${i}: found ${count} candidate items so far.`);
+          const count = await page.evaluate(() => {
+              const text = document.body.innerText;
+              const matches = text.match(/\$/g) || [];
+              return matches.length;
+          });
+          console.log(`[local-scraper] Scroll step ${i}: found ~${count} price tags so far.`);
         }
     }
 
@@ -220,7 +224,7 @@ export async function scrapeLocalMarketplace(
             if (!linkEl) continue;
 
             const href = linkEl.getAttribute('href') || linkEl.getAttribute('data-href') || '';
-            const idMatch = href.match(/\/item\/(\d{10,20})/) || href.match(/(\d{14,18})/);
+            const idMatch = href.match(/\/item\/(\d{10,20})/) || href.match(/(\d{14,21})/) || text.match(/item\/(\d{10,21})/);
             const externalId = idMatch ? idMatch[1] : null; if (!externalId || seenIds.has(externalId)) continue;
 
             // Image detection
@@ -229,23 +233,28 @@ export async function scrapeLocalMarketplace(
                 if (img && img.src && img.src.startsWith('http') && !img.src.includes('static')) return img.src;
                 const bg = root.querySelector('[style*="background-image"]');
                 if (bg) {
-                    const urlMatch = (bg as HTMLElement).style.backgroundImage.match(/url\("?(.+?)"?\)/);
+                    const style = (bg as HTMLElement).style.backgroundImage;
+                    const urlMatch = style.match(/url\("?(.+?)"?\)/);
                     if (urlMatch && urlMatch[1].startsWith('http')) return urlMatch[1];
                 }
                 return null;
             };
-            const imageUrl = findImg(el) || findImg(linkEl);
+            const imageUrl = findImg(el) || findImg(linkEl) || (el.parentElement ? findImg(el.parentElement) : null);
 
             const ariaLabel = (linkEl.getAttribute('aria-label') || "").trim();
-            let cleanTitle = ariaLabel || text.split("$")[1]?.substring(0, 100).trim() || text.substring(0, 100);
-            // Remove junk from title
-            cleanTitle = cleanTitle.replace(/^[\d,kK\s]+/, '').replace(/just listed/i, '').trim();
+            // Title logic: Use text after the price symbol
+            let cleanTitle = ariaLabel || text.split("$")[1]?.replace(/^[\d,kK\s]+/, '').trim() || text.substring(0, 100);
+            
+            // Clean up titles like "2015 Honda Civic · ..."
+            cleanTitle = cleanTitle.split('\n')[0].split('·')[0].split('  ')[0].trim();
+            cleanTitle = cleanTitle.replace(/just listed/i, '').trim();
 
             results.push({
                 externalId,
-                url: href.startsWith('http') ? href : `https://m.facebook.com${href}`,
+                // FORCE WEB URL to prevent App Store redirects
+                url: `https://www.facebook.com/marketplace/item/${externalId}/`,
                 imageUrl: imageUrl,
-                title: cleanTitle,
+                title: cleanTitle.substring(0, 100),
                 tileText: text
             });
             seenIds.add(externalId);
