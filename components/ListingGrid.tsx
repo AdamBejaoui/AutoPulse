@@ -4,7 +4,7 @@ import { ListingCard } from "@/components/ListingCard";
 export function ListingGrid({
   listings,
 }: {
-  listings: Listing[];
+  listings: any[];
 }): React.ReactElement {
   if (listings.length === 0) {
     return (

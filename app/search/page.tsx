@@ -45,6 +45,8 @@ export default async function SearchPage({
         postedAt: true,
         engine: true,
         description: true,
+        listingUrl: true,
+        condition: true,
       },
     }),
     prisma.listing.count({ where }),

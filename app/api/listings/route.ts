@@ -40,6 +40,8 @@ export async function GET(req: NextRequest) {
           postedAt: true,
           engine: true,
           description: true,
+          listingUrl: true,
+          condition: true,
         },
       }),
       prisma.listing.count({ where }),
