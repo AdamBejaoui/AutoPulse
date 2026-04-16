@@ -72,7 +72,6 @@ const MODEL_MAP: Record<string, string[]> = {
   Lexus: ["es", "is", "gs", "ls", "nx", "rx", "gx", "lx", "ux", "lc", "rc", "ct", "sc", "it"],
   Tesla: ["model 3", "model s", "model x", "model y", "cybertruck", "roadster"],
   Mazda: ["cx-5", "cx-9", "cx-30", "cx-50", "mazda3", "mazda6", "mx-5 miata", "miata", "cx-3", "cx-7", "mazda2", "mazda5", "tribute", "b2300", "b3000", "b4000"],
-  Subaru: ["outback", "forester", "legacy", "impreza", "wrx", "crosstrek", "brz", "ascent"],
   Volvo: ["s60", "s90", "v60", "v90", "xc40", "xc60", "xc90", "c40", "v40", "c30", "s40", "s70", "s80", "v70"],
   Infiniti: ["q50", "q60", "qx50", "qx60", "qx80", "g35", "g37", "fx35", "fx45", "ex35", "m35", "m37", "qx56", "qx70"],
   Acura: ["mdx", "rdx", "tlx", "ilx", "integra", "tsx", "tl", "rlx", "nsx", "zdx", "rsx", "cl"]
