@@ -290,12 +290,12 @@ export async function scrapeLocalMarketplace(
         // Trigger reactive alert matching
         try {
           const alertQueue = getAlertMatchQueue();
-          await alertQueue.add("matchListing", { listingId: item.externalId }, {
+          await alertQueue.add("matchListing", { listingId: item.externalId as string }, {
             removeOnComplete: true,
-            jobId: `match-${item.externalId}`
+            jobId: `match-${item.externalId as string}`
           });
         } catch (queueErr) {
-          console.error(`[local-scraper] Failed to queue alert match for ${item.externalId}:`, queueErr);
+          console.error(`[local-scraper] Failed to queue alert match for ${item.externalId as string}:`, queueErr);
         }
 
         upserted++;
