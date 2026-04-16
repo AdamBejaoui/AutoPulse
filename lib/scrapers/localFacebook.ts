@@ -214,19 +214,6 @@ export async function scrapeLocalMarketplace(
 
             if (!externalId) return null;
 
-            // Advanced image detection (Img tag or Background-image style)
-            let imageUrl: string | null = null;
-            const img = el.querySelector("img") || el.parentElement?.querySelector("img") || el.querySelector('[style*="background-image"]');
-            if (img) {
-                if (img.tagName === "IMG") {
-                    imageUrl = (img as HTMLImageElement).src;
-                } else {
-                    const style = (img as HTMLElement).style.backgroundImage;
-                    const urlMatch = style.match(/url\("?(.+?)"?\)/);
-                    imageUrl = urlMatch ? urlMatch[1] : null;
-                }
-            }
-            
             const tileText = (el.textContent || el.parentElement?.textContent || "").replace(/\n/g, " ").trim();
             const ariaLabel = (el.getAttribute('aria-label') || "").trim();
             
