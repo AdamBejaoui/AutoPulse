@@ -1,10 +1,11 @@
 import "../lib/envBootstrap";
 import http from "http";
 import cron from "node-cron";
-import { getNotificationsQueue, getScrapeQueue } from "../lib/queue";
+import { getNotificationsQueue, getScrapeQueue, getReparseQueue } from "../lib/queue";
 import "../workers/scrapeWorker";
 import "../workers/notificationWorker";
 import "../workers/alertMatchWorker";
+import "../workers/reparseWorker";
 
 /**
  * Hugging Face Spaces (Docker) requires the container to listen on a port
@@ -30,6 +31,9 @@ function logStartup(): void {
   );
   console.log(
     "[workers] Scheduled: notifications 'checkAlerts' every 15 minutes (*/15 * * * *)",
+  );
+  console.log(
+    "[workers] Scheduled: reparse 'reparseAll' every 24 hours (0 0 * * *)",
   );
   const nextQuarter = new Date(now);
   nextQuarter.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
@@ -59,6 +63,16 @@ cron.schedule("*/15 * * * *", async () => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[workers] Failed to queue checkAlerts:", msg);
+  }
+});
+
+cron.schedule("0 0 * * *", async () => {
+  try {
+    await getReparseQueue().add("reparseAll", {});
+    console.log("[workers] Cron: reparseAll job queued (daily)");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[workers] Failed to queue reparseAll:", msg);
   }
 });
 

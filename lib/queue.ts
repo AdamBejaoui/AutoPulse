@@ -13,6 +13,7 @@ let redisConnection: IORedis | null = null;
 let scrapeQueue: Queue | null = null;
 let notificationsQueue: Queue | null = null;
 let alertMatchQueue: Queue | null = null;
+let reparseQueue: Queue | null = null;
 
 const defaultJobRetries = {
   attempts: 3,
@@ -62,11 +63,11 @@ export function getAlertMatchQueue(): Queue {
 }
 
 export function getReparseQueue(): Queue {
-  if (!scrapeQueue) {
-    scrapeQueue = new Queue("reparse", {
+  if (!reparseQueue) {
+    reparseQueue = new Queue("reparse", {
       connection: getRedisConnection(),
       defaultJobOptions: defaultJobRetries,
     });
   }
-  return scrapeQueue;
+  return reparseQueue;
 }

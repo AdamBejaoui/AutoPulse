@@ -26,7 +26,9 @@ COPY --chown=pwuser:pwuser . .
 USER pwuser
 
 # Generate the Prisma client
-RUN npx prisma generate
+# We provide a placeholder DATABASE_URL because the build environment lacks the real secret,
+# and Prisma 7.7.0+ config validation requires it to be present.
+RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npx prisma generate
 
 # Final check: Ensure Playwright browsers are installed
 RUN npx playwright install chromium
