@@ -233,6 +233,8 @@ export async function scrapeLocalMarketplace(
         : { city: location, state: null };
 
     for (const item of listings) {
+        if (!item.externalId) continue;
+        
         const fallbackDescription = `AutoPulse local capture: ${item.tileText || item.title}`.substring(0, 2000);
         const parsedPrice = parseTilePriceToCents(item.tileText || item.title || "");
         const postedAt = parseRelativePostedAt(item.tileText);
@@ -240,7 +242,7 @@ export async function scrapeLocalMarketplace(
         const parsed = parseListingText(item.title, fallbackDescription);
 
         await withRetry(() => prisma.listing.upsert({
-            where: { externalId: item.externalId },
+            where: { externalId: item.externalId as string },
             update: {
                 price: parsedPrice > 0 ? parsedPrice : undefined,
                 imageUrl: item.imageUrl || undefined,
