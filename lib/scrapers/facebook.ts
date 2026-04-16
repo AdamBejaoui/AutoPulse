@@ -137,7 +137,8 @@ export async function scrapeFacebookMarketplaceLocation(
 
   const API_TOKEN = process.env.APIFY_API_TOKEN;
   if (!API_TOKEN) {
-    console.error("[facebook] APIFY_API_TOKEN is missing in .env");
+    console.warn("[facebook] APIFY_API_TOKEN is missing, signaling fallback to local scraper...");
+    result.hardLimited = true;
     return result;
   }
 

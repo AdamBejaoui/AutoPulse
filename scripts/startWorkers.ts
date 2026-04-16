@@ -1,7 +1,8 @@
 import "../lib/envBootstrap";
 import http from "http";
 import cron from "node-cron";
-import { getNotificationsQueue, getScrapeQueue, getReparseQueue } from "../lib/queue";
+import { getNotificationsQueue, getScrapeQueue, getReparseQueue, getRedisConnection } from "../lib/queue";
+import { prisma } from "../lib/prisma";
 import "../workers/scrapeWorker";
 import "../workers/notificationWorker";
 import "../workers/alertMatchWorker";
@@ -76,7 +77,44 @@ cron.schedule("0 0 * * *", async () => {
   }
 });
 
+async function runDiagnostics(): Promise<boolean> {
+  console.log("[workers] --- Pre-flight Diagnostics ---");
+  let allOk = true;
+
+  // 1. Check Redis
+  try {
+    const redis = getRedisConnection();
+    await redis.ping();
+    console.log("[workers] ✅ Redis: Connected");
+  } catch (e) {
+    console.error("[workers] ❌ Redis: Connection Failed", e instanceof Error ? e.message : String(e));
+    allOk = false;
+  }
+
+  // 2. Check Database
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.log("[workers] ✅ Database: Connected");
+  } catch (e) {
+    console.error("[workers] ❌ Database: Connection Failed", e instanceof Error ? e.message : String(e));
+    allOk = false;
+  }
+
+  if (allOk) {
+    console.log("[workers] --- Diagnostics Complete: Healthy ---");
+  } else {
+    console.warn("[workers] --- Diagnostics Complete: Issues Detected ---");
+  }
+  return allOk;
+}
+
 async function triggerInitialJobs(): Promise<void> {
+  const healthy = await runDiagnostics();
+  if (!healthy) {
+    console.warn("[workers] Skipping initial jobs due to connection issues.");
+    return;
+  }
+  
   console.log("[workers] Triggering initial startup jobs...");
   try {
     await getScrapeQueue().add("scrapeAll", {}, { priority: 1 });

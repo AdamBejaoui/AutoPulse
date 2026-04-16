@@ -66,9 +66,11 @@ export async function runAllScrapers(): Promise<RunAllScrapersSummary> {
       const location = batch[idx]!;
       if (r.status === "fulfilled") {
         const val = r.value;
-        if (val.hardLimited) {
+        const shouldFallback = val.hardLimited || (val.scraped === 0 && val.errors > 0);
+        
+        if (shouldFallback) {
           console.warn(
-            `[scraper] ${location}: Apify hard limit hit, falling back to local scrape`,
+            `[scraper] ${location}: Scrape result empty or limited (scraped=${val.scraped}, errors=${val.errors}), falling back to local scrape`,
           );
           fallbackLocations.push(location);
         }
