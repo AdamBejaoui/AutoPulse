@@ -132,25 +132,31 @@ export async function scrapeLocalMarketplace(
     console.log(`[local-scraper] Starting robust infinite scroll for ${scrollSteps} steps...`);
     
     for (let i = 0; i < scrollSteps; i++) {
-        // Bypass Facebook's scroll lock modal
+        // Bypass Facebook's scroll lock modal or login prompts
         await page.evaluate(() => {
           document.body.style.overflow = 'auto';
           document.documentElement.style.overflow = 'auto';
           
-          // Remove potential blocking overlays
-          const modal = document.querySelector('div[role="dialog"]');
-          if (modal) {
-              const closeBtn = modal.querySelector('div[aria-label="Fermer"], div[aria-label="Close"], i[class*="x1b0ak9"]');
-              if (closeBtn instanceof HTMLElement) closeBtn.click();
-              else (modal as HTMLElement).style.display = 'none';
-          }
+          // 1. Force remove blocking overlays/modals that dim the screen
+          const overlays = document.querySelectorAll('div[data-testid="mask"], div[class*="x1n2onr6"]');
+          overlays.forEach(ov => (ov as HTMLElement).style.display = 'none');
+
+          const dialogs = document.querySelectorAll('div[role="dialog"]');
+          dialogs.forEach(d => {
+              // Only remove if it contains login-related words or is a large modal
+              const text = d.textContent?.toLowerCase() || "";
+              if (text.includes("login") || text.includes("connexion") || text.includes("account") || text.includes("cookies")) {
+                  (d as HTMLElement).style.display = 'none';
+              }
+          });
           
-          // SCROLL Strategy: Scroll to the last item to trigger lazy load
-          const items = document.querySelectorAll('div[role="main"] a[href*="/marketplace/item/"]');
+          // 2. SCROLL Strategy: Scroll to bottom or to the last item
+          // We look for any link that contains '/marketplace/item/' as these are our targets
+          const items = document.querySelectorAll('a[href*="/marketplace/item/"]');
           if (items.length > 0) {
               items[items.length - 1].scrollIntoView({ behavior: 'smooth' });
           } else {
-              window.scrollBy(0, 2000);
+              window.scrollBy(0, 800 + Math.random() * 400);
           }
         });
 
@@ -158,15 +164,24 @@ export async function scrapeLocalMarketplace(
 
         
         if (i % 5 === 0) {
-          const count = await page.evaluate(() => document.querySelectorAll('div[role="main"] a[href*="/marketplace/item/"]').length);
+          const count = await page.evaluate(() => document.querySelectorAll('a[href*="/marketplace/item/"]').length);
           console.log(`[local-scraper] Scroll step ${i}: found ${count} items so far.`);
         }
     }
 
     // 3. Extract IDs and basic data from the grid
     const listings = await page.evaluate(() => {
-        const items = Array.from(document.querySelectorAll('div[role="main"] a[href*="/marketplace/item/"]'));
-        return items.map(a => {
+        // Broad selector: any 'a' tag linking to an item
+        const items = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"]'));
+        
+        // Filter out those with no text OR no image (likely not listing tiles)
+        const validItems = items.filter(a => {
+            const hasImg = a.querySelector('img') !== null;
+            const hasText = (a.textContent || '').trim().length > 5;
+            return hasImg || hasText;
+        });
+
+        return validItems.map(a => {
             const href = a.getAttribute('href') || '';
             const idMatch = href.match(/\/item\/(\d+)/);
             const img = a.querySelector("img");
