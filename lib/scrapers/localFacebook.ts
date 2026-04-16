@@ -190,7 +190,10 @@ export async function scrapeLocalMarketplace(
     }
 
     let upserted = 0;
-    const slugLocation = MARKETPLACE_CITIES.find(c => c.slug === location) || { city: location, state: null };
+    const foundCity = MARKETPLACE_CITIES.find(c => c.slug === location);
+    const slugLocation = foundCity 
+        ? parseCityStateFromLabel(foundCity.label) 
+        : { city: location, state: null };
 
     for (const item of listings) {
         const fallbackDescription = `AutoPulse local capture: ${item.tileText || item.title}`.substring(0, 2000);
