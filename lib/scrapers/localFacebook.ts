@@ -114,12 +114,16 @@ export async function scrapeLocalMarketplace(
 ) {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-    viewport: { width: 1920, height: 1080 }
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+    viewport: { width: 390, height: 844 },
+    extraHTTPHeaders: {
+      'Referer': 'https://www.google.com/',
+      'Accept-Language': 'en-US,en;q=0.9',
+    }
   });
   const page = await context.newPage();
 
-  const url = `https://www.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
+  const url = `https://m.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
   console.log(`[local-scraper] Searching ${location}...`);
 
   try {
@@ -140,9 +144,10 @@ export async function scrapeLocalMarketplace(
     const scrollDelayMs = Math.max(500, Number(process.env.LOCAL_SCROLL_DELAY_MS ?? 1500));
     
     // Wait for at least one listing or a timeout
-    console.log(`[local-scraper] Waiting for listing grid items...`);
+    console.log(`[local-scraper] Waiting for mobile listing items...`);
+    // Mobile selector can be different, so we use a broad search for marketplace item links
     await page.waitForSelector('a[href*="/marketplace/item/"]', { timeout: 15000 }).catch(() => {
-        console.warn(`[local-scraper] Timed out waiting for items selector. Proceeding with scroll cycle...`);
+        console.warn(`[local-scraper] Timed out waiting for items. Checking if redirected...`);
     });
 
     console.log(`[local-scraper] Starting robust infinite scroll for ${scrollSteps} steps...`);
@@ -166,13 +171,12 @@ export async function scrapeLocalMarketplace(
               }
           });
           
-          // 2. SCROLL Strategy: Scroll to bottom or to the last item
-          // We look for any link that contains '/marketplace/item/' as these are our targets
+          // 2. SCROLL Strategy: Mobile friendly scroll
           const items = document.querySelectorAll('a[href*="/marketplace/item/"]');
           if (items.length > 0) {
               items[items.length - 1].scrollIntoView({ behavior: 'smooth' });
           } else {
-              window.scrollBy(0, 800 + Math.random() * 400);
+              window.scrollBy(0, 600 + Math.random() * 400);
           }
         });
 
