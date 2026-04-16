@@ -64,10 +64,10 @@ export function ListingDetailModal({
   listing: initialListing, 
   children 
 }: { 
-  listing: Listing;
+  listing: any;
   children: React.ReactNode;
 }) {
-  const [listing, setListing] = React.useState<Listing>(initialListing);
+  const [listing, setListing] = React.useState<any>(initialListing);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [syncStatus, setSyncStatus] = React.useState<"idle" | "syncing" | "busy" | "error">("idle");
 
