@@ -5,7 +5,10 @@ import { prisma } from "../lib/prisma";
 async function main() {
   const listingWithDesc = await prisma.listing.findFirst({
     where: {
-      description: { not: null, not: "" }
+      AND: [
+        { description: { not: null } },
+        { description: { not: "" } }
+      ]
     }
   });
 
