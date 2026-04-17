@@ -26,6 +26,7 @@ export interface ParsedListing {
 
   // Meta
   parseScore: number;
+  isJunk: boolean;
 }
 
 const MAKES = [
@@ -117,6 +118,28 @@ function capitalize(s: string): string {
   const normalized = MAKE_NORMALIZATION[s.toLowerCase()];
   if (normalized) return normalized;
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+/**
+ * Robust junk title detection for Facebook Marketplace.
+ * Catches category nav nodes, placeholders, and generic listings.
+ */
+export function isJunkTitle(title: string): boolean {
+  const low = title.toLowerCase().trim();
+  const junkPatterns = [
+    "marketplace listing",
+    "voitures", "bateaux", "bateau", "motos", "moto",
+    "caravanes", "caravane", "camping-cars", "camping-car",
+    "sports mécaniques", "sport mécanique",
+    "powersports", "rv", "campers", "boats", "trailers",
+    "vehicles", "cars", "trucks"
+  ];
+  
+  // Exact or contains "marketplace listing"
+  if (low.includes("marketplace listing")) return true;
+  
+  // Full match for category nav nodes
+  return junkPatterns.some(p => low === p);
 }
 
 /**
@@ -318,6 +341,8 @@ export function parseListingText(title: string, description: string = ""): Parse
     }
   }
 
+  const isJunk = isJunkTitle(title);
+  
   return {
     make,
     model,
@@ -336,6 +361,7 @@ export function parseListingText(title: string, description: string = ""): Parse
     accidents,
     owners,
     features: Array.from(featuresSet),
-    parseScore: Math.max(0, parseScore)
+    parseScore: Math.max(0, parseScore),
+    isJunk
   };
 }

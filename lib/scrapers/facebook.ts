@@ -1,6 +1,6 @@
 import { ApifyClient } from "apify-client";
 import { prisma } from "../prisma";
-import { parseListingText } from "../parser/listingParser";
+import { parseListingText, isJunkTitle } from "../parser/listingParser";
 import { getAlertMatchQueue } from "../queue";
 
 export type ScrapeLocationResult = {
@@ -180,6 +180,12 @@ export async function scrapeFacebookMarketplaceLocation(
         const url = (item.url || item.listing_url || item.itemUrl || `https://www.facebook.com/marketplace/item/${externalId}`).toString();
         const imgUrl = (item.primaryImage || item.image || item.thumbnail || item.listing_image || null)?.toString();
         
+        // JUNK GUARD: Filter placeholders like "Marketplace Listing" or category nav nodes
+        if (isJunkTitle(title)) {
+          console.log(`[facebook] ⏭️ Skipping junk listing: "${title}"`);
+          continue;
+        }
+
         // Price detection (handles number or formatted string)
         let price = parsePriceToCents(item.price || item.priceFormatted || item.price_formatted || item.price_raw);
         if (price === 0 && typeof item.price === 'number' && item.price > 0 && item.price < 2000000) {
@@ -205,6 +211,30 @@ export async function scrapeFacebookMarketplaceLocation(
         const model = vInfo.model || parsedFromTitle.model || "Unknown";
         const year = Number(vInfo.year) || parsedFromTitle.year || 0;
         const mileage = item.mileage ? parseInt(item.mileage.toString().replace(/\D/g, '')) : (Number(vInfo.mileage) || parsedFromTitle.mileage);
+
+        // QUALITY GUARD: Skip if make is Unknown - prevents "Marketplace Listing" spam
+        if (make === "Unknown") {
+          console.log(`[facebook] ⏭️ Unparseable make, skipping: "${title}"`);
+          continue;
+        }
+
+        // SEMANTIC DEDUPLICATION: Skip if a listing with identical specs already exists
+        const duplicate = await prisma.listing.findFirst({
+          where: {
+            make,
+            model,
+            year,
+            price,
+            mileage,
+            city,
+          },
+          select: { externalId: true }
+        });
+
+        if (duplicate && duplicate.externalId !== externalId) {
+          console.log(`[facebook] ⏭️ Semantic duplicate found (different ID), skipping: "${title}" ($${price/100})`);
+          continue;
+        }
 
         // Safely extract description text
         const rawDesc: any = item.description || item.listingDescription || null;

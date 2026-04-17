@@ -1,6 +1,6 @@
 import { chromium, Browser, Page } from "playwright";
 import { prisma } from "../prisma";
-import { parseListingText } from "../parser/listingParser";
+import { parseListingText, isJunkTitle } from "../parser/listingParser";
 import { MarketplaceScrapeFilters } from "./facebook";
 import { MARKETPLACE_CITIES } from "../cities";
 import { getAlertMatchQueue } from "../queue";
@@ -238,19 +238,9 @@ export async function scrapeLocalMarketplace(
     const rawHtml = await page.content();
     console.log(`[local-scraper] Raw HTML size: ${rawHtml.length} chars`);
 
-    // Diagnostic: sample a small slice of the HTML to understand what's in it
+    // Sample a small slice of the HTML to understand what's in it
     const htmlSnippet = rawHtml.replace(/\s+/g, ' ').substring(0, 300);
     console.log(`[local-scraper] HTML snippet: ${htmlSnippet}`);
-
-    // Junk title patterns to reject — substring match (not anchored) so variants like
-    // "Marketplace Listing · Vehicles" or "Voitures à vendre" are also caught
-    const isJunkTitle = (t: string) => {
-        const low = t.toLowerCase().trim();
-        return (
-            low.includes('marketplace listing') ||
-            /^(vehicles?|cars?|trucks?|voitures?|bateaux|bateau|motos?|motorcycles?|caravanes?|camping-cars?|sports? m[eé]caniques?|powersports?|rv|campers?|boats?|trailers?|unknown)$/i.test(low)
-        );
-    };
 
     type ListingRaw = { externalId: string; url: string; imageUrl: string | null; title: string; tileText: string };
     const listings: ListingRaw[] = [];
@@ -305,7 +295,11 @@ export async function scrapeLocalMarketplace(
         const title = rawTitle.replace(/\\u([\dA-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))).trim();
 
         // Skip known junk: category nav names, generic fallback titles
-        if (isJunkTitle(title)) continue;
+        // JUNK GUARD: Filter placeholders like "Marketplace Listing" or category nav nodes
+        if (isJunkTitle(title)) {
+            console.log(`[local-scraper] ⏭️ Skipping junk listing: "${title}"`);
+            continue;
+        }
 
         const priceStr = priceMatch?.[1] || '';
         const tileText = `$${priceStr} ${title}`;
@@ -346,7 +340,11 @@ export async function scrapeLocalMarketplace(
 
             const rawTitle = titleMatch![1];
             const title = rawTitle.replace(/\\u([\dA-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))).trim();
-            if (isJunkTitle(title)) continue;
+            // JUNK GUARD: Filter placeholders like "Marketplace Listing" or category nav nodes
+            if (isJunkTitle(title)) {
+                console.log(`[local-scraper] ⏭️ Skipping junk listing: "${title}"`);
+                continue;
+            }
 
             seenIds.add(externalId);
             const priceStr = priceMatch![1];
@@ -395,6 +393,24 @@ export async function scrapeLocalMarketplace(
         // Skip if the parser couldn't identify a real make — these show as "Marketplace Listing" in the UI
         if (!parsed.make || parsed.make === 'Unknown') {
             console.log(`[local-scraper] ⏭️ Unparseable make, skipping: "${item.title}"`);
+            continue;
+        }
+
+        // SEMANTIC DEDUPLICATION: Skip if a listing with identical specs already exists
+        const duplicate = await prisma.listing.findFirst({
+            where: {
+                make: parsed.make,
+                model: parsed.model,
+                year: parsed.year,
+                price: parsedPrice,
+                mileage: parsed.mileage,
+                city: slugLocation.city,
+            },
+            select: { externalId: true }
+        });
+
+        if (duplicate && duplicate.externalId !== item.externalId) {
+            console.log(`[local-scraper] ⏭️ Semantic duplicate found (different ID), skipping: "${item.title}" ($${parsedPrice/100})`);
             continue;
         }
 
