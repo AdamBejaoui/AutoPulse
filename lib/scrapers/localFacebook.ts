@@ -297,9 +297,9 @@ export async function scrapeLocalMarketplace(
 
         // Description — look for dedicated text fields in the proximity
         const descMatch = 
-            context.match(/"listing_description"\s*:\s*{\s*"text"\s*:\s*"([^"]{10,2000}?)"\s*}/) ||
-            context.match(/"redacted_description"\s*:\s*{\s*"text"\s*:\s*"([^"]{10,2000}?)"\s*}/) ||
-            context.match(/"description"\s*:\s*{\s*"text"\s*:\s*"([^"]{10,2000}?)"\s*}/);
+            context.match(/"listing_description"\s*:\s*{\s*"text"\s*:\s*"([^"]{10,10000}?)"\s*}/) ||
+            context.match(/"redacted_description"\s*:\s*{\s*"text"\s*:\s*"([^"]{10,10000}?)"\s*}/) ||
+            context.match(/"description"\s*:\s*{\s*"text"\s*:\s*"([^"]{10,10000}?)"\s*}/);
         
         const rawDescription = descMatch ? descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\u([\dA-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))) : null;
 

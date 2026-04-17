@@ -112,7 +112,6 @@ export function ListingDetailModal({
           if (!response.ok) {
             throw new Error(`Status ${response.status}`);
           }
-
           const data = await response.json();
           if (data?.listing) {
             setListing(data.listing);
@@ -298,7 +297,7 @@ export function ListingDetailModal({
                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">About this vehicle</h3>
                 </div>
                 <div className={cn(
-                  "rounded-2xl bg-white/5 border border-white/10 p-5 relative overflow-hidden transition-all duration-500",
+                  "rounded-2xl bg-white/5 border border-white/10 p-5 transition-all duration-500",
                   isRefreshing ? "opacity-40 blur-[2px] scale-[0.98]" : "opacity-100 blur-0 scale-100"
                 )}>
                   <div className={cn(
