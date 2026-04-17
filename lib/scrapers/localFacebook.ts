@@ -108,26 +108,47 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
   throw lastError;
 }
 
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Edge/122.0.0.0',
+];
+
+export class FacebookAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FacebookAuthError";
+  }
+}
+
 export async function scrapeLocalMarketplace(
   location: string,
   filters: MarketplaceScrapeFilters = {}
 ) {
-  const browser = await chromium.launch({ headless: true });
+  const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  const browser = await chromium.launch({ 
+    headless: process.env.SCRAPER_HEADLESS !== 'false',
+    args: ['--disable-blink-features=AutomationControlled']
+  });
+
   const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    viewport: { width: 1280, height: 900 },
+    userAgent: ua,
+    viewport: { 
+      width: 1280 + Math.floor(Math.random() * 100), 
+      height: 900 + Math.floor(Math.random() * 100) 
+    },
     extraHTTPHeaders: {
-      'Referer': 'https://www.google.com/',
+      'Referer': 'https://www.facebook.com/',
       'Accept-Language': 'en-US,en;q=0.9',
     }
   });
 
-  // Inject Facebook session cookies to bypass IP-level login redirect
+  // Inject Facebook session cookies
   const fbCookiesEnv = process.env.FB_COOKIES;
   if (fbCookiesEnv) {
     try {
       const raw = JSON.parse(fbCookiesEnv);
-      // Support both EditThisCookie (expirationDate) and Cookie-Editor (expires) export formats
       const cookies = (Array.isArray(raw) ? raw : Object.values(raw)).map((c: any) => ({
         name: String(c.name),
         value: String(c.value),
@@ -141,12 +162,12 @@ export async function scrapeLocalMarketplace(
         sameSite: 'None' as const,
       }));
       await context.addCookies(cookies);
-      console.log(`[local-scraper] ✅ Loaded ${cookies.length} Facebook cookies from FB_COOKIES`);
+      console.log(`[local-scraper] ✅ Loaded ${cookies.length} Facebook cookies`);
     } catch (e) {
-      console.warn(`[local-scraper] ⚠️ Failed to parse FB_COOKIES (will proceed without auth):`, e);
+      console.warn(`[local-scraper] ⚠️ Failed to parse FB_COOKIES:`, e);
     }
   } else {
-    console.warn(`[local-scraper] ⚠️ FB_COOKIES not set — Facebook will likely redirect to login from this IP.`);
+    console.warn(`[local-scraper] ⚠️ FB_COOKIES not set — IP redirect highly likely.`);
   }
 
   const page = await context.newPage();
@@ -176,9 +197,21 @@ export async function scrapeLocalMarketplace(
         console.log(`[local-scraper] Page Snippet length: ${bodySnippet.length}`);
         console.log(`[local-scraper] Page Snippet: ${bodySnippet}`);
 
-    if (finalUrl.includes("/login/") || pageTitle.includes("Log In") || pageTitle.includes("Connexion")) {
-        console.warn(`[local-scraper] ⚠️ REDIRECTED TO LOGIN. Facebook is blocking this IP.`);
-    }
+        if (finalUrl.includes("/login/") || pageTitle.includes("Log In") || pageTitle.includes("Connexion")) {
+            console.error(`[local-scraper] ⚠️ REDIRECTED TO LOGIN. Facebook is blocking this IP or cookies are invalid.`);
+            throw new FacebookAuthError("Cookies expired or IP blocked by login redirect.");
+        }
+
+        // --- RELIABILITY: Wait for actual listing data ($ symbols) ---
+        console.log(`[local-scraper] Waiting for listing grid hydration (Price symbols)...`);
+        const hasData = await page.waitForFunction(() => {
+            return document.body.innerText.includes("$") || 
+                   document.querySelector('div[role="main"]') !== null;
+        }, { timeout: 20000 }).catch(() => false);
+
+        if (!hasData) {
+            console.warn(`[local-scraper] No price symbols ($) found on page after 20s. Page may be empty or layout changed.`);
+        }
     
     // 2. Scroll to load more (Infinite Scroll logic with Modal Bypass)
     const scrollSteps = Math.max(1, Number(process.env.LOCAL_SCROLL_STEPS ?? 25));

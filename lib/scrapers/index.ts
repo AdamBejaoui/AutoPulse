@@ -96,6 +96,19 @@ export async function runAllScrapers(): Promise<RunAllScrapersSummary> {
         summary.totalScraped += fallback.scraped;
         summary.totalUpserted += fallback.upserted;
       } catch (fallbackErr) {
+        const isAuthError = fallbackErr instanceof Error && fallbackErr.name === "FacebookAuthError";
+        
+        if (isAuthError) {
+          console.error("\n\n🚨🚨🚨 CRITICAL AUTHENTICATION FAILURE 🚨🚨🚨");
+          console.error(`[scraper-fallback] Facebook is blocking the current IP or FB_COOKIES are EXPIRED.`);
+          console.error(`[scraper-fallback] Action Required: Update FB_COOKIES environment variable with fresh session tokens.`);
+          console.error("🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n\n");
+          
+          // Stop attempting further local scrapes in this batch if auth is definitely dead
+          summary.totalErrors += fallbackLocations.length;
+          break; 
+        }
+
         const fbMsg =
           fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
         console.error(`[scraper-fallback] ${loc} failed: ${fbMsg}`);

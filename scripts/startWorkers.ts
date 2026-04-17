@@ -86,6 +86,14 @@ async function runDiagnostics(): Promise<boolean> {
     const redis = getRedisConnection();
     await redis.ping();
     console.log("[workers] ✅ Redis: Connected");
+    
+    // Check Eviction Policy
+    const info = await redis.info('memory');
+    if (info.includes("maxmemory-policy:volatile-lru")) {
+       console.warn("\n🚨 WARNING: Redis 'maxmemory-policy' is set to 'volatile-lru'.");
+       console.warn("   This can cause job data to be evicted unexpectedly.");
+       console.warn("   Action: Set policy to 'noeviction' in your Redis configuration.\n");
+    }
   } catch (e) {
     console.error("[workers] ❌ Redis: Connection Failed", e instanceof Error ? e.message : String(e));
     allOk = false;
