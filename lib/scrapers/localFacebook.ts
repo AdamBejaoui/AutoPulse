@@ -161,6 +161,13 @@ export async function scrapeLocalMarketplace(
         secure: Boolean(c.secure ?? true),
         sameSite: (c.sameSite === 'no_restriction' ? 'None' : (c.sameSite === 'lax' ? 'Lax' : (c.sameSite === 'strict' ? 'Strict' : 'Lax'))) as any,
       }));
+      const hasCUser = cookies.some(c => c.name === 'c_user');
+      const hasXS = cookies.some(c => c.name === 'xs');
+      console.log(`[local-scraper] 🔑 Cookie check: c_user=${hasCUser}, xs=${hasXS}`);
+      if (!hasCUser || !hasXS) {
+          console.warn(`[local-scraper] ⚠️ WARNING: Missing critical session cookies (c_user/xs). Bypass might fail.`);
+      }
+
       await context.addCookies(cookies);
       console.log(`[local-scraper] ✅ Loaded ${cookies.length} Facebook cookies`);
     } catch (e) {
@@ -192,7 +199,7 @@ export async function scrapeLocalMarketplace(
         });
 
         const bodySnippet = await page.evaluate(() => document.body.innerText.substring(0, 500).replace(/\n/g, ' '));
-        console.log(`[local-scraper] [v2.1] Current URL: ${finalUrl}`);
+        console.log(`[local-scraper] [v2.2] Current URL: ${page.url()}`);
         console.log(`[local-scraper] Page Title: ${pageTitle}`);
         console.log(`[local-scraper] Page Snippet length: ${bodySnippet.length}`);
         console.log(`[local-scraper] Page Snippet: ${bodySnippet}`);
@@ -219,17 +226,25 @@ export async function scrapeLocalMarketplace(
 
             console.log(`[local-scraper] 🛡️ Bypass Step ${loopCount + 1}: Currently at ${currentUrl}`);
             
-            // 1. Proactive Checkbox Handling (e.g., "Save Browser", "Keep me logged in")
+            // 1. Proactive Checkbox Handling (Enhanced Evaluation)
             try {
-                const checkboxes = page.locator('input[type="checkbox"], input[type="radio"]');
-                const count = await checkboxes.count();
-                for (let i = 0; i < count; i++) {
-                    const cb = checkboxes.nth(i);
-                    if (await cb.isVisible() && !(await cb.isChecked())) {
-                        console.log(`[local-scraper] 🔄 Checking invisible/unchecked checkbox at step ${loopCount + 1}...`);
-                        await cb.check({ force: true }).catch(() => {});
-                    }
-                }
+                await page.evaluate(() => {
+                    // Look for any input that is a checkbox or radio
+                    const inputs = document.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+                    inputs.forEach((input: any) => {
+                        if (!input.checked) {
+                            console.log("Checking checkbox: " + input.name);
+                            input.click();
+                        }
+                    });
+                    // Also look for elements that might be custom-styled checkboxes
+                    const customBoxes = document.querySelectorAll('div[role="checkbox"], div[role="radio"]');
+                    customBoxes.forEach((box: any) => {
+                        if (box.getAttribute('aria-checked') !== 'true') {
+                            box.click();
+                        }
+                    });
+                });
             } catch (e) { /* ignore */ }
 
             // 2. Expanded Button Selection
