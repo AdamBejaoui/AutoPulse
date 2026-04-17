@@ -139,7 +139,5 @@ export function Navbar(): React.ReactElement {
         )}
       </header>
     </div>
-      </header>
-    </div>
   );
 }
