@@ -209,6 +209,24 @@ export async function scrapeLocalMarketplace(
     // 3. Extract IDs and basic data from the grid
     // 3. Extract IDs and basic data from the grid
     const listings = await page.evaluate(() => {
+        // Helper: find the best image URL from an element or its descendants/ancestors
+        function findImg(el: Element | null): string | null {
+            if (!el) return null;
+            // Direct img tag
+            const img = el.tagName === 'IMG' ? el as HTMLImageElement : el.querySelector('img');
+            if (img) {
+                const src = img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
+                if (src && !src.startsWith('data:') && src.length > 10) return src;
+            }
+            // Background image via style
+            const bgEl = el.querySelector('[style*="background-image"]') as HTMLElement | null;
+            if (bgEl) {
+                const match = bgEl.style.backgroundImage.match(/url\(["']?(.*?)["']?\)/);
+                if (match?.[1]) return match[1];
+            }
+            return null;
+        }
+
         // Broad search for anything that looks like a listing card (usually divs or articles)
         const candidates = Array.from(document.querySelectorAll('div, a, [role="link"]'));
         const results = [];
