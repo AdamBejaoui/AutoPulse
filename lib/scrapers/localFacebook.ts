@@ -227,13 +227,25 @@ export async function scrapeLocalMarketplace(
             if (clicked) {
                 // IMPORTANT: After bypassing a prompt, Facebook often lands on a generic homepage 
                 // or a transition URL. We must re-navigate to our target Marketplace URL.
-                console.log(`[local-scraper] 🔄 Re-navigating to target URL after bypass: ${url}`);
-                await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+                console.log(`[local-scraper] ⏳ Waiting for session to settle before re-navigation...`);
+                await page.waitForTimeout(3000); 
+                
+                console.log(`[local-scraper] 🔄 Re-navigating to target URL: ${url}`);
+                await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 }).catch(async () => {
+                   console.warn(`[local-scraper] ⚠️ Networkidle timed out, proceeding with 'load'...`);
+                   await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
+                });
                 
                 // Final check to see if we're finally on Marketplace
                 const finalCheckUrl = page.url();
+                const finalTitle = await page.title();
+                console.log(`[local-scraper] 🔎 Post-bypass location: ${finalCheckUrl} | Title: ${finalTitle}`);
+                
                 if (finalCheckUrl.includes("/marketplace/")) {
                     console.log(`[local-scraper] ✅ Successfully reached Marketplace after re-navigation.`);
+                } else {
+                    console.warn(`[local-scraper] ⚠️ Re-navigation landed on unexpected page. Attempting one last direct goto...`);
+                    await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
                 }
             }
 
