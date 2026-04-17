@@ -121,6 +121,34 @@ export async function scrapeLocalMarketplace(
       'Accept-Language': 'en-US,en;q=0.9',
     }
   });
+
+  // Inject Facebook session cookies to bypass IP-level login redirect
+  const fbCookiesEnv = process.env.FB_COOKIES;
+  if (fbCookiesEnv) {
+    try {
+      const raw = JSON.parse(fbCookiesEnv);
+      // Support both EditThisCookie (expirationDate) and Cookie-Editor (expires) export formats
+      const cookies = (Array.isArray(raw) ? raw : Object.values(raw)).map((c: any) => ({
+        name: String(c.name),
+        value: String(c.value),
+        domain: String(c.domain || '.facebook.com').replace(/^\.?/, '.'),
+        path: String(c.path || '/'),
+        expires: c.expirationDate ? Math.floor(Number(c.expirationDate))
+                 : c.expires       ? Math.floor(Number(c.expires))
+                 : -1,
+        httpOnly: Boolean(c.httpOnly),
+        secure: Boolean(c.secure ?? true),
+        sameSite: 'None' as const,
+      }));
+      await context.addCookies(cookies);
+      console.log(`[local-scraper] ✅ Loaded ${cookies.length} Facebook cookies from FB_COOKIES`);
+    } catch (e) {
+      console.warn(`[local-scraper] ⚠️ Failed to parse FB_COOKIES (will proceed without auth):`, e);
+    }
+  } else {
+    console.warn(`[local-scraper] ⚠️ FB_COOKIES not set — Facebook will likely redirect to login from this IP.`);
+  }
+
   const page = await context.newPage();
 
   const url = `https://www.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
