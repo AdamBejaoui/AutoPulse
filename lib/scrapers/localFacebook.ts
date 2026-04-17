@@ -295,7 +295,8 @@ export async function scrapeLocalMarketplace(
         // Image — uri field pointing to CDN jpg/png/webp
         // FB JSON may use escaped (https:\/\/) or plain (https://) slashes — handle both
         const imgRaw = context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
-        const imgMatch = imgRaw ? [imgRaw[0], imgRaw[1].replace(/\\\/g, '/')] : null;
+        const imageUrl = imgRaw ? imgRaw[1].split('\\/').join('/') : null;
+        const imgMatch = imgRaw ? [imgRaw[0], imageUrl] : null;
 
         // Must have BOTH a parseable price > 0 AND a title to be a real vehicle listing
         if (!titleMatch || priceValue <= 0) continue;
@@ -308,7 +309,6 @@ export async function scrapeLocalMarketplace(
 
         const priceStr = priceMatch?.[1] || '';
         const tileText = `$${priceStr} ${title}`;
-        const imageUrl = imgMatch?.[1] || null;
 
         console.log(`[local-scraper] ✅ Listing: ${externalId} | "${title.substring(0, 60)}" | $${priceStr}`);
         listings.push({
@@ -340,7 +340,7 @@ export async function scrapeLocalMarketplace(
             const priceMatch = context.match(/"amount"\s*:\s*"(\d+(?:\.\d+)?)"/);
             const priceValue2 = parseFloat((priceMatch?.[1] || '0').replace(/,/g, ''));
             const imgRaw2 = context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
-            const imageUrl = imgRaw2 ? imgRaw2[1].replace(/\\\/g, '/') : null;
+            const imageUrl = imgRaw2 ? imgRaw2[1].split('\\/').join('/') : null;
 
             if (!titleMatch || priceValue2 <= 0) continue;
 
