@@ -242,8 +242,15 @@ export async function scrapeLocalMarketplace(
     const htmlSnippet = rawHtml.replace(/\s+/g, ' ').substring(0, 300);
     console.log(`[local-scraper] HTML snippet: ${htmlSnippet}`);
 
-    // Junk title patterns to reject (FB category nav in English + French, generic fallbacks)
-    const JUNK_TITLES = /^(marketplace listing|vehicles?|cars?|trucks?|voitures?|bateaux|bateau|motos?|motorcycles?|caravanes?|camping-cars?|sports? mécaniques?|powersports?|rv|campers?|boats?|trailers?|unknown)$/i;
+    // Junk title patterns to reject — substring match (not anchored) so variants like
+    // "Marketplace Listing · Vehicles" or "Voitures à vendre" are also caught
+    const isJunkTitle = (t: string) => {
+        const low = t.toLowerCase().trim();
+        return (
+            low.includes('marketplace listing') ||
+            /^(vehicles?|cars?|trucks?|voitures?|bateaux|bateau|motos?|motorcycles?|caravanes?|camping-cars?|sports? m[eé]caniques?|powersports?|rv|campers?|boats?|trailers?|unknown)$/i.test(low)
+        );
+    };
 
     type ListingRaw = { externalId: string; url: string; imageUrl: string | null; title: string; tileText: string };
     const listings: ListingRaw[] = [];
@@ -286,7 +293,9 @@ export async function scrapeLocalMarketplace(
         const priceValue = priceValueEarly;
 
         // Image — uri field pointing to CDN jpg/png/webp
-        const imgMatch = context.match(/"uri"\s*:\s*"(https:\\\/\\\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/);
+        // FB JSON may use escaped (https:\/\/) or plain (https://) slashes — handle both
+        const imgRaw = context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
+        const imgMatch = imgRaw ? [imgRaw[0], imgRaw[1].replace(/\\\/g, '/')] : null;
 
         // Must have BOTH a parseable price > 0 AND a title to be a real vehicle listing
         if (!titleMatch || priceValue <= 0) continue;
@@ -295,11 +304,11 @@ export async function scrapeLocalMarketplace(
         const title = rawTitle.replace(/\\u([\dA-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))).trim();
 
         // Skip known junk: category nav names, generic fallback titles
-        if (JUNK_TITLES.test(title)) continue;
+        if (isJunkTitle(title)) continue;
 
         const priceStr = priceMatch?.[1] || '';
         const tileText = `$${priceStr} ${title}`;
-        const imageUrl = imgMatch?.[1]?.replace(/\\\//g, '/') || null;
+        const imageUrl = imgMatch?.[1] || null;
 
         console.log(`[local-scraper] ✅ Listing: ${externalId} | "${title.substring(0, 60)}" | $${priceStr}`);
         listings.push({
@@ -330,18 +339,18 @@ export async function scrapeLocalMarketplace(
                 context.match(/"listing_title"\s*:\s*"([^"]{3,120})"/);  // no generic "name" fallback here
             const priceMatch = context.match(/"amount"\s*:\s*"(\d+(?:\.\d+)?)"/);
             const priceValue2 = parseFloat((priceMatch?.[1] || '0').replace(/,/g, ''));
-            const imgMatch = context.match(/"uri"\s*:\s*"(https:\\\/\\\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/);
+            const imgRaw2 = context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
+            const imageUrl = imgRaw2 ? imgRaw2[1].replace(/\\\/g, '/') : null;
 
             if (!titleMatch || priceValue2 <= 0) continue;
 
             const rawTitle = titleMatch[1];
             const title = rawTitle.replace(/\\u([\dA-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))).trim();
-            if (JUNK_TITLES.test(title)) continue;
+            if (isJunkTitle(title)) continue;
 
             seenIds.add(externalId);
             const priceStr = priceMatch[1];
             const tileText = `$${priceStr} ${title}`;
-            const imageUrl = imgMatch?.[1]?.replace(/\\\//g, '/') || null;
 
             console.log(`[local-scraper] ✅ JSON Listing: ${externalId} | "${title.substring(0, 60)}" | $${priceStr}`);
             listings.push({
@@ -382,6 +391,12 @@ export async function scrapeLocalMarketplace(
         const postedAt = parseRelativePostedAt(item.tileText);
         
         const parsed = parseListingText(item.title, fallbackDescription);
+
+        // Skip if the parser couldn't identify a real make — these show as "Marketplace Listing" in the UI
+        if (!parsed.make || parsed.make === 'Unknown') {
+            console.log(`[local-scraper] ⏭️ Unparseable make, skipping: "${item.title}"`);
+            continue;
+        }
 
         await withRetry(() => prisma.listing.upsert({
             where: { externalId: item.externalId as string },
