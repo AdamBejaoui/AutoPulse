@@ -159,7 +159,7 @@ export async function scrapeLocalMarketplace(
                  : -1,
         httpOnly: Boolean(c.httpOnly),
         secure: Boolean(c.secure ?? true),
-        sameSite: 'None' as const,
+        sameSite: (c.sameSite === 'no_restriction' ? 'None' : (c.sameSite === 'lax' ? 'Lax' : (c.sameSite === 'strict' ? 'Strict' : 'Lax'))) as any,
       }));
       await context.addCookies(cookies);
       console.log(`[local-scraper] ✅ Loaded ${cookies.length} Facebook cookies`);
@@ -225,28 +225,45 @@ export async function scrapeLocalMarketplace(
             }
 
             if (clicked) {
-                // IMPORTANT: After bypassing a prompt, Facebook often lands on a generic homepage 
-                // or a transition URL. We must re-navigate to our target Marketplace URL.
-                console.log(`[local-scraper] ⏳ Waiting for session to settle before re-navigation...`);
-                await page.waitForTimeout(3000); 
+                console.log(`[local-scraper] ⏳ Waiting for natural redirect (Max 15s)...`);
                 
-                console.log(`[local-scraper] 🔄 Re-navigating to target URL: ${url}`);
-                await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 }).catch(async () => {
-                   console.warn(`[local-scraper] ⚠️ Networkidle timed out, proceeding with 'load'...`);
-                   await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
-                });
+                // Wait for the URL to land on Marketplace (ideal case) or at least away from login/transition
+                const landedOnMarketplace = await page.waitForFunction((target) => {
+                    const u = window.location.href;
+                    return u.includes(target) && !u.includes("login") && !u.includes("crypted_string");
+                }, location, { timeout: 15000 }).catch(() => false);
+
+                if (landedOnMarketplace) {
+                    console.log(`[local-scraper] ✅ Native redirect successful: ${page.url()}`);
+                } else {
+                    console.warn(`[local-scraper] ⚠️ Native redirect timed out or landed elsewhere. URL: ${page.url()}`);
+                    console.log(`[local-scraper] 🔄 Forcing re-navigation to target...`);
+                    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+                        return page.goto(url, { waitUntil: 'load', timeout: 30000 });
+                    });
+                }
                 
-                // Final check to see if we're finally on Marketplace
+                // Check if we need to click "Not Now" or "OK" (Secondary prompts)
+                const secondarySelectors = [
+                    'button:has-text("Not Now")',
+                    'div[role="button"]:has-text("OK")',
+                    'div[role="button"]:has-text("Accepter")',
+                    'button:has-text("Decline")'
+                ];
+                for (const sel of secondarySelectors) {
+                    try {
+                        const btn = page.locator(sel).first();
+                        if (await btn.isVisible()) {
+                            console.log(`[local-scraper] 🔄 Found secondary prompt ("${sel}"). Clicking...`);
+                            await btn.click();
+                            await page.waitForTimeout(2000);
+                        }
+                    } catch (e) {}
+                }
+
                 const finalCheckUrl = page.url();
                 const finalTitle = await page.title();
                 console.log(`[local-scraper] 🔎 Post-bypass location: ${finalCheckUrl} | Title: ${finalTitle}`);
-                
-                if (finalCheckUrl.includes("/marketplace/")) {
-                    console.log(`[local-scraper] ✅ Successfully reached Marketplace after re-navigation.`);
-                } else {
-                    console.warn(`[local-scraper] ⚠️ Re-navigation landed on unexpected page. Attempting one last direct goto...`);
-                    await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
-                }
             }
 
             if (!clicked) {
