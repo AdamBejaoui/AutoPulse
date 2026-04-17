@@ -301,7 +301,7 @@ export async function scrapeLocalMarketplace(
         // Must have BOTH a parseable price > 0 AND a title to be a real vehicle listing
         if (!titleMatch || priceValue <= 0) continue;
 
-        const rawTitle = titleMatch[1];
+        const rawTitle = titleMatch![1];
         const title = rawTitle.replace(/\\u([\dA-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))).trim();
 
         // Skip known junk: category nav names, generic fallback titles
@@ -344,7 +344,7 @@ export async function scrapeLocalMarketplace(
 
             if (!titleMatch || priceValue2 <= 0) continue;
 
-            const rawTitle = titleMatch[1];
+            const rawTitle = titleMatch![1];
             const title = rawTitle.replace(/\\u([\dA-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))).trim();
             if (isJunkTitle(title)) continue;
 
