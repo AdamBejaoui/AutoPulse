@@ -349,7 +349,7 @@ export async function scrapeLocalMarketplace(
             if (isJunkTitle(title)) continue;
 
             seenIds.add(externalId);
-            const priceStr = priceMatch[1];
+            const priceStr = priceMatch![1];
             const tileText = `$${priceStr} ${title}`;
 
             console.log(`[local-scraper] ✅ JSON Listing: ${externalId} | "${title.substring(0, 60)}" | $${priceStr}`);
