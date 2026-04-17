@@ -245,7 +245,8 @@ export async function scrapeLocalMarketplace(
             const idMatch = href.match(/\/item\/(\d{10,21})/) || href.match(/(\d{14,21})/) || text.match(/item\/(\d{10,21})/);
             const externalId = idMatch ? idMatch[1] : null; if (!externalId || seenIds.has(externalId)) continue;
 
-            const imageUrl = findImg(el) || findImg(linkEl) || (el.offsetParent ? findImg(el.offsetParent) : null);
+            const htmlEl = el as HTMLElement;
+            const imageUrl = findImg(el) || findImg(linkEl) || (htmlEl.offsetParent ? findImg(htmlEl.offsetParent) : null);
 
             const ariaLabel = (linkEl.getAttribute('aria-label') || "").trim();
             // Clean Title: Get everything after the $ but before the location
