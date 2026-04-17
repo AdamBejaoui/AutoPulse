@@ -71,7 +71,7 @@ export function ComparisonOverlay({ isOpen, onClose }: { isOpen: boolean; onClos
                          "text-sm font-bold truncate",
                          spec.key === 'price' ? "text-cyber-blue text-lg" : "text-foreground"
                         )}>
-                         {spec.format(item[spec.key])}
+                         {spec.format(item[spec.key] as any)}
                        </div>
                     </div>
                   ))}
