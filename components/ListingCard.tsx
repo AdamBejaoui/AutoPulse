@@ -60,124 +60,108 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
     ? `${(listing.mileage / 1000).toFixed(1)}k mi`
     : "N/A";
 
-  return (
-    <ListingDetailModal listing={listing}>
-      <article className="group relative flex flex-col overflow-hidden rounded-[2rem] bg-card/60 backdrop-blur-3xl ring-1 ring-black/10 dark:ring-white/10 transition-all duration-500 hover:shadow-[0_0_50px_rgba(0,216,255,0.15)] hover:-translate-y-2 hover:ring-cyber-blue/30 cursor-pointer active:scale-[0.98]">
+  return (    <ListingDetailModal listing={listing}>
+      <article className="group relative flex flex-col overflow-hidden rounded-[2.5rem] bg-card/40 backdrop-blur-3xl ring-1 ring-white/5 transition-all duration-700 hover:shadow-[0_0_80px_rgba(0,216,255,0.25)] hover:-translate-y-3 hover:ring-cyber-blue/50 cursor-pointer active:scale-[0.98] border border-white/5">
         
-        {/* Visual Header */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden shrink-0">
+        {/* Visual Engine */}
+        <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
           <Image
             src={src}
             alt={title}
             fill
-            className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.15]"
+            className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.2]"
             onError={() => setImgOk(false)}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           
-          {/* DEAL Intel Overlay */}
+          {/* Overlays - Immersive Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-black/20 opacity-100 transition-opacity duration-700 group-hover:opacity-40" />
+          
+          {/* FLOATING PRICE BADGE (NEW) */}
+          <div className="absolute right-6 top-6 z-30">
+             <div className="rounded-2xl bg-cyber-blue px-4 py-2 shadow-[0_0_30px_rgba(0,216,255,0.6)] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
+                <p className="text-xl font-black tracking-tighter text-black leading-none">
+                  {formatUsd(listing.price)}
+                </p>
+             </div>
+          </div>
+
+          {/* DEAL INTEL - MOVED TO TOP LEFT */}
           {listing.analysis && listing.analysis.rating !== 'unknown' && (
-            <div className="absolute left-4 top-4 z-20">
+            <div className="absolute left-6 top-6 z-20">
               <div className={cn(
-                "flex h-7 items-center justify-center rounded-lg px-3 text-[10px] font-black tracking-widest shadow-lg backdrop-blur-md border uppercase italic",
-                listing.analysis.rating === 'great' ? "bg-emerald-500/90 text-white border-emerald-400 shadow-emerald-500/20" :
-                listing.analysis.rating === 'good' ? "bg-cyber-blue/90 text-black border-cyan-400 shadow-cyan-500/20" :
+                "flex h-8 items-center justify-center rounded-xl px-4 text-[9px] font-black tracking-[0.2em] shadow-2xl backdrop-blur-xl border uppercase italic transition-all duration-500 group-hover:-translate-y-1",
+                listing.analysis.rating === 'great' ? "bg-emerald-500/90 text-white border-emerald-400" :
+                listing.analysis.rating === 'good' ? "bg-white/10 text-cyber-blue border-cyber-blue/50" :
                 "bg-orange-500/80 text-white border-orange-400"
               )}>
                 {listing.analysis.rating === 'great' ? "🔥 GREAT DEAL" : 
                  listing.analysis.rating === 'good' ? "✨ GOOD VALUE" : "FAIR PRICE"}
-                {listing.analysis.diffAmount > 50000 && (
-                  <span className="ml-2 border-l border-white/20 pl-2">
-                    SAVE ${(listing.analysis.diffAmount / 100).toLocaleString()}
-                  </span>
-                )}
               </div>
             </div>
           )}
           
-          {/* Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90 transition-opacity group-hover:opacity-60" />
-          
-          {/* Top Right NEW Tag */}
-          <div className="absolute right-4 top-4">
-             <div className="flex h-6 items-center justify-center rounded-full bg-cyber-blue px-3 text-[10px] font-black tracking-widest text-background shadow-[0_0_15px_rgba(0,216,255,0.6)] animate-pulse">
-                NEW
-             </div>
-          </div>
-
-          {/* Floating Badges Bottom Left (Over Image) */}
-          <div className="absolute left-4 bottom-4 flex flex-col gap-2">
-            <span className="inline-flex w-fit items-center rounded-full bg-black/40 dark:bg-black/40 backdrop-blur-xl border border-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">
-              <MapPin size={12} className="mr-1.5 text-cyber-blue" />
-              {loc || "USA"}
-            </span>
-            <span className="inline-flex w-fit items-center rounded-full bg-black/40 dark:bg-black/40 backdrop-blur-xl border border-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">
-              <Gauge size={12} className="mr-1.5 text-cyber-blue" />
-              {mileage}
-            </span>
-
-            {listing.color && (
-              <span className="inline-flex w-fit items-center rounded-full bg-black/40 dark:bg-black/40 backdrop-blur-xl border border-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">
-                <div className={cn("mr-1.5 h-2 w-2 rounded-full", `bg-${listing.color.toLowerCase()}-500`)} style={{ backgroundColor: listing.color.toLowerCase() }} />
-                {listing.color}
-              </span>
-            )}
+          {/* HIGH-DENSITY SPEC BAR (NEW) */}
+          <div className="absolute bottom-6 inset-x-6 z-20 flex gap-2">
+            <div className="flex flex-1 items-center gap-3 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 px-4 py-2.5 shadow-xl transition-all duration-500 group-hover:bg-cyber-blue/10 group-hover:border-cyber-blue/30 overflow-hidden">
+               <div className="flex items-center gap-1.5 border-r border-white/10 pr-3">
+                  <Gauge size={12} className="text-cyber-blue" />
+                  <span className="text-[10px] font-black tracking-widest text-white/90">{mileage}</span>
+               </div>
+               <div className="flex items-center gap-1.5 truncate">
+                  <MapPin size={12} className="text-cyber-blue" />
+                  <span className="text-[10px] font-black tracking-widest text-white/90 truncate">{listing.city || "USA"}</span>
+               </div>
+            </div>
             
-            {listing.titleStatus && listing.titleStatus !== 'clean' && (
-              <span className="inline-flex w-fit items-center rounded-full bg-red-500/20 backdrop-blur-xl border border-red-500/30 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 shadow-lg">
-                ⚠️ {listing.titleStatus}
-              </span>
-            )}
+            <div className="flex shrink-0 translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 gap-1.5">
+               <ComparisonToggle listing={listing} />
+            </div>
           </div>
 
-          <div className="absolute bottom-4 right-4 flex gap-2 translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-            <ComparisonToggle listing={listing} />
-            <ButtonIcon icon={PlusCircle} />
-          </div>
+          {/* HOLOGRAPHIC SHIMMER */}
+          <div className="absolute inset-x-0 top-0 h-[100%] w-[100%] -translate-x-[150%] skew-x-[-30deg] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-[1500ms] group-hover:translate-x-[150%] z-40" />
         </div>
 
-        {/* Content Body */}
-        <div className="relative z-10 flex flex-1 flex-col px-6 pb-6 pt-5 bg-gradient-to-b from-background/50 to-background">
-          <div className="mb-3">
-            <h2 className="line-clamp-2 font-display text-xl font-black leading-tight tracking-tight text-foreground group-hover:text-cyber-blue transition-colors duration-300 drop-shadow-md">
+        {/* Content Body - Refined Typography */}
+        <div className="relative z-10 flex flex-1 flex-col px-8 pb-8 pt-6">
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+               <span className="text-[9px] font-black tracking-[0.3em] text-cyber-blue uppercase opacity-60">
+                 {listing.year || "New Entry"}
+               </span>
+               <div className="h-px flex-1 bg-gradient-to-r from-cyber-blue/30 to-transparent" />
+            </div>
+            <h2 className="line-clamp-2 font-display text-2xl font-black leading-[1.1] tracking-tight text-foreground group-hover:text-cyber-blue transition-colors duration-500 uppercase italic">
               {title}
             </h2>
-            
-            {/* Short Description Snippet */}
-            {listing.description && (
-              <p className="mt-1 line-clamp-2 text-[11px] font-medium text-muted-foreground/80 leading-relaxed">
-                {listing.description.replace(/AutoPulse local capture:\s*/, "")}
-              </p>
-            )}
-
-            {listing.trim && (
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                 {listing.trim}
-              </p>
-            )}
           </div>
 
-          <div className="mt-auto pt-4 flex items-end justify-between border-t border-black/5 dark:border-white/5">
-            <div className="flex flex-col">
-              <p className="text-3xl font-black tracking-tighter text-cyber-blue drop-shadow-[0_0_10px_rgba(0,216,255,0.3)] leading-none">
-                {formatUsd(listing.price)}
-              </p>
-              {listing.condition && (
-                <span className="mt-1 text-[9px] font-black uppercase tracking-wider text-primary opacity-80">
-                  {listing.condition}
-                </span>
-              )}
-            </div>
+          <div className="flex flex-wrap gap-1.5 mb-5 opacity-80 group-hover:opacity-100 transition-opacity">
             {listing.transmission && (
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-cyber-blue transition-colors">
+              <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground">
                 {listing.transmission}
               </span>
             )}
+            {listing.trim && (
+               <span className="rounded-full bg-cyber-blue/10 border border-cyber-blue/20 px-3 py-1 text-[8px] font-black uppercase tracking-widest text-cyber-blue">
+                 {listing.trim}
+               </span>
+            )}
+          </div>
+
+          <div className="mt-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+               <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-cyber-blue animate-pulse" />
+               </div>
+               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                 Live Analysis active
+               </span>
+            </div>
+            <ArrowRightLeft size={16} className="text-white/20 group-hover:text-cyber-blue group-hover:scale-110 transition-all" />
           </div>
         </div>
-
-        {/* Shimmer Effect on Hover */}
-        <div className="absolute inset-0 -translate-x-[150%] skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-1000 group-hover:translate-x-[150%]" />
       </article>
     </ListingDetailModal>
   );
