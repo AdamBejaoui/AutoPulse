@@ -46,6 +46,18 @@ export const VEHICLE_SEARCH_SYNONYMS: Readonly<
   rivian: ["rivian"],
   lucid: ["lucid"],
   genesis: ["genesis"],
+  // Features & Trims
+  auto: ["automatic", "cvt"],
+  automatic: ["auto", "cvt"],
+  manual: ["stick", "stick shift", "6-speed", "5-speed"],
+  stick: ["manual", "stick shift"],
+  awd: ["all wheel drive", "all-wheel"],
+  "4wd": ["4x4", "four wheel drive"],
+  "4x4": ["4wd", "four wheel drive"],
+  leather: ["leather interior", "leather seats"],
+  sunroof: ["moonroof", "panoramic"],
+  turbo: ["turbocharged", "turbo"],
+  diesel: ["duramax", "cummins", "powerstroke"],
 };
 
 export function expandSearchTerms(term: string): readonly string[] {

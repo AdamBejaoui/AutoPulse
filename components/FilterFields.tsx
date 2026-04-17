@@ -133,9 +133,39 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
     transmission, fuelType, driveType, titleStatus, color, bodyStyle
   ]);
 
+  const resetAll = () => {
+    setKeywords("");
+    setMake("");
+    setModel("");
+    setYearMin("");
+    setYearMax("");
+    setPriceMin("");
+    setPriceMax("");
+    setMileageMax("");
+    setCity("");
+    setTransmission("");
+    setFuelType("");
+    setDriveType("");
+    setTitleStatus("");
+    setColor("");
+    setBodyStyle("");
+    router.push("/search");
+  };
+
   return (
     <div className="flex flex-col h-full gap-4">
       
+      {/* HEADER WITH RESET */}
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Filters</h2>
+        <button 
+          onClick={resetAll}
+          className="text-[10px] font-black uppercase tracking-widest text-cyber-blue hover:text-cyber-blue/80 transition-colors"
+        >
+          Reset All
+        </button>
+      </div>
+
       {/* 1. ESSENTIALS SECTION */}
       <div className="rounded-2xl bg-black/5 dark:bg-white/[0.02] border border-black/10 dark:border-white/5 overflow-hidden">
         <SectionHeader 
@@ -196,6 +226,47 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
           </div>
         </div>
         )}
+      </div>
+
+      {/* 1.5 PREMIUM FEATURES SECTION (Moved up) */}
+      <div className="rounded-2xl bg-black/5 dark:bg-white/[0.02] border border-black/10 dark:border-white/5 overflow-hidden">
+        <SectionHeader 
+           icon={ShieldCheck} 
+           title="Premium Features" 
+           isOpen={expanded.identity} 
+           onClick={() => toggleSection('identity')} 
+        />
+        <div className="p-5 pt-0 space-y-3">
+           <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Popular Tags</Label>
+           <div className="flex flex-wrap gap-2">
+              {[
+                "Sunroof", "Leather", "Navigation", "Backup Camera", 
+                "Apple Carplay", "Third Row", "Heated Seats", "Tow Package",
+                "New Tires", "AWD", "Clean Title"
+              ].map(feat => (
+                <button
+                   key={feat}
+                   type="button"
+                   onClick={() => {
+                     const low = feat.toLowerCase();
+                     const currentVal = keywords || "";
+                     if (currentVal.toLowerCase().includes(low)) {
+                        setKeywords(currentVal.replace(new RegExp(low, 'gi'), "").replace(/,\s*,/g, ",").trim());
+                     } else {
+                        setKeywords(currentVal ? `${currentVal}, ${feat}` : feat);
+                     }
+                   }}
+                   className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                     keywords.toLowerCase().includes(feat.toLowerCase())
+                     ? "bg-cyber-blue text-black border-cyber-blue shadow-[0_0_10px_rgba(0,216,255,0.3)]"
+                     : "bg-black/5 dark:bg-white/5 text-muted-foreground border-black/10 dark:border-white/5 hover:border-cyber-blue/50 hover:text-foreground"
+                   }`}
+                >
+                   {feat}
+                </button>
+              ))}
+           </div>
+        </div>
       </div>
 
       {/* 2. PERFORMANCE SECTION */}
@@ -303,16 +374,15 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
                     className="glass-input h-10 px-3 rounded-lg text-sm"
                  />
               </div>
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Mileage Max</Label>
-                 <Input
-                    type="number"
-                    value={mileageMax}
-                    onChange={(e) => setMileageMax(e.target.value)}
-                    placeholder="100k"
-                    className="glass-input h-10 px-3 rounded-lg text-sm"
-                 />
-              </div>
+               <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Mileage Max</Label>
+                  <Input
+                     value={mileageMax}
+                     onChange={(e) => setMileageMax(e.target.value)}
+                     placeholder="e.g. 100k"
+                     className="glass-input h-10 px-3 rounded-lg text-sm"
+                  />
+               </div>
            </div>
 
            <div className="space-y-2">
@@ -401,46 +471,6 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
          )}
       </div>
 
-      {/* 2.5 PREMIUM FEATURES SECTION */}
-      <div className="rounded-2xl bg-black/5 dark:bg-white/[0.02] border border-black/10 dark:border-white/5 overflow-hidden">
-        <SectionHeader 
-           icon={ShieldCheck} 
-           title="Premium Features" 
-           isOpen={expanded.identity} // Reusing identity expansion or could add a new one
-           onClick={() => toggleSection('identity')} 
-        />
-        <div className="p-5 pt-0 space-y-3">
-           <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Popular Tags</Label>
-           <div className="flex flex-wrap gap-2">
-              {[
-                "Sunroof", "Leather", "Navigation", "Backup Camera", 
-                "Apple Carplay", "Third Row", "Heated Seats", "Tow Package",
-                "New Tires", "AWD", "Clean Title"
-              ].map(feat => (
-                <button
-                   key={feat}
-                   type="button"
-                   onClick={() => {
-                     const low = feat.toLowerCase();
-                     const currentVal = keywords || "";
-                     if (currentVal.toLowerCase().includes(low)) {
-                        setKeywords(currentVal.replace(new RegExp(low, 'gi'), "").replace(/,\s*,/g, ",").trim());
-                     } else {
-                        setKeywords(currentVal ? `${currentVal}, ${feat}` : feat);
-                     }
-                   }}
-                   className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
-                     keywords.toLowerCase().includes(feat.toLowerCase())
-                     ? "bg-cyber-blue text-black border-cyber-blue shadow-[0_0_10px_rgba(0,216,255,0.3)]"
-                     : "bg-black/5 dark:bg-white/5 text-muted-foreground border-black/10 dark:border-white/5 hover:border-cyber-blue/50 hover:text-foreground"
-                   }`}
-                >
-                   {feat}
-                </button>
-              ))}
-           </div>
-        </div>
-      </div>
 
     </div>
   );

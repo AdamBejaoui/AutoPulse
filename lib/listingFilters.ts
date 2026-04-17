@@ -16,24 +16,38 @@ function cleanFlatQuery(
   return flat;
 }
 
-const optionalInt = z.preprocess((val: unknown) => {
-  if (val === undefined || val === null) return undefined;
-  const s = String(val).trim();
-  if (s === "") return undefined;
-  const n = Number(s);
-  if (!Number.isFinite(n)) return undefined;
-  return Math.trunc(n);
-}, z.number().int().optional());
-
-/** Dollars in the URL; may include decimals (e.g. 15999.99). */
+/** Dollars/Units in the URL; handles "10k" or decimals. */
 const optionalPriceDollars = z.preprocess((val: unknown) => {
   if (val === undefined || val === null) return undefined;
-  const s = String(val).trim();
+  let s = String(val).trim().toLowerCase();
   if (s === "") return undefined;
+  
+  // Handle "10k" or "15.5k"
+  if (s.endsWith("k")) {
+    const n = Number(s.slice(0, -1));
+    return isFinite(n) ? n * 1000 : undefined;
+  }
+  
   const n = Number(s);
   if (!Number.isFinite(n) || n < 0) return undefined;
   return n;
 }, z.number().optional());
+
+const optionalInt = z.preprocess((val: unknown) => {
+  if (val === undefined || val === null) return undefined;
+  let s = String(val).trim().toLowerCase();
+  if (s === "") return undefined;
+
+  // Handle "100k"
+  if (s.endsWith("k")) {
+    const n = Number(s.slice(0, -1));
+    return isFinite(n) ? Math.trunc(n * 1000) : undefined;
+  }
+
+  const n = Number(s);
+  if (!Number.isFinite(n)) return undefined;
+  return Math.trunc(n);
+}, z.number().int().optional());
 
 const paramsSchema = z.object({
   /** Free-text: words are AND’ed; each word matches make, model, or description. */
@@ -162,16 +176,46 @@ export function buildStructuredWhere(
     where.driveType = { contains: p.driveType, mode: "insensitive" };
   }
   if (p.transmission) {
-    where.transmission = { contains: p.transmission, mode: "insensitive" };
+    const t = p.transmission;
+    const ors: Prisma.ListingWhereInput[] = [
+      { transmission: { contains: t, mode: "insensitive" } },
+      { rawTitle: { contains: t, mode: "insensitive" } },
+      { description: { contains: t, mode: "insensitive" } }
+    ];
+    // Add common variants
+    if (t === 'automatic') ors.push({ rawTitle: { contains: 'auto', mode: "insensitive" } });
+    if (t === 'manual') ors.push({ rawTitle: { contains: 'stick', mode: "insensitive" } });
+
+    where.AND = [...(where.AND as any[] || []), { OR: ors }];
   }
   if (p.fuelType) {
-    where.fuelType = { contains: p.fuelType, mode: "insensitive" };
+    const f = p.fuelType;
+    where.AND = [...(where.AND as any[] || []), {
+      OR: [
+        { fuelType: { contains: f, mode: "insensitive" } },
+        { description: { contains: f, mode: "insensitive" } }
+      ]
+    }];
   }
   if (p.color) {
-    where.color = { contains: p.color, mode: "insensitive" };
+    const c = p.color;
+    where.AND = [...(where.AND as any[] || []), {
+      OR: [
+        { color: { contains: c, mode: "insensitive" } },
+        { rawTitle: { contains: c, mode: "insensitive" } },
+        { description: { contains: c, mode: "insensitive" } }
+      ]
+    }];
   }
   if (p.titleStatus) {
-    where.titleStatus = { contains: p.titleStatus, mode: "insensitive" };
+    const s = p.titleStatus;
+    where.AND = [...(where.AND as any[] || []), {
+      OR: [
+        { titleStatus: { contains: s, mode: "insensitive" } },
+        { rawTitle: { contains: s, mode: "insensitive" } },
+        { description: { contains: s, mode: "insensitive" } }
+      ]
+    }];
   }
   if (p.maxOwners != null) {
     where.owners = { lte: p.maxOwners };

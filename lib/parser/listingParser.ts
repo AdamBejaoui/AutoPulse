@@ -59,12 +59,12 @@ const MODEL_MAP: Record<string, string[]> = {
   Ford: ["f-150", "f150", "f-250", "f250", "f-350", "f350", "mustang", "explorer", "escape", "edge", "fusion", "focus", "ranger", "bronco", "expedition", "maverick", "transit", "ecosport", "fiesta", "flex", "taurus", "crown victoria", "expedition el", "excursion", "e-150", "e150", "e-250", "e250", "e-350", "e350", "windstar", "freestar", "f-450", "f450", "f-550", "f550"],
   Chevrolet: ["silverado", "equinox", "malibu", "traverse", "tahoe", "suburban", "colorado", "blazer", "trax", "spark", "impala", "camaro", "corvette", "trailblazer", "express", "cruze", "sonic", "volt", "bolt", "hhr", "avalanche", "cobalt", "uplander", "venture", "astro", "cheyenne", "s10", "c1500", "k1500", "c2500", "k2500", "c3500", "k3500"],
   Nissan: ["altima", "sentra", "maxima", "rogue", "pathfinder", "murano", "frontier", "titan", "armada", "kicks", "versa", "leaf", "quest", "xterra", "370z", "350z", "juke", "cube", "nv200", "titan xd", "frontier desert runner", "note", "qashqai"],
-  BMW: ["3 series", "5 series", "7 series", "x1", "x3", "x5", "x7", "m3", "m5", "x6", "i3", "i4", "i7", "z4", "2 series", "4 series", "8 series", "x2", "x4", "m4", "m2", "m8", "x5 m", "x6 m", "1 series", "116i", "118i", "120i", "118d", "120d", "135i", "328i", "335i", "528i", "535i", "750li"],
+  BMW: ["3 series", "5 series", "7 series", "x1", "x3", "x5", "x7", "m3", "m5", "x6", "i3", "i4", "i7", "z4", "2 series", "4 series", "8 series", "x2", "x4", "m4", "m2", "m8", "x5 m", "x6 m", "1 series", "116i", "118i", "120i", "325i", "328i", "330i", "335i", "430i", "435i", "525i", "528i", "530i", "535i", "540i", "750li"],
   "Mercedes-Benz": ["c-class", "e-class", "s-class", "glc", "gle", "gls", "gla", "glb", "cla", "cls", "sl", "g-class", "amg", "eqb", "eqe", "eqs", "glk", "ml", "gl", "slk", "cl", "clk", "sprinter", "metris"],
   Jeep: ["wrangler", "grand cherokee", "cherokee", "compass", "renegade", "gladiator", "patriot", "commander", "wagoneer", "grand wagoneer", "tj", "jk", "jl"],
   Dodge: ["charger", "challenger", "durango", "ram", "dart", "journey", "viper", "hornet", "caravan", "grand caravan", "nitro", "magnum", "avenger", "caliber", "dakota", "ram 1500", "ram 2500", "ram 3500"],
   Ram: ["1500", "2500", "3500", "promaster", "ramcharger", "1500 classic", "2500 heavy duty", "3500 heavy duty", "700", "1500 hemi", "2500 diesel"],
-  GMC: ["sierra", "yukon", "terrain", "acadia", "canyon", "envoy", "safari", "savana", "jimmy", "sonoma", "1500", "2500", "3500"],
+  Gmc: ["sierra", "yukon", "terrain", "acadia", "canyon", "envoy", "safari", "savana", "jimmy", "sonoma", "1500", "2500", "3500"],
   Hyundai: ["elantra", "sonata", "tucson", "santa fe", "palisade", "kona", "ioniq", "veloster", "genesis", "accent", "azera", "nexo", "tiburon", "entourage", "veracruz", "venue"],
   Kia: ["optima", "sorento", "sportage", "telluride", "stinger", "soul", "forte", "rio", "carnival", "k5", "niro", "ev6", "seltos", "cadenza", "sedona", "borrego", "amanti", "spectra", "rondo"],
   Subaru: ["outback", "forester", "impreza", "legacy", "crosstrek", "wrx", "sti", "ascent", "brz", "baja", "tribeca", "xv crosstrek", "crosstour"],
@@ -79,7 +79,8 @@ const MODEL_MAP: Record<string, string[]> = {
   Buick: ["enclave", "encore", "envision", "lacrosse", "regal", "verano", "lucerne", "lesabre", "century", "park avenue", "riviera", "roadmaster"],
   Mitsubishi: ["outlander", "eclipse", "lancer", "pajero", "montero", "asx", "mirage", "fuso"],
   Geo: ["tracker", "prizm", "metro", "storm"],
-  Suzuki: ["sx4", "vitara", "grand vitara", "swift", "equator", "kizashi", "xl7", "forenza", "reno", "verona", "sidekick", "samurai"]
+  Suzuki: ["sx4", "vitara", "grand vitara", "swift", "equator", "kizashi", "xl7", "forenza", "reno", "verona", "sidekick", "samurai"],
+  Smart: ["fortwo"]
 };
 
 
@@ -222,6 +223,16 @@ export function parseListingText(title: string, description: string = ""): Parse
           }
         }
       }
+    }
+  }
+
+  // 3.5 DIGIT-ONLY MODEL FALLBACK (The Truck Logic)
+  if (model === "Unknown" && make !== "Unknown") {
+    const truckDigits = fullText.match(/\b(1500|2500|3500)\b/);
+    if (truckDigits) {
+      if (make === "Chevrolet") model = "Silverado";
+      if (make === "Gmc") model = "Sierra";
+      if (make === "Ram") model = "Ram 1500";
     }
   }
 

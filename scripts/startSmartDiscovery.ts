@@ -5,6 +5,7 @@ async function smartDiscovery() {
   console.log("🚀 Starting Smart Discovery Cycle...");
   
   // High volume cities to prioritize
+  // High volume US cities to prioritize
   const targets = [
     "new-york-city",
     "los-angeles",
@@ -13,7 +14,22 @@ async function smartDiscovery() {
     "phoenix",
     "miami",
     "dallas",
-    "atlanta"
+    "atlanta",
+    "san-francisco",
+    "seattle",
+    "boston",
+    "denver",
+    "philadelphia",
+    "washington-dc",
+    "las-vegas",
+    "san-diego",
+    "san-antonio",
+    "orlando",
+    "charlotte",
+    "nashville",
+    "detroit",
+    "portland",
+    "minneapolis"
   ];
 
   for (const city of targets) {
