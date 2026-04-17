@@ -7,6 +7,8 @@ import { Gauge, MapPin, Sparkles, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Listing } from "@prisma/client";
 import { ListingDetailModal } from "./ListingDetailModal";
+import { useComparison } from "@/context/ComparisonContext";
+import { ArrowRightLeft, Check } from "lucide-react";
 
 function formatUsd(cents: number): string {
   if (cents === 0) return "FREE";
@@ -73,6 +75,26 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           
+          {/* DEAL Intel Overlay */}
+          {listing.analysis && listing.analysis.rating !== 'unknown' && (
+            <div className="absolute left-4 top-4 z-20">
+              <div className={cn(
+                "flex h-7 items-center justify-center rounded-lg px-3 text-[10px] font-black tracking-widest shadow-lg backdrop-blur-md border uppercase italic",
+                listing.analysis.rating === 'great' ? "bg-emerald-500/90 text-white border-emerald-400 shadow-emerald-500/20" :
+                listing.analysis.rating === 'good' ? "bg-cyber-blue/90 text-black border-cyan-400 shadow-cyan-500/20" :
+                "bg-orange-500/80 text-white border-orange-400"
+              )}>
+                {listing.analysis.rating === 'great' ? "🔥 GREAT DEAL" : 
+                 listing.analysis.rating === 'good' ? "✨ GOOD VALUE" : "FAIR PRICE"}
+                {listing.analysis.diffAmount > 50000 && (
+                  <span className="ml-2 border-l border-white/20 pl-2">
+                    SAVE ${(listing.analysis.diffAmount / 100).toLocaleString()}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          
           {/* Overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-90 transition-opacity group-hover:opacity-60" />
           
@@ -108,7 +130,8 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
             )}
           </div>
 
-          <div className="absolute bottom-4 right-4 flex translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+          <div className="absolute bottom-4 right-4 flex gap-2 translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+            <ComparisonToggle listing={listing} />
             <ButtonIcon icon={PlusCircle} />
           </div>
         </div>
@@ -167,5 +190,36 @@ function ButtonIcon({ icon: Icon }: { icon: any }) {
           <Icon size={18} className="text-foreground" />
        </div>
     </div>
+  );
+}
+
+function ComparisonToggle({ listing }: { listing: any }) {
+  const { addToComparison, removeFromComparison, isInComparison, comparisonList } = useComparison();
+  const active = isInComparison(listing.id);
+  const isFull = comparisonList.length >= 4 && !active;
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (active) {
+      removeFromComparison(listing.id);
+    } else if (!isFull) {
+      addToComparison(listing);
+    }
+  };
+
+  return (
+    <button 
+      onClick={toggle}
+      disabled={isFull}
+      className={cn(
+        "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 border-2",
+        active 
+          ? "bg-cyber-blue border-white shadow-[0_0_20px_rgba(0,216,255,0.6)] animate-pulse" 
+          : "bg-black/60 backdrop-blur-md border-white/20 hover:border-cyber-blue hover:text-cyber-blue text-white",
+        isFull && "opacity-50 cursor-not-allowed grayscale"
+      )}
+    >
+      {active ? <Check size={18} className="text-black" /> : <ArrowRightLeft size={18} />}
+    </button>
   );
 }

@@ -8,6 +8,8 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { SaveSearchModal } from "@/components/SaveSearchModal";
 import { Toaster } from "@/components/ui/toaster";
+import { ComparisonProvider } from "@/context/ComparisonContext";
+import { ComparisonDock } from "@/components/ComparisonDock";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-outfit" }); // Keep var name for compatibility or rename (we'll keep it so we don't break existing tailwind config variables unexpectedly, wait we will rename in tailwind config)
@@ -28,11 +30,14 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased bg-mesh">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <SearchFiltersProvider>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <SaveSearchModal />
-            <Toaster />
+            <ComparisonProvider>
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <SaveSearchModal />
+              <ComparisonDock />
+              <Toaster />
+            </ComparisonProvider>
           </SearchFiltersProvider>
         </ThemeProvider>
       </body>

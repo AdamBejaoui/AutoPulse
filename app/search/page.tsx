@@ -10,6 +10,7 @@ import {
 import { ListingGrid } from "@/components/ListingGrid";
 import { Pagination } from "@/components/Pagination";
 import { SearchLayout } from "@/components/SearchLayout";
+import { getMarketAnalysis } from "@/lib/intelligence";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,14 @@ export default async function SearchPage({
     prisma.listing.count({ where }),
   ]);
 
+  // ENRICH WITH MARKET INTELLIGENCE
+  const listingsWithAnalysis = await Promise.all(
+    listings.map(async (l) => {
+      const analysis = await getMarketAnalysis(l.price, l.make || "", l.model || "", l.year);
+      return { ...l, analysis };
+    })
+  );
+
   const totalPages = Math.max(1, Math.ceil(total / parsed.limit));
 
   const u = toSearchParams(parsed);
@@ -89,7 +98,7 @@ export default async function SearchPage({
       }
     >
       <SearchLayout total={total} sidebarInitial={sidebarInitial}>
-        <ListingGrid listings={listings} />
+        <ListingGrid listings={listingsWithAnalysis} />
         <Pagination
           page={parsed.page}
           totalPages={totalPages}
