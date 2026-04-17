@@ -197,25 +197,47 @@ export async function scrapeLocalMarketplace(
         console.log(`[local-scraper] Page Snippet length: ${bodySnippet.length}`);
         console.log(`[local-scraper] Page Snippet: ${bodySnippet}`);
 
-        // --- RELIABILITY: Multi-stage Session Bypass ---
-        // If we land on a login page OR a transition page (crypted_string), we need to click "Continue"
+        // --- RELIABILITY: Hardened Multi-stage Session Bypass ---
         let loopCount = 0;
-        const maxLoops = 5;
+        const maxLoops = 10; // Increased from 5 to 10 for persistent checkpoints
         let bypassSuccessful = false;
 
         while (loopCount < maxLoops) {
             const currentUrl = page.url();
             const currentTitle = await page.title();
             
+            // Success condition: Away from login and transition pages
             if (!currentUrl.includes("/login/") && !currentUrl.includes("crypted_string") && !currentTitle.includes("Log In")) {
-                if (loopCount > 0) console.log(`[local-scraper] ✅ Multi-stage bypass complete. URL: ${currentUrl}`);
-                bypassSuccessful = true;
+                if (loopCount > 0) {
+                    console.log(`[local-scraper] ✅ Hardened bypass complete. Landed at: ${currentUrl}`);
+                    bypassSuccessful = true;
+                    // Critical delay: Give cookies time to settle in context
+                    await page.waitForTimeout(10000); 
+                }
                 break;
             }
 
             console.log(`[local-scraper] 🛡️ Bypass Step ${loopCount + 1}: Currently at ${currentUrl}`);
             
+            // 1. Proactive Checkbox Handling (e.g., "Save Browser", "Keep me logged in")
+            try {
+                const checkboxes = page.locator('input[type="checkbox"], input[type="radio"]');
+                const count = await checkboxes.count();
+                for (let i = 0; i < count; i++) {
+                    const cb = checkboxes.nth(i);
+                    if (await cb.isVisible() && !(await cb.isChecked())) {
+                        console.log(`[local-scraper] 🔄 Checking invisible/unchecked checkbox at step ${loopCount + 1}...`);
+                        await cb.check({ force: true }).catch(() => {});
+                    }
+                }
+            } catch (e) { /* ignore */ }
+
+            // 2. Expanded Button Selection
             const continueSelectors = [
+                'button[type="submit"]:has-text("Continue")',
+                'button[type="submit"]:has-text("Confirm")',
+                'button[name="reset_action"]', // Common on Facebook checkpoints
+                'button[name="checkpoint_action"]',
                 'text="Continue"',
                 'div[role="button"]:has-text("Continue")',
                 'div[role="button"]:has-text("Continuer")',
@@ -230,9 +252,10 @@ export async function scrapeLocalMarketplace(
                 try {
                     const btn = page.locator(sel).first();
                     if (await btn.isVisible()) {
-                        console.log(`[local-scraper] 🔄 Clicking confirmation button: "${sel}"...`);
+                        const btnText = await btn.innerText().catch(() => "Unknown");
+                        console.log(`[local-scraper] 🔄 Clicking button: "${sel}" (Label: "${btnText}")...`);
                         await btn.click({ force: true });
-                        await page.waitForTimeout(5000); // Wait for transition
+                        await page.waitForTimeout(5000); // Wait for potential 302
                         actionTaken = true;
                         break; 
                     }
@@ -240,10 +263,8 @@ export async function scrapeLocalMarketplace(
             }
 
             if (!actionTaken) {
-                console.warn(`[local-scraper] ⚠️ No bypass buttons found on step ${loopCount + 1}.`);
-                // If it's a login page but no button is found, we might be truly blocked
+                console.warn(`[local-scraper] ⚠️ No bypass actions found on step ${loopCount + 1}.`);
                 if (currentUrl.includes("/login/")) break;
-                // If it's a transition page, wait a bit more
                 await page.waitForTimeout(3000);
             }
 
