@@ -199,32 +199,28 @@ export async function scrapeLocalMarketplace(
         });
 
         const bodySnippet = await page.evaluate(() => document.body.innerText.substring(0, 500).replace(/\n/g, ' '));
-        console.log(`[local-scraper] [v2.2] Current URL: ${page.url()}`);
+        console.log(`[local-scraper] [v2.3] Current URL: ${page.url()}`);
         console.log(`[local-scraper] Page Title: ${pageTitle}`);
         console.log(`[local-scraper] Page Snippet length: ${bodySnippet.length}`);
         console.log(`[local-scraper] Page Snippet: ${bodySnippet}`);
 
-        // --- RELIABILITY: Hardened Multi-stage Session Bypass ---
+        // --- RELIABILITY: Ultra-Persistent Multi-stage Session Bypass ---
         let loopCount = 0;
-        const maxLoops = 10; // Increased from 5 to 10 for persistent checkpoints
+        const maxLoops = 30; // Increased to handle deep checkpoint chains
         let bypassSuccessful = false;
+        let lastUrl = page.url();
 
         while (loopCount < maxLoops) {
             const currentUrl = page.url();
             const currentTitle = await page.title();
             
-            // Success condition: Away from login and transition pages
-            if (!currentUrl.includes("/login/") && !currentUrl.includes("crypted_string") && !currentTitle.includes("Log In")) {
-                if (loopCount > 0) {
-                    console.log(`[local-scraper] ✅ Hardened bypass complete. Landed at: ${currentUrl}`);
-                    bypassSuccessful = true;
-                    // Critical delay: Give cookies time to settle in context
-                    await page.waitForTimeout(10000); 
-                }
-                break;
+            // If the URL has not changed for 2 iterations despite clicking, try a reload or keyboard press
+            if (loopCount > 0 && loopCount % 2 === 0 && currentUrl === lastUrl) {
+                console.log(`[local-scraper] 🔄 URL stuck at ${currentUrl}. Sending "Enter" key...`);
+                await page.keyboard.press('Enter');
+                await page.waitForTimeout(5000);
             }
-
-            console.log(`[local-scraper] 🛡️ Bypass Step ${loopCount + 1}: Currently at ${currentUrl}`);
+            lastUrl = currentUrl;
             
             // 1. Proactive Checkbox Handling (Enhanced Evaluation)
             try {
@@ -247,19 +243,19 @@ export async function scrapeLocalMarketplace(
                 });
             } catch (e) { /* ignore */ }
 
-            // 2. Expanded Button Selection
+            // 2. Expanded Button Selection (Deep check)
             const continueSelectors = [
                 'button[type="submit"]:has-text("Continue")',
                 'button[type="submit"]:has-text("Confirm")',
-                'button[name="reset_action"]', // Common on Facebook checkpoints
+                'button[name="reset_action"]',
                 'button[name="checkpoint_action"]',
+                'button[name="submit"][value="1"]',
                 'text="Continue"',
                 'div[role="button"]:has-text("Continue")',
-                'div[role="button"]:has-text("Continuer")',
                 'div[role="button"]:has-text("Confirm")',
-                '[aria-label*="Continue"]',
-                'button:has-text("Not Now")',
-                'div[role="button"]:has-text("OK")'
+                'button:has-text("Yes")',
+                'button:has-text("This was me")',
+                '[aria-label*="Continue"]'
             ];
             
             let actionTaken = false;
@@ -290,6 +286,10 @@ export async function scrapeLocalMarketplace(
         if (bypassSuccessful || loopCount > 0) {
             const currentUrl = page.url();
             if (!currentUrl.includes("/marketplace/")) {
+                console.log(`[local-scraper] 🔄 Attempting recovery navigation to Home first...`);
+                await page.goto("https://www.facebook.com/home.php", { waitUntil: 'load', timeout: 30000 }).catch(() => {});
+                await page.waitForTimeout(5000);
+                
                 console.log(`[local-scraper] 🔄 Final re-navigation to target Marketplace: ${url}`);
                 await page.goto(url, { waitUntil: 'load', timeout: 60000 }).catch(() => {});
             }
