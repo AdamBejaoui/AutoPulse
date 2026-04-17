@@ -283,8 +283,17 @@ export async function scrapeLocalMarketplace(
         const priceValue = priceValueEarly;
 
         // Image — uri field pointing to CDN jpg/png/webp
-        const imgRaw = context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
+        const imgRaw = 
+            context.match(/"primary_listing_photo"\s*:\s*{\s*"image"\s*:\s*{\s*"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/) ||
+            context.match(/"preferred_thumbnail"\s*:\s*{\s*"image"\s*:\s*{\s*"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/) ||
+            context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
         const imageUrl = imgRaw ? imgRaw[1].split('\\/').join('/') : null;
+        
+        // VISUAL GUARD: Skip new discovery listings if they have no image
+        if (!imageUrl || imageUrl.trim().length === 0) {
+            console.log(`[local-scraper] ⏭️ Skipping listing without image: "${externalId}"`);
+            continue;
+        }
 
         // Description — look for dedicated text fields in the proximity
         const descMatch = 

@@ -21,7 +21,17 @@ function formatUsd(cents: number): string {
 const placeholderSvg =
   "data:image/svg+xml," +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"><rect width="640" height="360" fill="currentColor" class="text-muted"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" class="text-foreground" opacity="0.1" font-family="system-ui" font-weight="900" font-size="40">AUTOPULSE</text></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+      <defs>
+        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#0A0C0F;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#16191D;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="640" height="360" fill="url(#g)"/>
+      <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#00D8FF" opacity="0.3" font-family="system-ui" font-weight="900" font-size="40" letter-spacing="0.2em">AUTOPULSE</text>
+      <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" fill="#888" opacity="0.5" font-family="system-ui" font-weight="500" font-size="14" letter-spacing="0.1em">VISUAL CAPTURE PENDING</text>
+    </svg>`,
   );
 
 export const ListingCard = memo(function ListingCard({ listing }: { listing: any }): React.ReactElement {

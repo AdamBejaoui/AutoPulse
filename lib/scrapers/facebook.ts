@@ -178,7 +178,28 @@ export async function scrapeFacebookMarketplaceLocation(
         if (!externalId) continue;
 
         const url = (item.url || item.listing_url || item.itemUrl || `https://www.facebook.com/marketplace/item/${externalId}`).toString();
-        const imgUrl = (item.primaryImage || item.image || item.thumbnail || item.listing_image || null)?.toString();
+        
+        // ROBUST IMAGE MAPPING
+        let imgUrl = (
+          item.primaryImage || 
+          item.image || 
+          item.thumbnail || 
+          item.listing_image || 
+          item.primary_listing_photo?.image?.uri ||
+          item.media?.[0]?.image?.uri ||
+          item.photos?.[0]?.image?.uri ||
+          null
+        )?.toString();
+
+        if (imgUrl) {
+            imgUrl = imgUrl.split('\\/').join('/');
+        }
+        
+        // VISUAL GUARD: Skip new discovery listings if they have no image
+        if (!imgUrl || imgUrl.trim().length === 0) {
+            console.log(`[facebook] ⏭️ Skipping listing without image: "${title}"`);
+            continue;
+        }
         
         // JUNK GUARD: Filter placeholders like "Marketplace Listing" or category nav nodes
         if (isJunkTitle(title)) {
