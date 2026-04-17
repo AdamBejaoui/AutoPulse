@@ -246,10 +246,6 @@ export function ListingDetailModal({
                   </div>
                 ))}
               </div>
-
-                </div>
-              </div>
-
               {/* MARKET INTELLIGENCE SECTION */}
               {listing.analysis && (
                 <div className="space-y-3">
@@ -287,6 +283,31 @@ export function ListingDetailModal({
                   </div>
                 </div>
               )}
+
+              {/* Description Section - More Compact */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary">
+                  <Info size={16} />
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em]">About this vehicle</h3>
+                  {isRefreshing && (
+                    <span className="flex items-center gap-1 text-[8px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full animate-pulse tracking-widest ml-auto uppercase">
+                      <Loader2 size={8} className="animate-spin" /> Analyzing lead timing...
+                    </span>
+                  )}
+                </div>
+                <div className={cn(
+                  "rounded-2xl bg-white/5 border border-white/10 p-5 transition-all duration-500",
+                  isRefreshing ? "opacity-40 blur-[2px] scale-[0.98]" : "opacity-100 blur-0 scale-100"
+                )}>
+                  <div className="leading-relaxed text-foreground/80 text-sm font-medium whitespace-pre-wrap max-h-40 overflow-y-auto custom-scrollbar">
+                    {listing.rawDescription || listing.description ? (
+                      (listing.rawDescription || listing.description || "").replace(/AutoPulse local capture:\s*/, "") || "No detailed description provided."
+                    ) : (
+                      "Explore this vehicle on Facebook Marketplace for full details and seller information."
+                    )}
+                  </div>
+                </div>
+              </div>
 
               {/* Actions - Brought Higher */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
