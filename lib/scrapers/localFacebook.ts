@@ -312,8 +312,25 @@ export async function scrapeLocalMarketplace(
 
   const page = await context.newPage();
 
-  const url = `https://m.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
-  console.log(`[local-scraper] Searching ${location} (Mobile View)...`);
+  // v4: Force location using numeric IDs to bypass San Francisco sticky drift
+  const FORCED_LOCATION_IDS: Record<string, string> = {
+    'chicago': '106149489415840',
+    'new-york-city': '108130915873615',
+    'los-angeles': '107657905929318',
+    'houston': '111663085526836',
+    'phoenix': '110682055627705',
+    'philadelphia': '104033232967165',
+    'san-antonio': '111750692176462',
+    'san-diego': '115450848466606',
+    'dallas': '110196722340360',
+  };
+
+  const forcedId = FORCED_LOCATION_IDS[location];
+  const url = forcedId 
+    ? `https://m.facebook.com/marketplace/category/vehicles?location_id=${forcedId}&sortBy=creation_time_descend&exact=false`
+    : `https://m.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
+    
+  console.log(`[local-scraper] Searching ${location} ${forcedId ? `(Forced ID: ${forcedId})` : ''} (Mobile View)...`);
 
     try {
         await page.goto(url, { waitUntil: 'load', timeout: 90000 });
@@ -559,9 +576,9 @@ export async function scrapeLocalMarketplace(
             const seen = new Set<string>();
 
             const findIdInElement = (el: Element): string | null => {
-                // 1. Aria-label extraction (v3 finding: IDs are at the end of aria-label)
+                // 1. Aria-label extraction (v4: loosened regex searching anywhere in content)
                 const ariaLabel = el.getAttribute('aria-label') || "";
-                const ariaMatch = ariaLabel.match(/(\d{14,21})$/);
+                const ariaMatch = ariaLabel.match(/(\d{14,21})/);
                 if (ariaMatch) return ariaMatch[1];
 
                 // 2. Attribute scan
@@ -570,8 +587,8 @@ export async function scrapeLocalMarketplace(
                     const value = attrs[i].value;
                     const idMatch = value.match(/(?:\/item\/|[\?&]id=|listing_id=|"id":")(\d{14,21})/);
                     if (idMatch) return idMatch[1];
-                    const longNumMatch = value.match(/^\d{14,21}$/);
-                    if (longNumMatch) return value;
+                    const longNumMatch = value.match(/\d{14,21}/);
+                    if (longNumMatch) return value.match(/\d{14,21}/)?.[0] || null;
                 }
                 return null;
             };
@@ -579,7 +596,7 @@ export async function scrapeLocalMarketplace(
             const extractFromElement = (el: Element) => {
                 let id = findIdInElement(el);
                 
-                // If no ID in this element, check parents (Scanning up to 10 levels for v3)
+                // If no ID in this element, check parents (Scanning up to 10 levels for v4)
                 let curr: Element | null = el;
                 let depth = 0;
                 while (!id && curr && depth < 10) {
@@ -599,6 +616,10 @@ export async function scrapeLocalMarketplace(
                 const imgSrc = (rawSrcset ? rawSrcset.split(',').pop()?.trim().split(' ')[0] : null) || 
                                img?.getAttribute('src') || 
                                img?.getAttribute('data-src') || "";
+
+                if (results.length < 5 && id) {
+                    console.log(`[local-eval] Diagnostic: ID=${id} Label="${el.getAttribute('aria-label')}" Href="${(el as any).href}"`);
+                }
 
                 const textContent = (el as HTMLElement).innerText || (container as HTMLElement)?.innerText || "";
                 const lines = textContent.split('\n').map((l: string) => l.trim()).filter(Boolean);
@@ -776,10 +797,12 @@ export async function scrapeLocalMarketplace(
         
         const parsed = parseListingText(item.title, fallbackDescription);
 
-        // Skip if the parser couldn't identify a real make — these show as "Marketplace Listing" in the UI
+        // v4 Relaxed Check: Allow low-context listings if we found something numeric
         if (!parsed.make || parsed.make === 'Unknown') {
-            console.log(`[local-scraper] ⏭️ Unparseable make, skipping: "${item.title}"`);
-            continue;
+            if (!item.title.includes("Marketplace Listing") && !item.title.includes("Vehicles")) {
+                console.log(`[local-scraper] ⏭️ Unparseable make, skipping: "${item.title}"`);
+                continue;
+            }
         }
 
         // SEMANTIC DEDUPLICATION: Skip if a listing with identical specs already exists
@@ -792,7 +815,7 @@ export async function scrapeLocalMarketplace(
                 mileage: parsed.mileage,
                 city: slugLocation.city,
             },
-            select: { externalId: true }
+            select: { id: true, externalId: true, imageUrl: true }
         });
 
         if (duplicate && duplicate.externalId !== item.externalId) {
@@ -800,11 +823,14 @@ export async function scrapeLocalMarketplace(
             continue;
         }
 
+        // Image fix: if incoming image is valid but existing is empty, force update
+        const finalImageUrl = (item.imageUrl && item.imageUrl.length > 10) ? item.imageUrl : undefined;
+
         await withRetry(() => prisma.listing.upsert({
             where: { externalId: item.externalId as string },
             update: {
                 price: parsedPrice > 0 ? parsedPrice : undefined,
-                imageUrl: item.imageUrl || undefined,
+                imageUrl: finalImageUrl || undefined,
                 description: item.description && !item.description.includes("AutoPulse local capture") ? item.description : undefined,
                 features: parsed.features,
                 rawTitle: item.title,
@@ -846,7 +872,6 @@ export async function scrapeLocalMarketplace(
                 parsedAt: new Date(),
             }
         }));
-
         // Trigger reactive alert matching
         try {
           const alertQueue = getAlertMatchQueue();
