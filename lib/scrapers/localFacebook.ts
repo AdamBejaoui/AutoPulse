@@ -362,6 +362,18 @@ export async function scrapeLocalMarketplace(
       });
       console.log(`[local-eval] Screen State: URL=${currentUrl} | Title="${screenInfo.title}" | Button="${screenInfo.buttonText}" | Snip="${screenInfo.bodySnippet}"`);
 
+      // NEW: Login Wall Detection & Guest Mode Fallback
+      if (currentUrl.includes("/login/") || screenInfo.bodySnippet.toLowerCase().includes("log in")) {
+          console.log(`[local-eval] Bypass Phase: Login Wall detected. Purging session and attempting Guest Mode...`);
+          await context.clearCookies();
+          // Use a direct search URL that avoids redirects
+          const guestUrl = `https://www.facebook.com/marketplace/${location}/search?query=car&vertical=CARS_AND_TRUCKS`;
+          await page.goto(guestUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+          await page.waitForTimeout(5000);
+          loopCount++;
+          continue;
+      }
+
       if (stuckCount > 3) {
           console.log(`[local-eval] Bypass Phase: Stuck on same state for 3 loops. Reloading page...`);
           await page.reload({ waitUntil: 'load' });
