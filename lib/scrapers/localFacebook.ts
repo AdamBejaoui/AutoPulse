@@ -601,7 +601,9 @@ export async function scrapeLocalMarketplace(
     // 2. Scroll to load more (Infinite Scroll logic with Modal Bypass)
     const scrollSteps = Math.max(1, Number(process.env.LOCAL_SCROLL_STEPS ?? 25));
     const scrollDelayMs = Math.max(1000, Number(process.env.LOCAL_SCROLL_DELAY_MS ?? 2500));
-    
+    const listings: ListingRaw[] = [];
+    const seenIds = new Set<string>();
+
     const collectFromDom = async () => {
         const domListings = await page.evaluate(() => {
             const results: any[] = [];
