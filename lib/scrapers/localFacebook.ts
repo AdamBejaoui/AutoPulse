@@ -161,22 +161,33 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
     try {
         await page.goto("https://www.facebook.com/login", { waitUntil: 'networkidle', timeout: 60000 });
         
-        // 1. Fill credentials
-        await page.fill('input[name="email"]', email);
-        await page.fill('input[name="pass"]', password);
-        await page.waitForTimeout(1000 + Math.random() * 1000);
-        
-        // 2. Click Login
-        const loginBtn = page.locator('button[name="login"], #loginbutton').first();
-        await loginBtn.click();
-        
-        // 3. Wait for navigation or checkpoint
-        await page.waitForNavigation({ waitUntil: 'load', timeout: 60000 }).catch(() => {});
-        
-        const currentUrl = page.url();
-        if (currentUrl.includes("checkpoint") || currentUrl.includes("login/device-based")) {
-            console.warn(`[local-scraper] ⚠️ Checkpoint detected during login. Manual interaction might be needed.`);
-            // We usually continue to let the bypass loop handle the "Continue" buttons
+        // 1. Check if we are on a "Continue as" page instead of a login form
+        // We'll wait a bit to see if either the form or a button appears
+        const formOrButton = await Promise.race([
+            page.waitForSelector('input[name="email"]', { timeout: 10000 }).then(() => 'form'),
+            page.waitForSelector('text="Continue", [role="button"]:has-text("Continue"), button:has-text("Log In")', { timeout: 10000 }).then(() => 'button'),
+            page.waitForTimeout(10000).then(() => 'none')
+        ]);
+
+        if (formOrButton === 'button') {
+            console.log(`[local-scraper] 🔄 Login form not visible, but found a "Continue" or "Log In" button. Clicking...`);
+            const btn = page.locator('text="Continue", [role="button"]:has-text("Continue"), button:has-text("Log In")').first();
+            await btn.click();
+            await page.waitForTimeout(5000);
+        }
+
+        // 2. Now try to fill the form if it appeared (or if it was there already)
+        const emailInput = page.locator('input[name="email"]').first();
+        if (await emailInput.isVisible()) {
+            await emailInput.fill(email);
+            await page.fill('input[name="pass"]', password);
+            await page.waitForTimeout(1000 + Math.random() * 1000);
+            
+            const loginBtn = page.locator('button[name="login"], #loginbutton, [type="submit"]').first();
+            await loginBtn.click();
+            await page.waitForNavigation({ waitUntil: 'load', timeout: 60000 }).catch(() => {});
+        } else {
+            console.log(`[local-scraper] ❓ Still no login form after interaction. URL: ${page.url()}. Will attempt bypass loop.`);
         }
         
         return true;
