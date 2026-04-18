@@ -57,15 +57,16 @@ export const reparseWorker = new Worker(
       // --- Phase 2: Backfill missing images for Facebook listings ---
       const imagelessListings = await prisma.listing.findMany({
         where: {
-          source: "facebook",
+          source: { in: ["facebook", "local"] },
           OR: [
             { imageUrl: null },
             { imageUrl: "" },
           ],
+          NOT: { listingUrl: null },
           listingUrl: { not: "" },
         },
         select: { id: true, listingUrl: true, externalId: true },
-        take: 50,
+        take: 100, // Process more per run
       });
 
       console.log(`[reparseWorker] Found ${imagelessListings.length} image-less listings to backfill...`);
@@ -85,10 +86,21 @@ export const reparseWorker = new Worker(
             });
             imagesFixed++;
             console.log(`[reparseWorker] ✅ Fixed image for ${listing.externalId}`);
+          } else {
+            // Update updatedAt even if no image found so we move to next ones in next batch
+            await prisma.listing.update({
+              where: { id: listing.id },
+              data: { updatedAt: new Date() }
+            });
           }
-          await new Promise(r => setTimeout(r, 1500));
+          await new Promise(r => setTimeout(r, 1000));
         } catch (e) {
           console.error(`[reparseWorker] Image backfill failed for ${listing.externalId}:`, e);
+          // Still update updatedAt to skip for now
+          await prisma.listing.update({
+            where: { id: listing.id },
+            data: { updatedAt: new Date() }
+          }).catch(() => {});
         }
       }
 

@@ -545,19 +545,43 @@ export async function scrapeLocalMarketplace(
             const results: any[] = [];
             const seen = new Set<string>();
 
-            const extractFromLink = (a: Element) => {
-                const href = (a as HTMLAnchorElement).getAttribute('href') || "";
-                const idMatch = href.match(/(?:\/item\/|[\?&]id=)(\d{10,21})/);
-                if (!idMatch) return;
-                const id = idMatch[1];
-                if (seen.has(id)) return;
+            const findIdInAttributes = (el: Element): string | null => {
+                const attrs = el.attributes;
+                for (let i = 0; i < attrs.length; i++) {
+                    const value = attrs[i].value;
+                    const idMatch = value.match(/(?:\/item\/|[\?&]id=|listing_id=|"id":")(\d{14,21})/);
+                    if (idMatch) return idMatch[1];
+                    // Also check for pure long numbers in attributes
+                    const longNumMatch = value.match(/^\d{14,21}$/);
+                    if (longNumMatch) return value;
+                }
+                return null;
+            };
+
+            const extractFromElement = (el: Element) => {
+                let id = findIdInAttributes(el);
+                
+                // If no ID in this element, check parents
+                let curr: Element | null = el;
+                let depth = 0;
+                while (!id && curr && depth < 5) {
+                    id = findIdInAttributes(curr);
+                    curr = curr.parentElement;
+                    depth++;
+                }
+
+                if (!id || seen.has(id)) return;
                 seen.add(id);
 
-                const container = a.closest('div[style*="aspect-ratio"], div.x1gslohp, div.x1n2onr6, div.x1lliihq') || a.parentElement;
-                const img = a.querySelector('img') || container?.querySelector('img');
-                const imgSrc = img?.getAttribute('src') || img?.getAttribute('data-src') || "";
+                const container = el.closest('div[style*="aspect-ratio"], div.x1gslohp, div.x1n2onr6, div.x1lliihq, [role="link"]') || el.parentElement;
+                
+                // Aggressive Image Search
+                const img = el.querySelector('img') || container?.querySelector('img');
+                const imgSrc = img?.getAttribute('src') || 
+                               img?.getAttribute('data-src') || 
+                               img?.getAttribute('srcset')?.split(' ')[0] || "";
 
-                const textContent = (a as HTMLElement).innerText || (container as HTMLElement)?.innerText || "";
+                const textContent = (el as HTMLElement).innerText || (container as HTMLElement)?.innerText || "";
                 const lines = textContent.split('\n').map((l: string) => l.trim()).filter(Boolean);
 
                 let price = "";
@@ -578,32 +602,25 @@ export async function scrapeLocalMarketplace(
                 });
             };
 
-            // Strategy 1: Standard authenticated links
-            document.querySelectorAll('a[href*="/marketplace/item/"]').forEach(extractFromLink);
+            // Strategy 1: Find all elements with price symbols (The most reliable anchor in guest view)
+            const priceElements = Array.from(document.querySelectorAll('*')).filter(el => {
+                return el.children.length === 0 && (el.textContent?.includes('$') || el.textContent?.includes('£') || el.textContent?.includes('€'));
+            });
+            
+            priceElements.forEach(extractFromElement);
 
-            // Strategy 2: Short /item/ paths (mobile unauthenticated)
-            document.querySelectorAll('a[href*="/item/"]').forEach(extractFromLink);
+            // Strategy 2: Standard anchors/links as fallback
+            document.querySelectorAll('a[href], [role="link"]').forEach(extractFromElement);
 
-            // Strategy 3: Any anchor whose href contains a long numeric ID (FB listing IDs are 10-21 digits)
-            if (results.length === 0) {
-                document.querySelectorAll('a[href]').forEach(a => {
-                    const href = (a as HTMLAnchorElement).getAttribute('href') || "";
-                    if (/\/\d{10,21}\//.test(href) || /[?&]id=\d{10,21}/.test(href)) {
-                        extractFromLink(a);
-                    }
-                });
-            }
-
-            // Strategy 4: Full-page HTML regex scrape (last resort for guest views)
+            // Strategy 3: Global Regex on innerHTML for absolute fallback
             if (results.length === 0) {
                 const html = document.documentElement.innerHTML;
-                const idPattern = /(?:"id"|marketplace_listing_id|item_id)[^\d]*?["']?(\d{14,21})["']?/g;
+                const idPattern = /(?:"id"|marketplace_listing_id|item_id|fbid=)[^\d]*?["']?(\d{14,21})["']?/g;
                 let m;
-                while ((m = idPattern.exec(html)) !== null && results.length < 200) {
+                while ((m = idPattern.exec(html)) !== null && results.length < 100) {
                     const id = m[1];
                     if (!seen.has(id)) {
                         seen.add(id);
-                        // Try to find context around this ID in the DOM
                         results.push({
                             externalId: id,
                             imageUrl: "",
@@ -630,7 +647,7 @@ export async function scrapeLocalMarketplace(
             }
         }
         if (newCount > 0) {
-            console.log(`[local-scraper] collectFromDom: +${newCount} new (total: ${listings.length})`);
+            console.log(`[local-scraper] collectFromDom: +${newCount} new (total: ${seenIds.size} unique IDs found)`);
         }
     };
 
