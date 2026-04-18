@@ -170,11 +170,12 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
     console.log(`[local-scraper] 🔐 Starting automated login for ${email.substring(0, 3)}...`);
     
     try {
-        await page.goto("https://www.facebook.com/login", { waitUntil: 'load', timeout: 60000 });
+        await page.goto("https://m.facebook.com/login", { waitUntil: 'load', timeout: 60000 });
         
         // 1. Determine if we are on a login form or an account chooser
         const formOrButton = await Promise.race([
             page.waitForSelector('input[name="email"]', { timeout: 8000 }).then(() => 'form').catch(() => null),
+            page.waitForSelector('input[name="m_ts"]', { timeout: 8000 }).then(() => 'form').catch(() => null), // Mobile hidden field
             // Prioritize "Log In" or "Use another profile" to get to the actual form
             page.waitForSelector('button:has-text("Log In"), [role="button"]:has-text("Log In"), text="Use another profile"', { timeout: 8500 }).then(() => 'force-form').catch(() => null),
             page.waitForSelector('[role="button"]:has-text("Continue"), [aria-label*="Continue"]', { timeout: 8500 }).then(() => 'button').catch(() => null),
@@ -192,12 +193,12 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
         }
 
         // 2. NUCLEAR RESET: If still no form, clear cookies and try one more fresh navigate
-        let emailInput = page.locator('input[name="email"]').first();
+        let emailInput = page.locator('input[name="email"], #m_login_email').first();
         if (!(await emailInput.isVisible({ timeout: 2000 }).catch(() => false))) {
             console.warn(`[local-scraper] 🧨 Form still hidden after interaction. Clearing cookies and trying fresh login...`);
             await page.context().clearCookies();
-            await page.goto("https://www.facebook.com/login", { waitUntil: 'load', timeout: 30000 });
-            emailInput = page.locator('input[name="email"]').first();
+            await page.goto("https://m.facebook.com/login", { waitUntil: 'load', timeout: 30000 });
+            emailInput = page.locator('input[name="email"], #m_login_email').first();
         }
 
         // 3. Handle potential Cookie Banners (Common in Datacenters/EU)
@@ -211,14 +212,14 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
         // 4. Now try to fill the form if it is visible
         if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
             await emailInput.fill(email);
-            await page.fill('input[name="pass"]', password);
+            await page.fill('input[name="pass"], #m_login_password', password);
             await page.waitForTimeout(1000 + Math.random() * 1000);
             
-            console.log(`[local-scraper] ⌨️ Submitting form via Enter key...`);
+            console.log(`[local-scraper] ⌨️ Submitting mobile form via Enter key...`);
             await page.keyboard.press('Enter');
             
-            // Backup: Try clicking the button too, but don't fail if it's "not visible"
-            const loginBtn = page.locator('button[name="login"], #loginbutton, [type="submit"]').first();
+            // Backup: Try clicking the button too
+            const loginBtn = page.locator('button[name="login"], #loginbutton, [type="submit"], button[value="Log In"]').first();
             await loginBtn.click({ force: true, timeout: 3000 }).catch(() => {
                 console.log(`[local-scraper] ℹ️ Button click skipped (likely handled by Enter key).`);
             });
@@ -239,7 +240,9 @@ export async function scrapeLocalMarketplace(
   location: string,
   filters: MarketplaceScrapeFilters = {}
 ) {
-  const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  // Use a strictly Mobile Safari User Agent for better bypass
+  const ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1";
+  
   const browser = await chromium.launch({ 
     headless: process.env.SCRAPER_HEADLESS !== 'false',
     args: [
@@ -247,18 +250,18 @@ export async function scrapeLocalMarketplace(
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--window-size=1920,1080'
+        '--window-size=390,844'
     ]
   });
 
   const context = await browser.newContext({
     userAgent: ua,
     viewport: { 
-      width: 1920, 
-      height: 1080 
+      width: 390, 
+      height: 844 
     },
     extraHTTPHeaders: {
-      'Referer': 'https://www.facebook.com/',
+      'Referer': 'https://m.facebook.com/',
       'Accept-Language': 'en-US,en;q=0.9',
     }
   });
@@ -295,13 +298,13 @@ export async function scrapeLocalMarketplace(
       await context.addCookies(mapped);
       console.log(`[local-scraper] ✅ Injected ${mapped.length} session cookies.`);
   } else {
-      console.warn(`[local-scraper] 🆕 No stored session found. Initial login required.`);
+      console.warn(`[local-scraper] 🆕 No stored session found. Proceeding with guest mobile browse.`);
   }
 
   const page = await context.newPage();
 
-  const url = `https://www.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
-  console.log(`[local-scraper] Searching ${location}...`);
+  const url = `https://m.facebook.com/marketplace/${location}/vehicles?sortBy=creation_time_descend&exact=false`;
+  console.log(`[local-scraper] Searching ${location} (Mobile View)...`);
 
     try {
         await page.goto(url, { waitUntil: 'load', timeout: 90000 });
@@ -481,11 +484,11 @@ export async function scrapeLocalMarketplace(
         if (bypassSuccessful || loopCount > 0) {
             const currentUrl = page.url();
             if (!currentUrl.includes("/marketplace/")) {
-                console.log(`[local-scraper] 🔄 Attempting recovery navigation to Home first...`);
-                await page.goto("https://www.facebook.com/home.php", { waitUntil: 'load', timeout: 30000 }).catch(() => {});
+                console.log(`[local-scraper] 🔄 Attempting recovery navigation to Mobile Home...`);
+                await page.goto("https://m.facebook.com/home.php", { waitUntil: 'load', timeout: 30000 }).catch(() => {});
                 await page.waitForTimeout(5000);
                 
-                console.log(`[local-scraper] 🔄 Final re-navigation to target Marketplace: ${url}`);
+                console.log(`[local-scraper] 🔄 Final re-navigation to target Mobile Marketplace: ${url}`);
                 await page.goto(url, { waitUntil: 'load', timeout: 60000 }).catch(() => {});
             }
 
@@ -580,24 +583,28 @@ export async function scrapeLocalMarketplace(
     const listings: ListingRaw[] = [];
     const seenIds = new Set<string>();
 
-    // --- Strategy 1: Find /item/NNNNN anywhere in the raw HTML ---
-    // Desktop FB uses href="/marketplace/item/123456" (no trailing slash) or in JSON blobs
-    // The (?=[^\d]) lookahead ensures we don't grab partial numbers
-    const itemIdPattern = /\/item\/(\d{10,21})(?=[^\d])/g;
-    let idMatch: RegExpExecArray | null;
-    while ((idMatch = itemIdPattern.exec(rawHtml)) !== null) {
-        const externalId = idMatch[1];
-        if (seenIds.has(externalId)) continue;
-        seenIds.add(externalId);
-
-        // Pull surrounding context (up to 1600 chars around the ID occurrence)
-        const ctxStart = Math.max(0, idMatch.index - 800);
-        const ctxEnd = Math.min(rawHtml.length, idMatch.index + 800);
-        const context = rawHtml.substring(ctxStart, ctxEnd);
-
-        // Title — prefer explicit marketplace key; only fall back to generic "name" when price is also present
-        const strictTitleMatch =
-            context.match(/"marketplace_listing_title"\s*:\s*"([^"]{3,120})"/) ||
+            // --- Strategy 1: Find marketplace item IDs ---
+            // Mobile FB often uses href="/marketplace/item/123456"
+            const itemIdPattern = /\/item\/(\d{10,21})(?=[^\d])/g;
+            let idMatch: RegExpExecArray | null;
+            while ((idMatch = itemIdPattern.exec(rawHtml)) !== null) {
+                const externalId = idMatch[1];
+                if (seenIds.has(externalId)) continue;
+                seenIds.add(externalId);
+        
+                // Convert mobile URL to desktop URL for the database
+                const url = `https://www.facebook.com/marketplace/item/${externalId}/`;
+                
+                // Pull surrounding context
+                const ctxStart = Math.max(0, idMatch.index - 800);
+                const ctxEnd = Math.min(rawHtml.length, idMatch.index + 800);
+                const context = rawHtml.substring(ctxStart, ctxEnd);
+        
+                // Title — on mobile, sometimes it's easier to find in aria-labels or neighboring text
+                const strictTitleMatch =
+                    context.match(/"marketplace_listing_title"\s*:\s*"([^"]{3,120})"/) ||
+                    context.match(/"title"\s*:\s*"([^"]{3,120})"/) ||
+                    context.match(/>([^<]{3,125})<\/div>/);
             context.match(/"listing_title"\s*:\s*"([^"]{3,120})"/);
 
         // Price — compute early so we can gate the "name" fallback on it
