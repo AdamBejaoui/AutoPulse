@@ -128,7 +128,6 @@ export function ListingDetailModal({
         if (retryTimer) clearTimeout(retryTimer);
       };
     }
-    }
   }, [
     listing.id, 
     listing.condition, 
