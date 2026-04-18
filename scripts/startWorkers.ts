@@ -87,12 +87,14 @@ async function runDiagnostics(): Promise<boolean> {
     await redis.ping();
     console.log("[workers] ✅ Redis: Connected");
     
-    // Check Eviction Policy
+    // Check & Fix Eviction Policy
     const info = await redis.info('memory');
     if (info.includes("maxmemory-policy:volatile-lru")) {
-       console.warn("\n🚨 WARNING: Redis 'maxmemory-policy' is set to 'volatile-lru'.");
-       console.warn("   This can cause job data to be evicted unexpectedly.");
-       console.warn("   Action: Set policy to 'noeviction' in your Redis configuration.\n");
+       console.log("[workers] 🔧 Attempting to auto-fix Redis eviction policy to 'noeviction'...");
+       await redis.config('SET', 'maxmemory-policy', 'noeviction').catch(e => {
+         console.warn(`[workers] ⚠️ Could not auto-fix Redis policy: ${e.message}`);
+         console.warn("   Manual action: Set policy to 'noeviction' in your Redis cloud provider UI.");
+       });
     }
   } catch (e) {
     console.error("[workers] ❌ Redis: Connection Failed", e instanceof Error ? e.message : String(e));
