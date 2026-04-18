@@ -240,8 +240,8 @@ export async function scrapeLocalMarketplace(
   location: string,
   filters: MarketplaceScrapeFilters = {}
 ) {
-  // Use a strictly Mobile Safari User Agent for better bypass
-  const ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1";
+  // Use a strictly Mobile Chrome User Agent for better Chromium compatibility
+  const ua = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
   
   const browser = await chromium.launch({ 
     headless: process.env.SCRAPER_HEADLESS !== 'false',
@@ -338,7 +338,7 @@ export async function scrapeLocalMarketplace(
             console.warn(`[local-scraper] Body still lacks content after 30s wait.`);
         });
 
-        const bodySnippet = await page.evaluate(() => document.body.innerText.substring(0, 500).replace(/\n/g, ' '));
+        const bodySnippet = await page.evaluate(() => document.body?.innerText?.substring(0, 500)?.replace(/\n/g, ' ') || "No body content");
         console.log(`[local-scraper] [v2.3] Current URL: ${page.url()}`);
         console.log(`[local-scraper] Page Title: ${pageTitle}`);
         console.log(`[local-scraper] Page Snippet length: ${bodySnippet.length}`);
