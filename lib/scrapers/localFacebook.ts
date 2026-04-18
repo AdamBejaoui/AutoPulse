@@ -543,23 +543,26 @@ export async function scrapeLocalMarketplace(
     const collectFromDom = async () => {
         const domListings = await page.evaluate(() => {
             const results: any[] = [];
-            // Target all marketplace item links
-            document.querySelectorAll('a[href*="/marketplace/item/"]').forEach(a => {
+            const seen = new Set<string>();
+
+            const extractFromLink = (a: Element) => {
                 const href = (a as HTMLAnchorElement).getAttribute('href') || "";
                 const idMatch = href.match(/(?:\/item\/|[\?&]id=)(\d{10,21})/);
                 if (!idMatch) return;
                 const id = idMatch[1];
-                
-                const container = a.closest('div[style*="aspect-ratio"], div.x1gslohp, div.x1n2onr6') || a.parentElement;
+                if (seen.has(id)) return;
+                seen.add(id);
+
+                const container = a.closest('div[style*="aspect-ratio"], div.x1gslohp, div.x1n2onr6, div.x1lliihq') || a.parentElement;
                 const img = a.querySelector('img') || container?.querySelector('img');
-                const imgSrc = img?.getAttribute('src') || "";
-                
+                const imgSrc = img?.getAttribute('src') || img?.getAttribute('data-src') || "";
+
                 const textContent = (a as HTMLElement).innerText || (container as HTMLElement)?.innerText || "";
-                const lines = textContent.split('\n').map(l => l.trim()).filter(Boolean);
-                
+                const lines = textContent.split('\n').map((l: string) => l.trim()).filter(Boolean);
+
                 let price = "";
                 let title = "";
-                for(const line of lines) {
+                for (const line of lines) {
                     if (line.includes('$') || line.includes('£') || line.includes('€')) {
                         if (!price) price = line;
                     } else if (line.length > 5 && !title) {
@@ -571,12 +574,50 @@ export async function scrapeLocalMarketplace(
                     externalId: id,
                     imageUrl: imgSrc,
                     title: title || lines[0] || "Unknown Listing",
-                    tileText: textContent
+                    tileText: textContent || `${price} ${title}`.trim()
                 });
-            });
+            };
+
+            // Strategy 1: Standard authenticated links
+            document.querySelectorAll('a[href*="/marketplace/item/"]').forEach(extractFromLink);
+
+            // Strategy 2: Short /item/ paths (mobile unauthenticated)
+            document.querySelectorAll('a[href*="/item/"]').forEach(extractFromLink);
+
+            // Strategy 3: Any anchor whose href contains a long numeric ID (FB listing IDs are 10-21 digits)
+            if (results.length === 0) {
+                document.querySelectorAll('a[href]').forEach(a => {
+                    const href = (a as HTMLAnchorElement).getAttribute('href') || "";
+                    if (/\/\d{10,21}\//.test(href) || /[?&]id=\d{10,21}/.test(href)) {
+                        extractFromLink(a);
+                    }
+                });
+            }
+
+            // Strategy 4: Full-page HTML regex scrape (last resort for guest views)
+            if (results.length === 0) {
+                const html = document.documentElement.innerHTML;
+                const idPattern = /(?:"id"|marketplace_listing_id|item_id)[^\d]*?["']?(\d{14,21})["']?/g;
+                let m;
+                while ((m = idPattern.exec(html)) !== null && results.length < 200) {
+                    const id = m[1];
+                    if (!seen.has(id)) {
+                        seen.add(id);
+                        // Try to find context around this ID in the DOM
+                        results.push({
+                            externalId: id,
+                            imageUrl: "",
+                            title: "Marketplace Listing",
+                            tileText: ""
+                        });
+                    }
+                }
+            }
+
             return results;
         });
 
+        let newCount = 0;
         for (const item of domListings) {
             if (!seenIds.has(item.externalId)) {
                 seenIds.add(item.externalId);
@@ -585,7 +626,11 @@ export async function scrapeLocalMarketplace(
                     url: `https://www.facebook.com/marketplace/item/${item.externalId}/`,
                     description: null
                 });
+                newCount++;
             }
+        }
+        if (newCount > 0) {
+            console.log(`[local-scraper] collectFromDom: +${newCount} new (total: ${listings.length})`);
         }
     };
 
