@@ -162,17 +162,17 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
         await page.goto("https://www.facebook.com/login", { waitUntil: 'load', timeout: 60000 });
         
         // 1. Determine if we are on a login form or an account chooser
-        // We use catch(() => null) to prevent the race from rejecting on the first timeout
         const formOrButton = await Promise.race([
             page.waitForSelector('input[name="email"]', { timeout: 8000 }).then(() => 'form').catch(() => null),
-            page.waitForSelector('text="Continue", [role="button"]:has-text("Continue"), [aria-label*="Continue"]', { timeout: 8500 }).then(() => 'button').catch(() => null),
+            // Updated CAA selectors: look for profile cards or buttons with IDs/labels
+            page.waitForSelector('[role="button"]:has-text("Continue"), [aria-label*="Continue"], [href*="/login/device-based/"]', { timeout: 8500 }).then(() => 'button').catch(() => null),
             page.waitForTimeout(9000).then(() => 'none')
         ]);
 
         if (formOrButton === 'button') {
-            console.log(`[local-scraper] 🔄 Login form not visible, but found a "Continue" button. Clicking...`);
-            const btn = page.locator('text="Continue", [role="button"]:has-text("Continue"), [aria-label*="Continue"]').first();
-            await btn.click();
+            console.log(`[local-scraper] 🔄 Account chooser detected. Clicking profile/continue button...`);
+            const btn = page.locator('[role="button"]:has-text("Continue"), [aria-label*="Continue"], [href*="/login/device-based/"]').first();
+            await btn.click({ force: true });
             await page.waitForTimeout(5000);
         }
 
@@ -308,13 +308,12 @@ export async function scrapeLocalMarketplace(
             const currentUrl = page.url();
             const currentTitle = await page.title();
             
-            // If the URL has not changed for 2 iterations despite clicking, try a reload or keyboard press
-            if (loopCount > 0 && loopCount % 2 === 0 && currentUrl === lastUrl) {
-                console.log(`[local-scraper] 🔄 URL stuck at ${currentUrl}. Sending "Tab" + "Enter"...`);
-                await page.keyboard.press('Tab');
-                await page.waitForTimeout(500);
-                await page.keyboard.press('Enter');
+            // If the URL has not changed for 3 iterations despite clicking, try a reload
+            if (loopCount > 0 && loopCount % 3 === 0 && currentUrl === lastUrl) {
+                console.log(`[local-scraper] 🔄 URL stuck at ${currentUrl}. Forcing page reload...`);
+                await page.reload({ waitUntil: 'load' }).catch(() => {});
                 await page.waitForTimeout(5000);
+                continue;
             }
             
             // If stuck mid-way and haven't tried Home, try a "warm up" navigation
@@ -362,18 +361,17 @@ export async function scrapeLocalMarketplace(
                 'button[name="reset_action"]',
                 'button[name="checkpoint_action"]',
                 'button[name="submit"][value="1"]',
-                'text="Continue"',
-                'div[role="button"]:has-text("Continue")',
+                '[role="button"]:has-text("Continue")', // Removed generic text="Continue"
                 'div[role="button"]:has-text("Confirm")',
                 'button:has-text("Yes")',
                 'button:has-text("This was me")',
                 '[aria-label*="Continue"]',
-                'text="Log In"',
                 'button:has-text("Log In")',
                 'div[role="button"]:has-text("Log In")',
                 '[aria-label*="Log In"]',
                 'text="Keep using this browser"',
-                'a:has-text("Continue")'
+                'a:has-text("Continue")',
+                '[href*="/login/device-based/"]' // Special CAA link
             ];
             
             let actionTaken = false;
