@@ -180,9 +180,17 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
             await page.waitForTimeout(5000);
         }
 
-        // 2. Now try to fill the form if it is visible
-        const emailInput = page.locator('input[name="email"]').first();
-        if (await emailInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+        // 2. NUCLEAR RESET: If still no form, clear cookies and try one more fresh navigate
+        let emailInput = page.locator('input[name="email"]').first();
+        if (!(await emailInput.isVisible({ timeout: 2000 }).catch(() => false))) {
+            console.warn(`[local-scraper] 🧨 Form still hidden after interaction. Clearing cookies and trying fresh login...`);
+            await page.context().clearCookies();
+            await page.goto("https://www.facebook.com/login", { waitUntil: 'load', timeout: 30000 });
+            emailInput = page.locator('input[name="email"]').first();
+        }
+
+        // 3. Now try to fill the form if it is visible
+        if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
             await emailInput.fill(email);
             await page.fill('input[name="pass"]', password);
             await page.waitForTimeout(1000 + Math.random() * 1000);
@@ -191,7 +199,7 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
             await loginBtn.click();
             await page.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
         } else {
-            console.log(`[local-scraper] ❓ No login form visible after initial check. URL: ${page.url()}.`);
+            console.log(`[local-scraper] ❓ No login form visible after nuclear reset. URL: ${page.url()}.`);
         }
         
         return true;
