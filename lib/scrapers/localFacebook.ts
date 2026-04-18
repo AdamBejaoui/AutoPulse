@@ -164,15 +164,19 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
         // 1. Determine if we are on a login form or an account chooser
         const formOrButton = await Promise.race([
             page.waitForSelector('input[name="email"]', { timeout: 8000 }).then(() => 'form').catch(() => null),
-            // Updated CAA selectors: look for profile cards or buttons with IDs/labels
-            page.waitForSelector('[role="button"]:has-text("Continue"), [aria-label*="Continue"], [href*="/login/device-based/"]', { timeout: 8500 }).then(() => 'button').catch(() => null),
+            // Prioritize "Log In" or "Use another profile" to get to the actual form
+            page.waitForSelector('button:has-text("Log In"), [role="button"]:has-text("Log In"), text="Use another profile"', { timeout: 8500 }).then(() => 'force-form').catch(() => null),
+            page.waitForSelector('[role="button"]:has-text("Continue"), [aria-label*="Continue"]', { timeout: 8500 }).then(() => 'button').catch(() => null),
             page.waitForTimeout(9000).then(() => 'none')
         ]);
 
-        if (formOrButton === 'button') {
-            console.log(`[local-scraper] 🔄 Account chooser detected. Clicking profile/continue button...`);
-            const btn = page.locator('[role="button"]:has-text("Continue"), [aria-label*="Continue"], [href*="/login/device-based/"]').first();
-            await btn.click({ force: true });
+        if (formOrButton === 'force-form' || formOrButton === 'button') {
+            const selector = formOrButton === 'force-form' 
+                ? 'button:has-text("Log In"), [role="button"]:has-text("Log In"), text="Use another profile"' 
+                : '[role="button"]:has-text("Continue"), [aria-label*="Continue"]';
+            
+            console.log(`[local-scraper] 🔄 Account chooser detected (${formOrButton}). Clicking to reveal form...`);
+            await page.locator(selector).first().click({ force: true });
             await page.waitForTimeout(5000);
         }
 
@@ -358,20 +362,21 @@ export async function scrapeLocalMarketplace(
             const continueSelectors = [
                 'button[type="submit"]:has-text("Continue")',
                 'button[type="submit"]:has-text("Confirm")',
-                'button[name="reset_action"]',
+                'button[name="reset_action"]', // Common on login checkpoints
                 'button[name="checkpoint_action"]',
                 'button[name="submit"][value="1"]',
-                '[role="button"]:has-text("Continue")', // Removed generic text="Continue"
+                'button:has-text("Log In")', // Force log in to get form
+                'text="Use another profile"',
+                '[role="button"]:has-text("Log In")',
+                '[role="button"]:has-text("Continue")',
                 'div[role="button"]:has-text("Confirm")',
                 'button:has-text("Yes")',
                 'button:has-text("This was me")',
                 '[aria-label*="Continue"]',
-                'button:has-text("Log In")',
-                'div[role="button"]:has-text("Log In")',
                 '[aria-label*="Log In"]',
                 'text="Keep using this browser"',
                 'a:has-text("Continue")',
-                '[href*="/login/device-based/"]' // Special CAA link
+                '[href*="/login/device-based/"]'
             ];
             
             let actionTaken = false;
