@@ -584,8 +584,8 @@ export async function scrapeLocalMarketplace(
     const seenIds = new Set<string>();
 
             // --- Strategy 1: Find marketplace item IDs ---
-            // Mobile FB uses /item/ID, Desktop FB uses /item/ID/
-            const itemIdPattern = /\/item\/(\d{10,21})/g;
+            // Mobile FB can use: /item/ID, /item/?id=ID, or absolute URLs
+            const itemIdPattern = /(?:\/item\/|[\?&]id=|listing_id=|marketplace_id=|item_id=)(\d{10,21})/g;
             let idMatch: RegExpExecArray | null;
             while ((idMatch = itemIdPattern.exec(rawHtml)) !== null) {
                 const externalId = idMatch[1];
@@ -604,6 +604,7 @@ export async function scrapeLocalMarketplace(
                 const strictTitleMatch =
                     context.match(/"marketplace_listing_title"\s*:\s*"([^"]{3,120})"/) ||
                     context.match(/"title"\s*:\s*"([^"]{3,120})"/) ||
+                    context.match(/aria-label=["']([^"']{3,120})["']/) ||
                     context.match(/>([^<]{3,125})<\/div>/);
             context.match(/"listing_title"\s*:\s*"([^"]{3,120})"/);
 
@@ -676,7 +677,7 @@ export async function scrapeLocalMarketplace(
     // Sometimes FB only embeds IDs without the /item/ URL (e.g., in feed edge nodes)
     if (listings.length === 0) {
         console.log('[local-scraper] Strategy 1 (href IDs) found nothing, trying JSON ID pattern...');
-        const jsonIdPattern = /"id"\s*:\s*"(\d{14,21})"/g;
+        const jsonIdPattern = /(?:"id"|id|listing_id)\s*[:=]\s*["']?(\d{14,21})["']?/g;
         let jsonMatch: RegExpExecArray | null;
         while ((jsonMatch = jsonIdPattern.exec(rawHtml)) !== null) {
             const externalId = jsonMatch[1];
@@ -688,8 +689,9 @@ export async function scrapeLocalMarketplace(
 
             const titleMatch =
                 context.match(/"marketplace_listing_title"\s*:\s*"([^"]{3,120})"/) ||
-                context.match(/"listing_title"\s*:\s*"([^"]{3,120})"/);  // no generic "name" fallback here
-            const priceMatch = context.match(/"amount"\s*:\s*"(\d+(?:\.\d+)?)"/);
+                context.match(/"listing_title"\s*:\s*"([^"]{3,120})"/) ||
+                context.match(/aria-label=["']([^"']{3,120})["']/);
+            const priceMatch = context.match(/"amount"\s*:\s*["']?(\d+(?:\.\d+)?)["']?/) || context.match(/\$\s*([\d,]+)/);
             const priceValue2 = parseFloat((priceMatch?.[1] || '0').replace(/,/g, ''));
             const imgRaw2 = context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
             const imageUrl = imgRaw2 ? imgRaw2[1].split('\\/').join('/') : null;
