@@ -189,14 +189,24 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
             emailInput = page.locator('input[name="email"]').first();
         }
 
-        // 3. Now try to fill the form if it is visible
+        // 3. Handle potential Cookie Banners (Common in Datacenters/EU)
+        const cookieBanner = page.locator('button[data-cookiebanner="accept_button"], button:has-text("Allow all cookies"), button:has-text("Accept All")').first();
+        if (await cookieBanner.isVisible({ timeout: 3000 }).catch(() => false)) {
+            console.log(`[local-scraper] 🍪 Cookie banner detected. Clearing it...`);
+            await cookieBanner.click().catch(() => {});
+            await page.waitForTimeout(1000);
+        }
+
+        // 4. Now try to fill the form if it is visible
         if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
             await emailInput.fill(email);
             await page.fill('input[name="pass"]', password);
             await page.waitForTimeout(1000 + Math.random() * 1000);
             
             const loginBtn = page.locator('button[name="login"], #loginbutton, [type="submit"]').first();
-            await loginBtn.click();
+            console.log(`[local-scraper] 🖱️ Clicking final Log In button...`);
+            await loginBtn.scrollIntoViewIfNeeded().catch(() => {});
+            await loginBtn.click({ force: true });
             await page.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
         } else {
             console.log(`[local-scraper] ❓ No login form visible after nuclear reset. URL: ${page.url()}.`);
