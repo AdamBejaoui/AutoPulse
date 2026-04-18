@@ -93,18 +93,31 @@ export async function scrapeLocalMarketplace(
 
   const page = await context.newPage();
   
-  // v8.2: Connect the console bridge to see browser logs in terminal
+  // v8.2: Connect the console bridge
   page.on('console', msg => {
     if (msg.text().includes('[local-eval]')) {
         console.log(msg.text());
     }
   });
   
-  // v8.1/v8.2: Corrected mbasic search URL parameters
-  const forcedId = FORCED_LOCATION_IDS[location] || '108130915873615'; // Default NYC
-  const searchUrl = `https://mbasic.facebook.com/marketplace/search/?query=car&location_id=${forcedId}`;
+  // v8.3: Side-Door Category Entry (Pivoting to Category as Search is often blocked for guests)
+  const forcedId = FORCED_LOCATION_IDS[location] || '108130915873615'; 
+  const searchUrl = `https://mbasic.facebook.com/marketplace/${location}/category/cars/?location_id=${forcedId}`;
   
   try {
+    // v8.3: Simulating a legacy Opera Mini entry with Google Referer
+    await page.setExtraHTTPHeaders({
+        'Referer': 'https://www.google.com/',
+        'Accept-Language': 'en-US,en;q=0.9',
+    });
+    
+    // v8.3: Overriding to a legacy Opera Mini UA which mbasic expects
+    await context.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+            get: () => 'Opera/9.80 (Android; Opera Mini/36.2.2254/119.132; U; en) Presto/2.12.423 Version/12.16',
+        });
+    });
+
     console.log(`[AutoPulse-v8] 🔍 Protocol: MBASIC | Target: ${searchUrl}`);
     const response = await page.goto(searchUrl, { waitUntil: 'commit', timeout: 60000 });
     
@@ -112,13 +125,18 @@ export async function scrapeLocalMarketplace(
     if (page.url().includes('/login/')) {
         console.warn(`[AutoPulse-v8] ⚠️ Auth Wall hit. Purging cookies and retrying as Guest...`);
         await context.clearCookies();
-        await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Fallback to a cleaner category URL if the city-specific one fails
+        const fallbackUrl = `https://mbasic.facebook.com/marketplace/category/cars/`;
+        await page.goto(fallbackUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     }
 
     // Diagnostics: What kind of links do we see?
     await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a')).map(a => a.href).slice(0, 15);
-        console.log(`[local-eval] Diagnostic: Found ${document.querySelectorAll('a').length} links. Sample: ${links.join(', ')}`);
+        const links = Array.from(document.querySelectorAll('a'))
+                           .map(a => a.href)
+                           .filter(h => h.includes('marketplace'))
+                           .slice(0, 15);
+        console.log(`[local-eval] Diagnostic: Found marketplace links. Sample: ${links.join(', ')}`);
     });
 
     // Wait for basic content
