@@ -93,7 +93,14 @@ export async function scrapeLocalMarketplace(
 
   const page = await context.newPage();
   
-  // v8.1: Corrected mbasic search URL parameters
+  // v8.2: Connect the console bridge to see browser logs in terminal
+  page.on('console', msg => {
+    if (msg.text().includes('[local-eval]')) {
+        console.log(msg.text());
+    }
+  });
+  
+  // v8.1/v8.2: Corrected mbasic search URL parameters
   const forcedId = FORCED_LOCATION_IDS[location] || '108130915873615'; // Default NYC
   const searchUrl = `https://mbasic.facebook.com/marketplace/search/?query=car&location_id=${forcedId}`;
   
@@ -109,10 +116,9 @@ export async function scrapeLocalMarketplace(
     }
 
     // Diagnostics: What kind of links do we see?
-    const linkCount = await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a')).map(a => a.href).slice(0, 10);
+    await page.evaluate(() => {
+        const links = Array.from(document.querySelectorAll('a')).map(a => a.href).slice(0, 15);
         console.log(`[local-eval] Diagnostic: Found ${document.querySelectorAll('a').length} links. Sample: ${links.join(', ')}`);
-        return links.length;
     });
 
     // Wait for basic content
