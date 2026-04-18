@@ -159,40 +159,40 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
     console.log(`[local-scraper] 🔐 Starting automated login for ${email.substring(0, 3)}...`);
     
     try {
-        await page.goto("https://www.facebook.com/login", { waitUntil: 'networkidle', timeout: 60000 });
+        await page.goto("https://www.facebook.com/login", { waitUntil: 'load', timeout: 60000 });
         
-        // 1. Check if we are on a "Continue as" page instead of a login form
-        // We'll wait a bit to see if either the form or a button appears
+        // 1. Determine if we are on a login form or an account chooser
+        // We use catch(() => null) to prevent the race from rejecting on the first timeout
         const formOrButton = await Promise.race([
-            page.waitForSelector('input[name="email"]', { timeout: 10000 }).then(() => 'form'),
-            page.waitForSelector('text="Continue", [role="button"]:has-text("Continue"), button:has-text("Log In")', { timeout: 10000 }).then(() => 'button'),
-            page.waitForTimeout(10000).then(() => 'none')
+            page.waitForSelector('input[name="email"]', { timeout: 8000 }).then(() => 'form').catch(() => null),
+            page.waitForSelector('text="Continue", [role="button"]:has-text("Continue"), [aria-label*="Continue"]', { timeout: 8500 }).then(() => 'button').catch(() => null),
+            page.waitForTimeout(9000).then(() => 'none')
         ]);
 
         if (formOrButton === 'button') {
-            console.log(`[local-scraper] 🔄 Login form not visible, but found a "Continue" or "Log In" button. Clicking...`);
-            const btn = page.locator('text="Continue", [role="button"]:has-text("Continue"), button:has-text("Log In")').first();
+            console.log(`[local-scraper] 🔄 Login form not visible, but found a "Continue" button. Clicking...`);
+            const btn = page.locator('text="Continue", [role="button"]:has-text("Continue"), [aria-label*="Continue"]').first();
             await btn.click();
             await page.waitForTimeout(5000);
         }
 
-        // 2. Now try to fill the form if it appeared (or if it was there already)
+        // 2. Now try to fill the form if it is visible
         const emailInput = page.locator('input[name="email"]').first();
-        if (await emailInput.isVisible()) {
+        if (await emailInput.isVisible({ timeout: 2000 }).catch(() => false)) {
             await emailInput.fill(email);
             await page.fill('input[name="pass"]', password);
             await page.waitForTimeout(1000 + Math.random() * 1000);
             
             const loginBtn = page.locator('button[name="login"], #loginbutton, [type="submit"]').first();
             await loginBtn.click();
-            await page.waitForNavigation({ waitUntil: 'load', timeout: 60000 }).catch(() => {});
+            await page.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
         } else {
-            console.log(`[local-scraper] ❓ Still no login form after interaction. URL: ${page.url()}. Will attempt bypass loop.`);
+            console.log(`[local-scraper] ❓ No login form visible after initial check. URL: ${page.url()}.`);
         }
         
         return true;
     } catch (e) {
-        console.error(`[local-scraper] 🚨 Login failed:`, e);
+        console.error(`[local-scraper] 🚨 performHeadlessLogin failed:`, e);
         return false;
     }
 }
