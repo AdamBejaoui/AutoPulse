@@ -584,8 +584,8 @@ export async function scrapeLocalMarketplace(
     const seenIds = new Set<string>();
 
             // --- Strategy 1: Find marketplace item IDs ---
-            // Mobile FB often uses href="/marketplace/item/123456"
-            const itemIdPattern = /\/item\/(\d{10,21})(?=[^\d])/g;
+            // Mobile FB uses /item/ID, Desktop FB uses /item/ID/
+            const itemIdPattern = /\/item\/(\d{10,21})/g;
             let idMatch: RegExpExecArray | null;
             while ((idMatch = itemIdPattern.exec(rawHtml)) !== null) {
                 const externalId = idMatch[1];
@@ -596,8 +596,8 @@ export async function scrapeLocalMarketplace(
                 const url = `https://www.facebook.com/marketplace/item/${externalId}/`;
                 
                 // Pull surrounding context
-                const ctxStart = Math.max(0, idMatch.index - 800);
-                const ctxEnd = Math.min(rawHtml.length, idMatch.index + 800);
+                const ctxStart = Math.max(0, idMatch.index - 1000);
+                const ctxEnd = Math.min(rawHtml.length, idMatch.index + 1000);
                 const context = rawHtml.substring(ctxStart, ctxEnd);
         
                 // Title — on mobile, sometimes it's easier to find in aria-labels or neighboring text
@@ -623,10 +623,11 @@ export async function scrapeLocalMarketplace(
         const priceMatch = priceMatchEarly;
         const priceValue = priceValueEarly;
 
-        // Image — uri field pointing to CDN jpg/png/webp
+        // Image — on mobile, it might be in an <img> tag or a simple "src"
         const imgRaw = 
             context.match(/"primary_listing_photo"\s*:\s*{\s*"image"\s*:\s*{\s*"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/) ||
             context.match(/"preferred_thumbnail"\s*:\s*{\s*"image"\s*:\s*{\s*"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/) ||
+            context.match(/<img[^>]+src=["'](https:\/\/[^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/) ||
             context.match(/"uri"\s*:\s*"(https:[^",]{10,}?\.(?:jpg|jpeg|png|webp)[^",]*)"/);
         const imageUrl = imgRaw ? imgRaw[1].split('\\/').join('/') : null;
         
