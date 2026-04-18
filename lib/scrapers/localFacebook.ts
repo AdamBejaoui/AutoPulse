@@ -203,10 +203,15 @@ async function performHeadlessLogin(page: Page): Promise<boolean> {
             await page.fill('input[name="pass"]', password);
             await page.waitForTimeout(1000 + Math.random() * 1000);
             
+            console.log(`[local-scraper] ⌨️ Submitting form via Enter key...`);
+            await page.keyboard.press('Enter');
+            
+            // Backup: Try clicking the button too, but don't fail if it's "not visible"
             const loginBtn = page.locator('button[name="login"], #loginbutton, [type="submit"]').first();
-            console.log(`[local-scraper] 🖱️ Clicking final Log In button...`);
-            await loginBtn.scrollIntoViewIfNeeded().catch(() => {});
-            await loginBtn.click({ force: true });
+            await loginBtn.click({ force: true, timeout: 3000 }).catch(() => {
+                console.log(`[local-scraper] ℹ️ Button click skipped (likely handled by Enter key).`);
+            });
+
             await page.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {});
         } else {
             console.log(`[local-scraper] ❓ No login form visible after nuclear reset. URL: ${page.url()}.`);
@@ -226,14 +231,20 @@ export async function scrapeLocalMarketplace(
   const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
   const browser = await chromium.launch({ 
     headless: process.env.SCRAPER_HEADLESS !== 'false',
-    args: ['--disable-blink-features=AutomationControlled']
+    args: [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--window-size=1920,1080'
+    ]
   });
 
   const context = await browser.newContext({
     userAgent: ua,
     viewport: { 
-      width: 1280 + Math.floor(Math.random() * 100), 
-      height: 900 + Math.floor(Math.random() * 100) 
+      width: 1920, 
+      height: 1080 
     },
     extraHTTPHeaders: {
       'Referer': 'https://www.facebook.com/',
