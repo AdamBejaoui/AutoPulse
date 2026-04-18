@@ -133,11 +133,11 @@ export function isJunkTitle(title: string): boolean {
   const low = title.toLowerCase().trim();
   const junkPatterns = [
     "marketplace listing",
-    "voitures", "bateaux", "bateau", "motos", "moto",
+    "voitures", "bateaux", "bateau", "motos", "moto", "camions", "camion",
     "caravanes", "caravane", "camping-cars", "camping-car",
     "sports mécaniques", "sport mécanique",
     "powersports", "rv", "campers", "boats", "trailers",
-    "vehicles", "cars", "trucks"
+    "vehicles", "cars", "trucks", "annonces", "autos", "carros", "venta"
   ];
   
   // Exact or contains "marketplace listing"

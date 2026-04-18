@@ -125,6 +125,8 @@ async function purgeJunkEntries(): Promise<void> {
             where: {
                 OR: [
                     { rawTitle: { contains: "Marketplace Listing" } },
+                    { rawTitle: { contains: "Voitures" } },
+                    { rawTitle: { contains: "Annonces" } },
                     { price: 0 },
                     { description: { contains: "Use Facebook app" } }
                 ]

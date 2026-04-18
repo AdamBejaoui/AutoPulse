@@ -49,7 +49,7 @@ export async function runAllScrapers(): Promise<RunAllScrapersSummary> {
     totalErrors: 0,
   };
 
-  const CONCURRENCY = Math.max(1, Number(process.env.FB_LOCATION_CONCURRENCY ?? 2));
+  const CONCURRENCY = Math.max(1, Number(process.env.FB_LOCATION_CONCURRENCY ?? 4));
   for (let i = 0; i < locations.length; i += CONCURRENCY) {
     const batch = locations.slice(i, i + CONCURRENCY);
     console.log(`[scraper] Starting batch: ${batch.join(", ")}`);
