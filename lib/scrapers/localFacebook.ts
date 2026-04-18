@@ -195,5 +195,10 @@ export async function scrapeLocalMarketplace(
 
 export async function enrichListingLocally(url: string) {
     console.log(`[AutoPulse-v8] 📈 Enrichment placeholder for ${url}`);
-    return null; // For now, v8.0 prioritizes stable capture over enrichment
+    return {
+        imageUrl: null,
+        description: null,
+        postedAt: null,
+        priceCents: 0
+    };
 }
