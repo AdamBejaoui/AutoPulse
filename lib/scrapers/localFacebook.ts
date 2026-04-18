@@ -53,6 +53,18 @@ async function saveStoredSession(cookies: any[]) {
   } catch (e) {}
 }
 
+const FORCED_LOCATION_IDS: Record<string, string> = {
+  'chicago': '106149489415840',
+  'new-york-city': '108130915873615',
+  'los-angeles': '107657905929318',
+  'houston': '111663085526836',
+  'phoenix': '110682055627705',
+  'philadelphia': '104033232967165',
+  'san-antonio': '111750692176462',
+  'san-diego': '115450848466606',
+  'dallas': '110196722340360',
+};
+
 export async function scrapeLocalMarketplace(
   location: string,
   filters: MarketplaceScrapeFilters = {}
