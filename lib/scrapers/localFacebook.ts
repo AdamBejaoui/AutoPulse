@@ -105,71 +105,55 @@ export async function scrapeLocalMarketplace(
   const searchUrl = `https://mbasic.facebook.com/marketplace/${location}/category/cars/?location_id=${forcedId}`;
   
   try {
-    // v8.3: Simulating a legacy Opera Mini entry with Google Referer
-    await page.setExtraHTTPHeaders({
-        'Referer': 'https://www.google.com/',
-        'Accept-Language': 'en-US,en;q=0.9',
-    });
-    
-    // v8.3: Overriding to a legacy Opera Mini UA which mbasic expects
+    // v8.4: Overriding to a legacy Blackberry UA for maximum basic compatibility
     await context.addInitScript(() => {
         Object.defineProperty(navigator, 'userAgent', {
-            get: () => 'Opera/9.80 (Android; Opera Mini/36.2.2254/119.132; U; en) Presto/2.12.423 Version/12.16',
+            get: () => 'BlackBerry9000/5.0.0.93 Profile/MIDP-2.1 Configuration/CLDC-1.1 VendorID/179',
         });
     });
 
     console.log(`[AutoPulse-v8] 🔍 Protocol: MBASIC | Target: ${searchUrl}`);
     const response = await page.goto(searchUrl, { waitUntil: 'commit', timeout: 60000 });
     
+    // v8.4: Floodlight Diagnostics (See EVERYTHING)
+    await page.evaluate(() => {
+        const title = document.title;
+        const bodySnippet = document.body.innerText.substring(0, 300).replace(/\n/g, ' ');
+        const links = Array.from(document.querySelectorAll('a'))
+                           .map(a => a.href)
+                           .slice(0, 25);
+        console.log(`[local-eval] Diagnostic: Title="${title}" | Snip="${bodySnippet}"`);
+        console.log(`[local-eval] Diagnostic: Raw Links: ${links.join(' | ')}`);
+    });
+
     // Check for Auth Wall on MBASIC
-    if (page.url().includes('/login/')) {
-        console.warn(`[AutoPulse-v8] ⚠️ Auth Wall hit. Purging cookies and retrying as Guest...`);
+    if (page.url().includes('/login/') || page.url().includes('checkpoint')) {
+        console.warn(`[AutoPulse-v8] ⚠️ Auth/Checkpoint hit. Purging cookies and retrying as Guest...`);
         await context.clearCookies();
-        // Fallback to a cleaner category URL if the city-specific one fails
         const fallbackUrl = `https://mbasic.facebook.com/marketplace/category/cars/`;
         await page.goto(fallbackUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     }
 
-    // Diagnostics: What kind of links do we see?
-    await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a'))
-                           .map(a => a.href)
-                           .filter(h => h.includes('marketplace'))
-                           .slice(0, 15);
-        console.log(`[local-eval] Diagnostic: Found marketplace links. Sample: ${links.join(', ')}`);
-    });
-
-    // Wait for basic content
-    await page.waitForSelector('a', { timeout: 15000 }).catch(() => {});
-
-    // MBASIC "Accept" Bypass
-    const acceptBtn = page.locator('input[value="Accept"], button:has-text("Accept"), button:has-text("Agree"), a:has-text("Accept")').first();
-    if (await acceptBtn.isVisible()) {
-        await acceptBtn.click();
-        await page.waitForTimeout(3000);
-    }
-
     const listings: ListingRaw[] = await page.evaluate(() => {
         const found: any[] = [];
-        // MBASIC grid items can be generic links with item IDs
         document.querySelectorAll('a').forEach(el => {
             const href = el.getAttribute('href') || "";
-            // Broaden ID match for mbasic URLs
-            const idMatch = href.match(/(?:\/item\/|listing_id=|id=)(\d{14,21})/);
+            // v8.4: Broad ID match supporting relative and encoded paths
+            const idMatch = href.match(/(?:\/item\/|listing_id=|id=|commerce\/details\/|item_id=)(\d{10,21})/);
             if (!idMatch) return;
             
             const id = idMatch[1];
             if (found.some(x => x.externalId === id)) return;
 
-            // MBASIC specific traversal: Find the nearest text block
             const text = el.innerText || el.parentElement?.innerText || "";
-            if (!text.includes('$')) return; // Likely not a listing
+            // v8.4: Accept even text-lite items if they have a price footprint
+            if (!text.includes('$') && !text.includes('Price')) return; 
 
             found.push({
                 externalId: id,
                 url: `https://www.facebook.com/marketplace/item/${id}/`,
                 imageUrl: (el.querySelector('img') as HTMLImageElement)?.src || null,
-                title: text.split('\n')[0] || "Unknown Car",
+                title: text.split('\n')[0].substring(0, 200) || "AutoPulse Item",
                 priceRaw: text.match(/\$[\d,kK]+/)?.[0] || "0",
                 locationRaw: text.split('\n').pop() || ""
             });
