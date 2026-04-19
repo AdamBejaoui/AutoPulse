@@ -79,6 +79,9 @@ export function ListingDetailModal({
     const isFallback = 
       !listing.condition || 
       listing.rawDescription?.includes("AutoPulse local capture") || 
+      listing.rawDescription?.toLowerCase().includes("connectez-vous") ||
+      listing.rawDescription?.toLowerCase().includes("log in to") ||
+      listing.description?.toLowerCase().includes("connectez-vous") ||
       (listing.description?.length || 0) < 100;
 
     if (isFallback && !isRefreshing) {
@@ -310,11 +313,13 @@ export function ListingDetailModal({
                     "leading-relaxed text-foreground/70 text-[15px] font-medium whitespace-pre-wrap transition-all duration-700",
                     !isExpanded && "line-clamp-[4]"
                   )}>
-                    {listing.rawDescription || listing.description ? (
-                      (listing.rawDescription || listing.description || "").replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim() || "Detailed telemetry pending."
-                    ) : (
-                      "Engage 'Deep Scan' via Facebook to retrieve missing telemetry data for this unit."
-                    )}
+                    {(() => {
+                      const desc = (listing.rawDescription || listing.description || "");
+                      if (desc.toLowerCase().includes("connectez-vous") || desc.toLowerCase().includes("log in to")) {
+                          return "Detailed telemetry pending (Login Wall detected). Deep scan initiated...";
+                      }
+                      return desc.replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim() || "Detailed telemetry pending.";
+                    })()}
                   </div>
                   
                   {((listing.rawDescription || listing.description || "").length > 200) && (

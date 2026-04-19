@@ -195,37 +195,54 @@ export async function scrapeLocalMarketplace(
             const id = idMatch[1];
             if (found.some(x => x.externalId === id)) return;
 
-            // v8.4: High-fidelity parsing from aria-label
-            // Format can be: "Year Make Model, [Price], [Location], listing [ID]"
-            // Or "Year Make Model · [Price] · [Location]" (Modern FB)
-            // v8.5: Robust Price Extraction
-            // We split by comma/dot and find the part that's clearly a price (~$1,234)
-            // ariaLabel layout is usually: "Title, Price, Location, meta"
-            const parts = ariaLabel.split(/[·,]+/).map(p => p.trim());
+            // v8.7: Flawless Price & Metadata Extraction
+            // We first completely extract the price using regex directly from ariaLabel.
+            // This prevents commas inside $3,000 from breaking parsing.
+            const priceRegex = /(?:[\$£€]\s*[\d,.\s]+|[\d,.\s]+\s*[\$£€]|Gratuit|Free)/i;
+            const priceMatch = ariaLabel.match(priceRegex);
             let priceRaw = "0";
+            let title = "Unknown Vehicle";
+            let locationRaw = "";
 
-            // Find parts that contain a currency symbol
-            const pricedPart = parts.find(p => /[\$£€]|Gratuit|Free/i.test(p));
-            if (pricedPart) {
-                priceRaw = pricedPart;
+            if (priceMatch) {
+                priceRaw = priceMatch[0];
+                // For layout: "2014 Lexus IS 250 $3,000 Miami, FL"
+                if (priceMatch.index !== undefined) {
+                    title = ariaLabel.substring(0, priceMatch.index).trim();
+                    locationRaw = ariaLabel.substring(priceMatch.index + priceMatch[0].length).trim().replace(/^[\s,·]+/, '').trim();
+                }
             } else {
-                // If no currency symbol found, take the first part that looks like a number 
-                // but IS NOT a year (1900-2030)
-                const candidate = parts.find(p => {
-                    const clean = p.replace(/[^\d]/g, '');
-                    const num = parseInt(clean);
-                    return clean.length > 0 && (num < 1900 || num > 2030);
-                });
-                priceRaw = candidate || "0";
+                // If there's no currency symbol, split cleanly by '·' and find the first
+                // part that is an explicit isolated number (not a year).
+                const dots = ariaLabel.split('·').map(p => p.trim());
+                if (dots.length > 1) { // It's formatted with middle dots
+                    let found = "0";
+                    for (let i = 1; i < dots.length; i++) {
+                        const clean = dots[i].replace(/[^\d]/g, '');
+                        const n = parseInt(clean);
+                        if (clean.length > 0 && n > 0 && (n < 1900 || n > 2030)) {
+                            found = dots[i];
+                            break;
+                        }
+                    }
+                    priceRaw = found;
+                    title = dots[0];
+                    locationRaw = dots[dots.length - 1]; // usually last
+                } else {
+                    title = ariaLabel;
+                }
             }
+
+            // Clean up UI-breaking characters from Title
+            title = title.replace(/,$/, '').trim() || "Unknown Vehicle";
 
             found.push({
                 externalId: id,
                 url: `https://www.facebook.com/marketplace/item/${id}/`,
                 imageUrl: (el.querySelector('img') as HTMLImageElement)?.src || null,
-                title: parts[0] || "Unknown Vehicle",
+                title: title,
                 priceRaw: priceRaw,
-                locationRaw: parts[2] || ""
+                locationRaw: locationRaw
             });
         });
         return found;
