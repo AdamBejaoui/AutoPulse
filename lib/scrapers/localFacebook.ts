@@ -34,7 +34,9 @@ export function parseTilePriceToCents(text: string): number {
   if (isNaN(val)) return 0;
   
   if (match[4] && (match[4].toLowerCase() === 'k')) val *= 1000;
-  return Math.round(val * 100);
+  let valCents = Math.round(val * 100);
+  if (valCents > 2147400000) return 2147400000; // Cap at max Int to prevent PostgreSQL crashes
+  return valCents;
 }
 
 async function getStoredSession() {
@@ -677,6 +679,12 @@ export async function enrichListingsBulkLocally(listingIds: string[], concurrenc
                         updatedAt: new Date(),
                     }
                 });
+
+                try {
+                    const matchQueue = getAlertMatchQueue();
+                    await matchQueue.add("matchListing", { listingId: listingId }, { removeOnComplete: true });
+                } catch (e) {}
+
                 console.log(`[AutoPulse-v8] ✨ HYPER SYNC OK: ${listingId} | ${details.timeRaw || 'Unk'}`);
                 totalSuccess++;
 
