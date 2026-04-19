@@ -71,18 +71,10 @@ export const reparseWorker = new Worker(
       console.log(`[reparseWorker] Found ${imagelessListings.length} image-less listings to backfill...`);
 
       for (const listing of imagelessListings) {
-        if (!listing.listingUrl) continue;
+        if (!listing.listingUrl || !listing.externalId) continue;
         try {
-          const details = await enrichListingLocally(listing.listingUrl);
-          if (details?.imageUrl) {
-            await prisma.listing.update({
-              where: { id: listing.id },
-              data: {
-                imageUrl: details.imageUrl,
-                description: details.description || undefined,
-                updatedAt: new Date(),
-              }
-            });
+          const success = await enrichListingLocally(listing.externalId);
+          if (success) {
             imagesFixed++;
             console.log(`[reparseWorker] ✅ Fixed image for ${listing.externalId}`);
           } else {
