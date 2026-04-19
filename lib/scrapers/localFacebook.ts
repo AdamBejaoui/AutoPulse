@@ -1,3 +1,4 @@
+import "../envBootstrap";
 import { chromium, Browser, Page } from "playwright";
 import { prisma } from "../prisma";
 import { parseListingText } from "../parser/listingParser";
@@ -22,15 +23,17 @@ interface ListingRaw {
 // Reuse the highly tested price parser from the previous iteration
 export function parseTilePriceToCents(text: string): number {
   if (!text) return 0;
-  const cleanText = text.replace(/\u00A0/g, " ").replace(/[\s\u00A0,]/g, "");
-  const match = cleanText.match(/([\$£€])\s*([\d.]+)([kK])?/);
-  if (!match) {
-    const fallback = cleanText.match(/([\d.]+)/);
-    if (!fallback) return 0;
-    return Math.round(parseFloat(fallback[1]) * 100);
-  }
-  let val = parseFloat(match[2]);
-  if (match[3]) val *= 1000;
+  // Support both $1,500 and 1 500 $ formats
+  const cleanText = text.replace(/\u00A0/g, " ").replace(/[\s\u00A0,.](?=\d)/g, "").replace(/\s/g, "");
+  const match = cleanText.match(/([\$£€])?([\d,.]+)([\$£€])?([kK])?/);
+  
+  if (!match) return 0;
+  
+  let valStr = match[2].replace(/,/g, "");
+  let val = parseFloat(valStr);
+  if (isNaN(val)) return 0;
+  
+  if (match[4] && (match[4].toLowerCase() === 'k')) val *= 1000;
   return Math.round(val * 100);
 }
 
@@ -77,8 +80,8 @@ export async function scrapeLocalMarketplace(
   });
   
   const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1',
-    viewport: { width: 390, height: 844 }
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    viewport: { width: 1280, height: 800 }
   });
 
   const cookies = await getStoredSession();
@@ -100,62 +103,87 @@ export async function scrapeLocalMarketplace(
     }
   });
   
-  // v8.3: Side-Door Category Entry (Pivoting to Category as Search is often blocked for guests)
-  const forcedId = FORCED_LOCATION_IDS[location] || '108130915873615'; 
-  const searchUrl = `https://mbasic.facebook.com/marketplace/${location}/category/cars/?location_id=${forcedId}`;
+  // Priority to www.facebook.com (Guest mode is active there)
+  const searchUrl = `https://www.facebook.com/marketplace/${location}/vehicles/?sortBy=creation_time_descend`;
   
   try {
-    // v8.4: Overriding to a legacy Blackberry UA for maximum basic compatibility
+    // Basic stealth script to prevent immediate detection
     await context.addInitScript(() => {
-        Object.defineProperty(navigator, 'userAgent', {
-            get: () => 'BlackBerry9000/5.0.0.93 Profile/MIDP-2.1 Configuration/CLDC-1.1 VendorID/179',
-        });
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
     });
 
-    console.log(`[AutoPulse-v8] 🔍 Protocol: MBASIC | Target: ${searchUrl}`);
-    const response = await page.goto(searchUrl, { waitUntil: 'commit', timeout: 60000 });
+    console.log(`[AutoPulse-v8] 🔍 Protocol: STANDARD | Target: ${searchUrl}`);
+    const response = await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: 60000 });
     
-    // v8.4: Floodlight Diagnostics (See EVERYTHING)
+    // v8.4: Dismiss potential Login/Cookie modals
+    await page.waitForTimeout(3000); 
+    try {
+        // Press Escape to dismiss generic modals
+        await page.keyboard.press('Escape');
+        
+        // Wait and dismiss the "X" on the login prompt if it exists
+        const dismissBtn = page.locator('div[aria-label="Fermer"], div[aria-label="Close"], [role="button"]:has-text("Not Now"), .x1i10hfl[role="button"]');
+        if (await dismissBtn.count() > 0) {
+            await dismissBtn.first().click();
+            console.log(`[AutoPulse-v8] 🛡️ Dismissed login modal.`);
+        }
+    } catch (e) {}
+
+    // v8.4: Floodlight Diagnostics
     await page.evaluate(() => {
-        const title = document.title;
-        const bodySnippet = document.body.innerText.substring(0, 300).replace(/\n/g, ' ');
-        const links = Array.from(document.querySelectorAll('a'))
-                           .map(a => a.href)
-                           .slice(0, 25);
-        console.log(`[local-eval] Diagnostic: Title="${title}" | Snip="${bodySnippet}"`);
-        console.log(`[local-eval] Diagnostic: Raw Links: ${links.join(' | ')}`);
+        try {
+            const title = document.title;
+            const bodySnippet = document.body ? document.body.innerText.substring(0, 300).replace(/\n/g, ' ') : "NO BODY";
+            console.log(`[local-eval] Diagnostic: Title="${title}" | URL="${window.location.href}"`);
+        } catch (e) {}
     });
 
-    // Check for Auth Wall on MBASIC
-    if (page.url().includes('/login/') || page.url().includes('checkpoint')) {
-        console.warn(`[AutoPulse-v8] ⚠️ Auth/Checkpoint hit. Purging cookies and retrying as Guest...`);
-        await context.clearCookies();
-        const fallbackUrl = `https://mbasic.facebook.com/marketplace/category/cars/`;
-        await page.goto(fallbackUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    // Final check for dead login wall
+    if (page.url().includes('login') && !page.url().includes('marketplace')) {
+        console.warn(`[AutoPulse-v8] ❌ Hard login wall hit even on WWW. Attempting one last redirect...`);
+        await page.goto(`https://www.facebook.com/marketplace/`, { waitUntil: 'domcontentloaded' });
     }
+
+    // Scroll to load dynamic content
+    await page.evaluate(() => window.scrollBy(0, 500));
+    await page.waitForTimeout(1000);
 
     const listings: ListingRaw[] = await page.evaluate(() => {
         const found: any[] = [];
-        document.querySelectorAll('a').forEach(el => {
+        // Standard marketplace uses aria-label on the link to describe the item
+        const listingLinks = Array.from(document.querySelectorAll('a[role="link"]'))
+                                  .filter(a => a.getAttribute('aria-label')?.includes('listing') || a.getAttribute('href')?.includes('/item/'));
+
+        listingLinks.forEach(el => {
             const href = el.getAttribute('href') || "";
-            // v8.4: Broad ID match supporting relative and encoded paths
-            const idMatch = href.match(/(?:\/item\/|listing_id=|id=|commerce\/details\/|item_id=)(\d{10,21})/);
+            const ariaLabel = el.getAttribute('aria-label') || "";
+            
+            // v8.4: Extract ID from URL
+            const idMatch = href.match(/\/item\/(\d{10,21})/);
             if (!idMatch) return;
             
             const id = idMatch[1];
             if (found.some(x => x.externalId === id)) return;
 
-            const text = el.innerText || el.parentElement?.innerText || "";
-            // v8.4: Accept even text-lite items if they have a price footprint
-            if (!text.includes('$') && !text.includes('Price')) return; 
+            // v8.4: High-fidelity parsing from aria-label
+            // Format can be: "Year Make Model, [Price], [Location], listing [ID]"
+            // Or "Year Make Model · [Price] · [Location]" (Modern FB)
+            const cleaners = ariaLabel.split(/[·,]+/).map(p => p.trim());
+            
+            // If aria-label is weak, fallback to elements
+            const title = cleaners[0] || el.querySelector('span')?.innerText || "Unknown Vehicle";
+            // Robust price match: look for currency symbols or "Free" or digits with separators
+            const priceMatch = ariaLabel.match(/([\$£€]?\s*[\d\s,.]+\s*[\$£€]?|Gratuit|Free)/i);
+            const priceRaw = priceMatch ? priceMatch[0] : "0";
+            const locationRaw = cleaners[2] || "";
 
             found.push({
                 externalId: id,
                 url: `https://www.facebook.com/marketplace/item/${id}/`,
                 imageUrl: (el.querySelector('img') as HTMLImageElement)?.src || null,
-                title: text.split('\n')[0].substring(0, 200) || "AutoPulse Item",
-                priceRaw: text.match(/\$[\d,kK]+/)?.[0] || "0",
-                locationRaw: text.split('\n').pop() || ""
+                title: title,
+                priceRaw: priceRaw,
+                locationRaw: locationRaw
             });
         });
         return found;
