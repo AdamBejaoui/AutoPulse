@@ -22,6 +22,10 @@ const defaultJobRetries = {
     type: "exponential" as const,
     delay: 30_000,
   },
+  removeOnComplete: true, // Auto-delete jobs from Redis on completion to prevent OOM
+  removeOnFail: {
+    age: 24 * 3600, // Keep failed jobs for 24 hours only
+  },
 };
 
 export function getRedisConnection(): IORedis {

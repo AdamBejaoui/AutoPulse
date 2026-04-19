@@ -188,26 +188,20 @@ export async function scrapeLocalMarketplace(
 
     const listings: ListingRaw[] = await page.evaluate(() => {
         const found: any[] = [];
-        // Standard marketplace uses aria-label on the link to describe the item
         const listingLinks = Array.from(document.querySelectorAll('a[role="link"]'))
                                   .filter(a => a.getAttribute('aria-label')?.includes('listing') || a.getAttribute('href')?.includes('/item/'));
 
         listingLinks.forEach(el => {
             const href = el.getAttribute('href') || "";
             const ariaLabel = el.getAttribute('aria-label') || "";
-            
-            // v8.4: Extract ID from URL
             const idMatch = href.match(/\/item\/(\d{10,21})/);
             if (!idMatch) return;
-            
             const id = idMatch[1];
             if (found.some(x => x.externalId === id)) return;
 
-            // v8.7: Flawless Price & Metadata Extraction
-            // We first completely extract the price using regex directly from ariaLabel.
-            // This prevents commas inside $3,000 from breaking parsing.
-            // Stricter price extraction to ignore model numbers (e.g., Lexus is 250 $2000 -> not 250$)
-            const priceRegex = /(?:[\$£€]\s*[\d,.]+(?:\s\d{3})*|(?<=\s)[\d,.]+(?:\s\d{3})*\s*[\$£€](?=\s|$)|Gratuit|Free)/i;
+            // Match prices like "$15,000", "15 000 $", "20 000 $US", "CA$5000", "Gratuit", "Free"
+            // We use \d+(?:[.,]\d+)* instead of [\d,.]+ to ensure commas are only matches if bounded by digits (prevents grabbing numeric model prefixes right before commas)
+            const priceRegex = /(?:(?:[A-Za-z]{1,3})?[\$£€]\s*\d+(?:[.,]\d+)*(?:\s\d{3})*|(?<=\s)\d+(?:[.,]\d+)*(?:\s\d{3})*\s*[\$£€](?:[A-Za-z]{1,3})?(?=\s|,|$)|Gratuit|Free)/i;
             const priceMatch = ariaLabel.match(priceRegex);
             let priceRaw = "0";
             let title = "Unknown Vehicle";
@@ -215,49 +209,37 @@ export async function scrapeLocalMarketplace(
 
             if (priceMatch) {
                 priceRaw = priceMatch[0];
-                // For layout: "2014 Lexus IS 250 $3,000 Miami, FL"
                 if (priceMatch.index !== undefined) {
                     title = ariaLabel.substring(0, priceMatch.index).trim();
                     locationRaw = ariaLabel.substring(priceMatch.index + priceMatch[0].length).trim().replace(/^[\s,·]+/, '').trim();
                 }
             } else {
-                // If there's no currency symbol, split cleanly by '·' and find the first
-                // part that is an explicit isolated number (not a year).
-                const dots = ariaLabel.split('·').map(p => p.trim());
-                if (dots.length > 1) { // It's formatted with middle dots
-                    let found = "0";
-                    for (let i = 1; i < dots.length; i++) {
-                        const clean = dots[i].replace(/[^\d]/g, '');
-                        const n = parseInt(clean);
-                        if (clean.length > 0 && n > 0 && (n < 1900 || n > 2030)) {
-                            found = dots[i];
-                            break;
-                        }
-                    }
-                    priceRaw = found;
-                    title = dots[0];
-                    locationRaw = dots[dots.length - 1]; // usually last
-                } else {
-                    title = ariaLabel;
-                }
+                // If the regex failed, we DO NOT GUESS pricing based on random numbers.
+                // Doing so causes model years or model numbers (like "F-150" or "IS 250") to magically become $150 or $250 prices.
+                title = ariaLabel.split(/[,·]/)[0] || ariaLabel; // Just take the first chunk as title
             }
 
-            // Clean up UI-breaking characters from Title
             title = title.replace(/,$/, '').trim() || "Unknown Vehicle";
-
+            
             found.push({
                 externalId: id,
                 url: `https://www.facebook.com/marketplace/item/${id}/`,
                 imageUrl: (el.querySelector('img') as HTMLImageElement)?.src || null,
                 title: title,
                 priceRaw: priceRaw,
-                locationRaw: locationRaw
+                locationRaw: locationRaw,
+                _debugAria: ariaLabel
             });
         });
         return found;
     });
 
-    console.log(`[AutoPulse-v8] 🎯 Found ${listings.length} raw listings.`);
+    console.log(`[AutoPulse-v8] 🎯 Found ${listings.length} raw listings. Dumping first 3 for price debug:`);
+    listings.slice(0, 3).forEach(x => {
+        console.log(`   -> ARIA: ${x._debugAria}`);
+        console.log(`   -> Extracted Title: ${x.title}`);
+        console.log(`   -> Extracted Price: ${x.priceRaw}`);
+    });
 
     let upserted = 0;
     const foundCity = MARKETPLACE_CITIES.find(c => c.slug === location);
@@ -291,11 +273,15 @@ export async function scrapeLocalMarketplace(
             }
         });
 
-        // Queue enrichment instead of matching directly to get full info (most recent cars)
+        // 🚨 DISABLED BULLMQ: We were hitting Redis OOM (Out of Memory) because the fast scraper 
+        // pumps 100k listings into the waiting queue instantly. 
+        // agency_sweep.ts now handles bulk enrichment natively using enrichListingsBulkLocally().
+        /* 
         try {
             const enrichQueue = getEnrichmentQueue();
             await enrichQueue.add("enrichListing", { listingId: item.externalId }, { removeOnComplete: true });
         } catch (e) {}
+        */
         
         upserted++;
     }
