@@ -76,7 +76,13 @@ export async function scrapeLocalMarketplace(
 ) {
   console.log(`[AutoPulse-v8] 🚀 Launching Engine for "${location}"...`);
   
-  const proxyUrl = process.env.FB_PROXY;
+  const proxyRaw = process.env.FB_PROXY;
+  let proxyUrl: string | undefined;
+  if (proxyRaw) {
+      const proxies = proxyRaw.split(',').map(p => p.trim()).filter(Boolean);
+      proxyUrl = proxies[Math.floor(Math.random() * proxies.length)];
+  }
+
   const launchOptions: any = { 
     args: ['--disable-blink-features=AutomationControlled', '--no-sandbox'],
     headless: true 
@@ -540,7 +546,12 @@ export async function enrichListingsBulkLocally(listingIds: string[], concurrenc
     console.log(`[AutoPulse-v8] ⚡ HYPER SYNC: Enriching ${listingIds.length} listings with concurrency ${concurrency}...`);
     
     let totalSuccess = 0;
-    const proxyUrl = process.env.FB_PROXY;
+    const proxyRaw = process.env.FB_PROXY;
+    let proxyUrl: string | undefined;
+    if (proxyRaw) {
+        const proxies = proxyRaw.split(',').map(p => p.trim()).filter(Boolean);
+        proxyUrl = proxies[Math.floor(Math.random() * proxies.length)];
+    }
     const cookieString = process.env.FB_COOKIES;
     
     // Hyper-optimized Chromium parameters to prevent lag
@@ -555,7 +566,10 @@ export async function enrichListingsBulkLocally(listingIds: string[], concurrenc
         ],
         headless: true 
     };
-    if (proxyUrl) launchOptions.proxy = { server: proxyUrl };
+    if (proxyUrl) {
+        launchOptions.proxy = { server: proxyUrl };
+        console.log(`[AutoPulse-v8] 🌐 Bulk Enrichment using Proxy: ${proxyUrl.split('@').pop()}`);
+    }
 
     const browser = await chromium.launch(launchOptions);
     const context = await browser.newContext({
