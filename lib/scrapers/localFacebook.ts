@@ -441,13 +441,22 @@ export async function enrichListingLocally(listingId: string) {
             const imageEls = Array.from(document.querySelectorAll('img')).filter(img => img.src?.includes('scontent') && img.width > 300).map(img => img.src);
             
             // 4. Structured Details (Mileage, etc.)
-            const listItems = Array.from(document.querySelectorAll('[role="listitem"]')).map(el => (el as HTMLElement).innerText);
+            // Facebook uses different layouts for "About this vehicle". We capture all listitems AND any div that looks like a spec grid.
+            const listItems = Array.from(document.querySelectorAll('[role="listitem"], .x1n2onr6 span[dir="auto"], .x193iq5w span, div:has(> span[dir="auto"])')).map(el => (el as HTMLElement).innerText).filter(t => t && t.length > 3 && t.length < 50);
             
+            // Look specifically for the "About this vehicle" block
+            const h2s = Array.from(document.querySelectorAll('span')).filter(s => s.innerText.includes('About this vehicle') || s.innerText.includes('À propos de'));
+            let aboutVehicleText = "";
+            if (h2s.length > 0 && h2s[0].parentElement?.parentElement) {
+                aboutVehicleText = (h2s[0].parentElement.parentElement as HTMLElement).innerText;
+            }
+
             return {
                 description: descriptionText || null,
                 images: Array.from(new Set(imageEls)).slice(0, 10),
                 timeRaw: timeSpan?.innerText || null,
-                listItems: listItems
+                listItems: Array.from(new Set([...listItems])),
+                aboutVehicleText: aboutVehicleText
             };
         });
 
@@ -471,7 +480,7 @@ export async function enrichListingLocally(listingId: string) {
         };
 
         const finalDesc = details.description || listing.description || "";
-        const combinedText = `${listing.rawTitle} ${finalDesc} ${details.listItems.join(" ")}`;
+        const combinedText = `${listing.rawTitle} ${details.aboutVehicleText} ${finalDesc} ${details.listItems.join(" ")}`;
         const parsed = parseListingText(listing.rawTitle || "", combinedText);
         const postedAt = parseRelativeTime(details.timeRaw);
         
