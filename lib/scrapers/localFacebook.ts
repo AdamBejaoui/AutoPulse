@@ -331,9 +331,15 @@ export async function enrichListingLocally(listingId: string) {
     try {
         await page.goto(listing.listingUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
         
-        // 1. Dismiss initial modals & wait for primary content
+        // Smart Wait: Wait for the side panel containing details to appear
+        try {
+            await page.waitForSelector('div[role="main"] + div, .x1gslojk', { timeout: 10000 });
+        } catch (e) {
+            console.log(`[AutoPulse-v8] ⏳ Panel delay on ${listingId}. Proceeding with early capture.`);
+        }
+
         await page.keyboard.press('Escape');
-        await page.waitForTimeout(1500); // Shorter wait
+        await page.waitForTimeout(500); 
 
         // 2. Expand Description ("Voir plus" / "See more")
         try {
@@ -348,29 +354,38 @@ export async function enrichListingLocally(listingId: string) {
             // Helper to get text from various layouts
             const spans = Array.from(document.querySelectorAll('span'));
             
-            // 1. Description extraction
-            // Look for the block that either follows "Description" or is the largest text block in the side panel
-            const descriptionHeader = spans.find(s => 
-                s.innerText.includes('Description fournie') || 
-                s.innerText.includes('Description by') ||
-                s.innerText.includes('Seller\'s description')
-            );
+            // 1. Description extraction (Highly Robust)
+            // Strategy: Find the "Description" header and get the following content block with [dir='auto']
+            const headerTexts = ['Description', 'Description fournie', 'Seller\'s description', 'Seller Information'];
+            const allElements = Array.from(document.querySelectorAll('span, div, h2, h3'));
             
             let descriptionText = "";
+            const descriptionHeader = allElements.find(el => 
+                headerTexts.some(ht => (el as HTMLElement).innerText?.includes(ht))
+            );
+
             if (descriptionHeader) {
-                // Usually the next div/span is the content
-                const parent = descriptionHeader.parentElement;
-                if (parent && parent.nextElementSibling) {
-                    descriptionText = (parent.nextElementSibling as HTMLElement).innerText || "";
+                // Look in the siblings or parent siblings for [dir='auto']
+                let current = descriptionHeader as HTMLElement;
+                for (let i = 0; i < 5; i++) { // Search up to 5 levels/siblings
+                    if (!current) break;
+                    const autoDir = current.querySelector('[dir="auto"]');
+                    if (autoDir && (autoDir as HTMLElement).innerText.length > 20) {
+                        descriptionText = (autoDir as HTMLElement).innerText;
+                        break;
+                    }
+                    current = (current.nextElementSibling || current.parentElement?.nextElementSibling) as HTMLElement;
                 }
             }
             
             if (!descriptionText || descriptionText.length < 5) {
-                // Fallback: search for the largest block in the side sidebar
+                // Fallback: Search all [dir='auto'] blocks in the right panel and find the largest
                 const sidePanel = document.querySelector('div[role="main"] + div, div.x1gslojk');
                 if (sidePanel) {
-                    const longSpans = Array.from(sidePanel.querySelectorAll('span')).filter(s => s.innerText.length > 50);
-                    descriptionText = longSpans[0]?.innerText || "";
+                    const autoBlocks = Array.from(sidePanel.querySelectorAll('[dir="auto"]'))
+                        .map(el => (el as HTMLElement).innerText)
+                        .filter(t => t.length > 40 && !t.includes('$') && !t.includes('Johnstown')); // Filter out price/location
+                    descriptionText = autoBlocks.sort((a,b) => b.length - a.length)[0] || "";
                 }
             }
             

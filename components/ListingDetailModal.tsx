@@ -311,7 +311,7 @@ export function ListingDetailModal({
                     !isExpanded && "line-clamp-[4]"
                   )}>
                     {listing.rawDescription || listing.description ? (
-                      (listing.rawDescription || listing.description || "").replace(/AutoPulse (local capture|v8 captured):.*/i, "").trim() || "Detailed telemetry pending."
+                      (listing.rawDescription || listing.description || "").replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim() || "Detailed telemetry pending."
                     ) : (
                       "Engage 'Deep Scan' via Facebook to retrieve missing telemetry data for this unit."
                     )}
