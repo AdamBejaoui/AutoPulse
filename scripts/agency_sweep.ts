@@ -26,6 +26,17 @@ async function runAgencySweep() {
     process.exit(0);
   });
 
+  // 1. Get priority cities (those with active alerts)
+  let priorityCitySlugs: string[] = [];
+  try {
+    const subscriptions = await prisma.subscription.findMany({
+      select: { city: true }
+    });
+    priorityCitySlugs = Array.from(new Set(subscriptions.map(s => s.city?.toLowerCase()).filter(Boolean) as string[]));
+  } catch (e) {
+    console.warn("[sweep] Warning: Could not fetch subscriptions for priority sorting.");
+  }
+
   // 2. Sort cities: Priority first, then the rest
   const sortedCities = [...MARKETPLACE_CITIES].sort((a, b) => {
     const aPri = priorityCitySlugs.includes(a.slug) ? 1 : 0;
