@@ -226,7 +226,7 @@ export function buildStructuredWhere(
   if (p.features) {
     const reqFeatures = p.features
       .split(",")
-      .map((x) => x.trim())
+      .map((x) => x.trim().toLowerCase())
       .filter(Boolean);
     if (reqFeatures.length > 0) {
       where.features = { hasEvery: reqFeatures };
