@@ -354,38 +354,33 @@ export async function enrichListingLocally(listingId: string) {
             // Helper to get text from various layouts
             const spans = Array.from(document.querySelectorAll('span'));
             
-            // 1. Description extraction (Highly Robust)
-            // Strategy: Find the "Description" header and get the following content block with [dir='auto']
-            const headerTexts = ['Description', 'Description fournie', 'Seller\'s description', 'Seller Information'];
-            const allElements = Array.from(document.querySelectorAll('span, div, h2, h3'));
-            
+            // 1. Description extraction (Maximum Robustness)
+            // Strategy: Find the right-side details panel and extract the primary text block (dir="auto")
             let descriptionText = "";
-            const descriptionHeader = allElements.find(el => 
-                headerTexts.some(ht => (el as HTMLElement).innerText?.includes(ht))
-            );
-
-            if (descriptionHeader) {
-                // Look in the siblings or parent siblings for [dir='auto']
-                let current = descriptionHeader as HTMLElement;
-                for (let i = 0; i < 5; i++) { // Search up to 5 levels/siblings
-                    if (!current) break;
-                    const autoDir = current.querySelector('[dir="auto"]');
-                    if (autoDir && (autoDir as HTMLElement).innerText.length > 20) {
-                        descriptionText = (autoDir as HTMLElement).innerText;
-                        break;
-                    }
-                    current = (current.nextElementSibling || current.parentElement?.nextElementSibling) as HTMLElement;
-                }
-            }
+            const sidePanel = document.querySelector('div[role="main"] + div, div.x1gslojk, div[style*="width: 360px"]');
             
-            if (!descriptionText || descriptionText.length < 5) {
-                // Fallback: Search all [dir='auto'] blocks in the right panel and find the largest
-                const sidePanel = document.querySelector('div[role="main"] + div, div.x1gslojk');
-                if (sidePanel) {
-                    const autoBlocks = Array.from(sidePanel.querySelectorAll('[dir="auto"]'))
-                        .map(el => (el as HTMLElement).innerText)
-                        .filter(t => t.length > 40 && !t.includes('$') && !t.includes('Johnstown')); // Filter out price/location
-                    descriptionText = autoBlocks.sort((a,b) => b.length - a.length)[0] || "";
+            if (sidePanel) {
+                // Find all text blocks with dir="auto"
+                const textBlocks = Array.from(sidePanel.querySelectorAll('div[dir="auto"], span[dir="auto"]'))
+                    .map(el => (el as HTMLElement).innerText.trim())
+                    .filter(t => t.length > 30); // Filter out short fragments (price, name, etc)
+
+                // The description is typically the longest text block that doesn't repeat the title or city
+                const titleLower = document.title.toLowerCase();
+                const likelyDesc = textBlocks.find(t => 
+                    t.length > 50 && 
+                    !titleLower.includes(t.toLowerCase().substring(0, 20)) // Not the title
+                );
+
+                descriptionText = likelyDesc || textBlocks[0] || "";
+            }
+
+            // Fallback for different languages / layouts
+            if (!descriptionText || descriptionText.length < 10) {
+                const spans = Array.from(document.querySelectorAll('span'));
+                const descHeader = spans.find(s => s.innerText.includes('Description') || s.innerText.includes('Seller'));
+                if (descHeader && descHeader.parentElement?.nextElementSibling) {
+                    descriptionText = (descHeader.parentElement.nextElementSibling as HTMLElement).innerText;
                 }
             }
             
