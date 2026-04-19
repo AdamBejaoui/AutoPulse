@@ -1,22 +1,44 @@
 @echo off
+:: Ensure we are in the project directory
+cd /d "%~dp0"
+
 echo ====================================================
 echo    AutoPulse: Client Site Manual Sync
 echo ====================================================
 echo.
-echo This will update your customer's site with the latest 
-echo car listings using your local (unblocked) connection.
-echo.
-echo [1] Checking connection...
+
+:: 1. Check Node
 node -v >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Error: Node.js is not installed or not in PATH.
+    echo [ERROR] Node.js is not found. Please install it from nodejs.org
     pause
     exit /b
 )
 
-echo [2] Starting Scraper Sync...
-npm run agency-sweep
+:: 2. Check .env
+if not exist .env (
+    echo [ERROR] No .env file found in this folder! 
+    echo Please make sure your .env file is present.
+    pause
+    exit /b
+)
+
+echo [OK] Node.js and .env detected.
+echo [OK] Starting Scraper Sync... 
+echo (This window will stay open when finished)
+echo.
+
+:: 3. Run the script
+call npm run agency-sweep
+
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] The scraper crashed or encountered an error.
+    echo Please check the messages above.
+) else (
+    echo.
+    echo [SUCCESS] Sync Complete!
+)
 
 echo.
-echo Sync Complete! You can close this window.
 pause
