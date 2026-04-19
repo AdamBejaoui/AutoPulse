@@ -198,22 +198,34 @@ export async function scrapeLocalMarketplace(
             // v8.4: High-fidelity parsing from aria-label
             // Format can be: "Year Make Model, [Price], [Location], listing [ID]"
             // Or "Year Make Model · [Price] · [Location]" (Modern FB)
-            const cleaners = ariaLabel.split(/[·,]+/).map(p => p.trim());
-            
-            // If aria-label is weak, fallback to elements
-            const title = cleaners[0] || el.querySelector('span')?.innerText || "Unknown Vehicle";
-            // Robust price match: look for currency symbols or "Free" or digits with separators
-            const priceMatch = ariaLabel.match(/([\$£€]?\s*[\d\s,.]+\s*[\$£€]?|Gratuit|Free)/i);
-            const priceRaw = priceMatch ? priceMatch[0] : "0";
-            const locationRaw = cleaners[2] || "";
+            // v8.5: Robust Price Extraction
+            // We split by comma/dot and find the part that's clearly a price (~$1,234)
+            // ariaLabel layout is usually: "Title, Price, Location, meta"
+            const parts = ariaLabel.split(/[·,]+/).map(p => p.trim());
+            let priceRaw = "0";
+
+            // Find parts that contain a currency symbol
+            const pricedPart = parts.find(p => /[\$£€]|Gratuit|Free/i.test(p));
+            if (pricedPart) {
+                priceRaw = pricedPart;
+            } else {
+                // If no currency symbol found, take the first part that looks like a number 
+                // but IS NOT a year (1900-2030)
+                const candidate = parts.find(p => {
+                    const clean = p.replace(/[^\d]/g, '');
+                    const num = parseInt(clean);
+                    return clean.length > 0 && (num < 1900 || num > 2030);
+                });
+                priceRaw = candidate || "0";
+            }
 
             found.push({
                 externalId: id,
                 url: `https://www.facebook.com/marketplace/item/${id}/`,
                 imageUrl: (el.querySelector('img') as HTMLImageElement)?.src || null,
-                title: title,
+                title: parts[0] || "Unknown Vehicle",
                 priceRaw: priceRaw,
-                locationRaw: locationRaw
+                locationRaw: parts[2] || ""
             });
         });
         return found;
