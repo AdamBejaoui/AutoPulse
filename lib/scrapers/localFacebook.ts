@@ -170,9 +170,13 @@ export async function scrapeLocalMarketplace(
         }
     }
 
-    // Scroll to load dynamic content
-    await page.evaluate(() => window.scrollBy(0, 500));
-    await page.waitForTimeout(1000);
+    // v8.5: High-Volume Deep Scroll
+    // We scroll multiple times to load the extra listings needed to populate the site fast
+    console.log(`[AutoPulse-v8] 📜 Deep Scrolling for maximum volume...`);
+    for (let i = 0; i < 6; i++) {
+        await page.evaluate(() => window.scrollBy(0, 1500));
+        await page.waitForTimeout(1000);
+    }
 
     const listings: ListingRaw[] = await page.evaluate(() => {
         const found: any[] = [];
@@ -220,7 +224,7 @@ export async function scrapeLocalMarketplace(
     let upserted = 0;
     const foundCity = MARKETPLACE_CITIES.find(c => c.slug === location);
     
-    for (const item of listings.slice(0, 100)) {
+    for (const item of listings) {
         const priceCents = parseTilePriceToCents(item.priceRaw);
         if (priceCents <= 0) continue;
 
@@ -239,8 +243,8 @@ export async function scrapeLocalMarketplace(
                 model: parsed.model || "Unknown",
                 year: parsed.year || 0,
                 price: priceCents,
-                city: foundCity?.label.split(',')[0] || location,
-                state: foundCity?.label.split(',')[1]?.trim() || null,
+                city: foundCity?.label.split(',')[0] || location.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+                state: foundCity?.label.split(',')[1]?.trim() || "Local",
                 listingUrl: item.url,
                 imageUrl: item.imageUrl,
                 rawTitle: item.title,

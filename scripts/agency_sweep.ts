@@ -66,8 +66,10 @@ async function runAgencySweep() {
 
       console.log(`[${city.slug}] Done! Scraped: ${result.scraped}, Upserted: ${result.upserted}`);
 
-      // NEW: Trigger deep enrichment for the most recent findings (limit to top 50)
-      if (result.upserted > 0) {
+      // TRIGGER Deep enrichment (unless in FAST mode)
+      const skipEnrich = process.env.DEEP_ENRICH === 'false';
+      
+      if (result.upserted > 0 && !skipEnrich) {
         console.log(`[${city.slug}] 🛠️  Starting Deep Enrichment for latest listings...`);
         const recentListings = await prisma.listing.findMany({
             where: { 
@@ -84,9 +86,11 @@ async function runAgencySweep() {
                 const enriched = await enrichListingLocally(listing.externalId);
                 if (enriched) totalEnriched++;
                 // Jitter between individual items
-                await new Promise(r => setTimeout(r, 3000 + Math.random() * 2000));
+                await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000));
             }
         }
+      } else if (skipEnrich) {
+        console.log(`[${city.slug}] ⚡ FAST MODE: Skipping Deep Enrichment.`);
       }
 
     } catch (err) {
