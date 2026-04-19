@@ -315,31 +315,58 @@ export async function enrichListingLocally(listingId: string) {
         } catch (e) {}
 
         const details = await page.evaluate(() => {
-            // Updated selectors based on Chicago production layout
+            // Helper to get text from various layouts
             const spans = Array.from(document.querySelectorAll('span'));
             
-            // Description extraction (look for the large block)
-            const descriptionEl = spans.find(s => s.innerText?.length > 100 && !s.innerText.includes('marketplace') && !s.innerText.includes('Listed'));
+            // 1. Description extraction
+            // Look for the block that either follows "Description" or is the largest text block in the side panel
+            const descriptionHeader = spans.find(s => 
+                s.innerText.includes('Description fournie') || 
+                s.innerText.includes('Description by') ||
+                s.innerText.includes('Seller\'s description')
+            );
             
-            // Image extraction (high res)
+            let descriptionText = "";
+            if (descriptionHeader) {
+                // Usually the next div/span is the content
+                const parent = descriptionHeader.parentElement;
+                if (parent && parent.nextElementSibling) {
+                    descriptionText = (parent.nextElementSibling as HTMLElement).innerText || "";
+                }
+            }
+            
+            if (!descriptionText || descriptionText.length < 5) {
+                // Fallback: search for the largest block in the side sidebar
+                const sidePanel = document.querySelector('div[role="main"] + div, div.x1gslojk');
+                if (sidePanel) {
+                    const longSpans = Array.from(sidePanel.querySelectorAll('span')).filter(s => s.innerText.length > 50);
+                    descriptionText = longSpans[0]?.innerText || "";
+                }
+            }
+            
+            // 2. Timing extraction (e.g., "Publié il y a 4 heures" / "Listed 2 hours ago")
+            const timeSpan = spans.find(s => 
+                s.innerText.includes('Publié') || 
+                s.innerText.includes('Listed') || 
+                s.innerText.includes('il y a') ||
+                s.innerText.includes('ago')
+            );
+            
+            // 3. Image extraction (high res)
             const imageEls = Array.from(document.querySelectorAll('img')).filter(img => img.src?.includes('scontent') && img.width > 300).map(img => img.src);
             
-            // Timing extraction (e.g., "Listed 2 hours ago" / "Publié il y a 19 heures")
-            const timeSpan = spans.find(s => s.innerText.toLowerCase().includes('listed') || s.innerText.toLowerCase().includes('publié') || s.innerText.toLowerCase().includes('il y a'));
-            
-            // Specific labels extraction (Mileage, etc. - often in role="listitem")
-            const listItems = Array.from(document.querySelectorAll('[role="listitem"] span')).map(s => s.innerText);
-            const mileageItem = listItems.find(txt => txt.toLowerCase().includes('miles') || txt.toLowerCase().includes('km'));
+            // 4. Structured Details (Mileage, etc.)
+            const listItems = Array.from(document.querySelectorAll('[role="listitem"]')).map(el => (el as HTMLElement).innerText);
             
             return {
-                description: descriptionEl?.innerText || null,
+                description: descriptionText || null,
                 images: Array.from(new Set(imageEls)).slice(0, 10),
-                mileageRaw: mileageItem || null,
-                timeRaw: timeSpan?.innerText || null
+                timeRaw: timeSpan?.innerText || null,
+                listItems: listItems
             };
         });
 
-        // Helper: Convert relative time ("2 hours ago") to Date
+        // Helper: Convert relative time to Date
         const parseRelativeTime = (raw: string | null): Date | null => {
             if (!raw) return null;
             const now = new Date();
@@ -359,17 +386,24 @@ export async function enrichListingLocally(listingId: string) {
         };
 
         const finalDesc = details.description || listing.description || "";
-        const parsed = parseListingText(listing.rawTitle || "", finalDesc);
+        const combinedText = `${listing.rawTitle} ${finalDesc} ${details.listItems.join(" ")}`;
+        const parsed = parseListingText(listing.rawTitle || "", combinedText);
         const postedAt = parseRelativeTime(details.timeRaw);
         
-        // Final update to DB
+        // Manual spec extraction from list items for extra safety
+        const mileageItem = details.listItems.find(t => t.toLowerCase().includes('miles') || t.toLowerCase().includes('km') || t.toLowerCase().includes('kilométrage'));
+        const transmissionItem = details.listItems.find(t => t.toLowerCase().includes('transmission') || t.toLowerCase().includes('boîte'));
+        
+        const finalMileage = parsed.mileage || (mileageItem ? parseInt(mileageItem.replace(/\D/g, ''), 10) : listing.mileage);
+        const finalTransmission = parsed.transmission || (transmissionItem?.toLowerCase().includes('auto') ? 'automatic' : transmissionItem?.toLowerCase().includes('man') ? 'manual' : listing.transmission);
+
         await prisma.listing.update({
             where: { externalId: listingId },
             data: {
                 description: finalDesc,
                 rawDescription: finalDesc,
-                mileage: parsed.mileage || (details.mileageRaw ? parseInt(details.mileageRaw.replace(/\D/g, ''), 10) : listing.mileage),
-                transmission: parsed.transmission || listing.transmission,
+                mileage: finalMileage,
+                transmission: finalTransmission,
                 fuelType: parsed.fuelType || listing.fuelType,
                 driveType: parsed.driveType || listing.driveType,
                 titleStatus: parsed.titleStatus || listing.titleStatus,
@@ -380,7 +414,7 @@ export async function enrichListingLocally(listingId: string) {
             }
         });
 
-        console.log(`[AutoPulse-v8] ✨ Deep Sync successful for ${listingId} (${parsed.mileage || 'No'} miles)`);
+        console.log(`[AutoPulse-v8] ✨ Deep Sync OK: ${listingId} | Time: ${details.timeRaw || 'Unknown'} | Desc: ${finalDesc.substring(0, 30)}...`);
         return true;
 
     } catch (err) {
