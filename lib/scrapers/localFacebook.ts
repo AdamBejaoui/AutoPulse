@@ -42,20 +42,20 @@ export function parseTilePriceToCents(text: string): number {
 
 async function getStoredSession() {
   try {
-    const session = await prisma.scraperSession.findUnique({
+    const session = await withDbRetry(() => prisma.scraperSession.findUnique({
       where: { id: "facebook-default" }
-    });
+    }));
     return (session?.cookies as any[]) || null;
   } catch (e) { return null; }
 }
 
 async function saveStoredSession(cookies: any[]) {
   try {
-    await prisma.scraperSession.upsert({
+    await withDbRetry(() => prisma.scraperSession.upsert({
       where: { id: "facebook-default" },
       update: { cookies, updatedAt: new Date() },
       create: { id: "facebook-default", cookies, updatedAt: new Date() }
-    });
+    }));
   } catch (e) {}
 }
 
