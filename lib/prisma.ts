@@ -8,7 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
     max: 20, // Increased to support high concurrency during Mega Harvest
     idleTimeoutMillis: 30000,
