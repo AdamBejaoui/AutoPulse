@@ -1,4 +1,5 @@
 import * as React from "react";
+export const dynamic = 'force-dynamic';
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { StructuredSearchBar } from "@/components/StructuredSearchBar";
