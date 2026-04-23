@@ -10,17 +10,26 @@ export async function POST(req: Request) {
   });
   try {
     const body = await req.json();
+    console.log('Incoming Webhook Payload:', JSON.stringify(body, null, 2));
+
+    // Handle Apify Test Events
+    if (body.eventType === 'TEST') {
+      console.log('Apify Webhook Test Received Successfully!');
+      return NextResponse.json({ success: true, message: 'Test connection successful' });
+    }
 
     // The dataset ID where Apify stored the new scraped data
-    const datasetId = body.resource?.defaultDatasetId;
+    const datasetId = body.resource?.defaultDatasetId || body.resource?.id;
 
     if (!datasetId) {
+      console.error('Webhook Error: No dataset ID found in payload');
       return NextResponse.json({ error: 'No dataset ID found' }, { status: 400 });
     }
 
     // 1. Fetch the dataset items from Apify
+    console.log(`Querying Apify Dataset: ${datasetId}`);
     const { items } = await apifyClient.dataset(datasetId).listItems();
-    console.log(`Fetched ${items.length} items from Apify Dataset ${datasetId}`);
+    console.log(`Fetched ${items.length} items from Apify`);
 
     let createdCount = 0;
     let updatedCount = 0;
