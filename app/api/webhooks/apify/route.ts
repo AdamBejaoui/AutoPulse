@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
-import { prisma } from '@/lib/prisma';
 import { ApifyClient } from 'apify-client';
 import { parseListingText } from '@/lib/parser/listingParser';
 
 export async function POST(req: Request) {
+  const { prisma } = await import("@/lib/prisma"); 
   const apifyClient = new ApifyClient({
     token: process.env.APIFY_API_TOKEN,
   });
@@ -123,6 +123,7 @@ export async function POST(req: Request) {
 // -------------------------------------------------------------------------------------------------
 
 async function triggerZeroRedisNotifications(newListings: any[]) {
+  const { prisma } = await import("@/lib/prisma");
   console.log(`Checking notifications for ${newListings.length} new listings...`);
   
   // Example: Grab all active subscriptions from DB
