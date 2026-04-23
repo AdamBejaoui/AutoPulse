@@ -1,6 +1,5 @@
-import { PrismaClient } from "../prisma/generated/client";
+import { PrismaClient } from "@prisma/client";
 
-// Using a custom generated client to ensure Vercel doesn't swap it with the Edge version.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
