@@ -1,11 +1,11 @@
 import { Listing, Prisma, Subscription } from "@prisma/client";
-import { prisma } from "./prisma";
-import { vehicleTokenWhere, cityTokenWhere } from "./listingTextWhere";
 
 /**
  * Finds all active subscriptions that match a given listing's attributes.
  */
 export async function findMatchingSubscriptions(listing: Listing): Promise<Subscription[]> {
+  const { prisma } = await import("./prisma");
+
   // --- GLOBAL MOTORCYCLE/JUNK FILTER ---
   const blockRegex = /\b(motorcycle|scooter|moped|dirt bike|atv|utv|harley|yamaha|ninja|tao|grom|ducati|kawasaki|vespa|polaris|can-am|sea-doo|ski-doo|snowmobile|rv|camper|trailer|boat|jet ski)\b/i;
   const titleText = (listing.rawTitle || "").toLowerCase();
