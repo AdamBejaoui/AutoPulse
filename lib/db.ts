@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../prisma/generated/client";
 
-// This file is named db.ts to avoid any stale bundling issues with prisma.ts
+// Using a custom generated client to ensure Vercel doesn't swap it with the Edge version.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
