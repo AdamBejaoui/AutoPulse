@@ -4,11 +4,11 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { StructuredSearchBar } from "@/components/StructuredSearchBar";
 import { Search, Bell, Globe, ChevronRight } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
 const getCachedListingCount = unstable_cache(
   async () => {
+    const { prisma } = await import("@/lib/prisma");
     return prisma.listing.count();
   },
   ["listing-count"],
@@ -19,10 +19,8 @@ export default async function HomePage(): Promise<ReactElement> {
   const totalListings = await getCachedListingCount().catch(() => 0);
   return (
     <div className="flex flex-col relative">
-      {/* Background Grid */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
 
-      {/* Hero Section */}
       <section className="relative overflow-hidden pt-8 pb-16 lg:pt-32 lg:pb-40 text-foreground">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none z-0" />
         <div className="absolute top-0 right-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[150px] pointer-events-none" />
@@ -71,7 +69,6 @@ export default async function HomePage(): Promise<ReactElement> {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="container mx-auto px-4 py-24 sm:px-6">
         <div className="grid gap-8 md:grid-cols-3">
           <FeatureCard 
