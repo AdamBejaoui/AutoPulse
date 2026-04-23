@@ -1,5 +1,3 @@
-import { prisma } from "./prisma";
-
 // Simple in-memory cache for market stats to ensure smooth grid scrolling
 const statsCache = new Map<string, { median: number; count: number; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 10; // 10 minutes
@@ -24,6 +22,7 @@ export async function getMarketAnalysis(
     return null;
   }
 
+  const { prisma } = await import("./prisma");
   const cacheKey = `${make}-${model}-${year}`.toLowerCase();
   const now = Date.now();
   
