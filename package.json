@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate --schema=./prisma/schema.prisma && next build",
+    "build": "npx prisma@6.4.1 generate --schema=./prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "next lint",
     "workers": "ts-node --project tsconfig.json scripts/keepAlive.ts",
@@ -14,7 +14,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "6.4.1",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-toast": "^1.2.2",
@@ -28,7 +28,6 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.16",
     "playwright": "^1.49.0",
-    "prisma": "^7.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.4",
@@ -46,9 +45,14 @@
     "eslint-config-next": "14.2.18",
     "jest": "^30.3.0",
     "postcss": "^8.4.49",
+    "prisma": "6.4.1",
     "tailwindcss": "^3.4.15",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "prisma": "6.4.1",
+    "@prisma/client": "6.4.1"
   }
 }
