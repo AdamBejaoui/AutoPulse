@@ -1,36 +1,19 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+
+// PrismaClient is attached to the `global` object in development to prevent
+// exhausting your database connection limit.
+//
+// Learn more:
+// https://pris.ly/d/help/next-js-best-practices
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-function createPrismaClient() {
-  const pool = new Pool({
-    connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-    max: 20, // Increased to support high concurrency during Mega Harvest
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 60000, // Increase timeout to 60s for stability
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: ["error"],
   });
 
-  pool.on('error', (err) => {
-    console.error('[db-pool] Unexpected error on idle client:', err.message);
-  });
-
-  pool.on('connect', () => {
-    console.log('[db-pool] Low-level client connected to database');
-  });
-  const adapter = new PrismaPg(pool);
-  return new PrismaClient({
-    adapter,
-    log: ["error"], // Keep logs clean
-  });
-}
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
