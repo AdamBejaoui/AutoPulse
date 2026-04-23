@@ -17,7 +17,8 @@ model Listing {
   mileage     Int?
   city        String?
   state       String?
-  imageUrl    String?
+  imageUrls   String[]
+  vin         String?
   listingUrl  String
   description String?
   sellerName  String?
