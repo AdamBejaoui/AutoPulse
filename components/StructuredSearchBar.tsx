@@ -66,8 +66,11 @@ export function StructuredSearchBar() {
     if (make) params.set("make", make);
     if (model) params.set("model", model);
     if (city) {
-        const found = MARKETPLACE_CITIES.find(c => c.label.toLowerCase() === city.toLowerCase() || c.slug.toLowerCase() === city.toLowerCase());
-        params.set("city", found ? found.slug : city);
+        const found = MARKETPLACE_CITIES.find(c => 
+          c.label.toLowerCase() === city.toLowerCase() || 
+          c.slug.toLowerCase() === city.toLowerCase()
+        );
+        params.set("city", found ? found.label : city);
     }
     router.push(`/search?${params.toString()}`);
   };
