@@ -47,6 +47,9 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
   const yearRange = (s.yearMin || s.yearMax)
     ? `${s.yearMin || "Any"} – ${s.yearMax || "Any"}`
     : null;
+  const mileageRange = (s.mileageMin || s.mileageMax)
+    ? `${s.mileageMin?.toLocaleString() || "Any"} – ${s.mileageMax?.toLocaleString() || "Any"} mi`
+    : null;
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
@@ -106,7 +109,7 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse-dot shrink-0" />
           </div>
           <div className="text-xs text-muted-foreground mt-0.5 truncate">
-            {[priceRange, yearRange, s.city].filter(Boolean).join(" · ") || "Any vehicle"}
+            {[priceRange, yearRange, mileageRange, s.city].filter(Boolean).join(" · ") || "Any vehicle"}
           </div>
         </div>
 
@@ -136,8 +139,8 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
             {s.city && (
               <DetailItem icon={<MapPin size={13} />} label="Location" value={s.city} />
             )}
-            {s.mileageMax && (
-              <DetailItem icon={<Gauge size={13} />} label="Max mileage" value={`${s.mileageMax.toLocaleString()} mi`} />
+            {mileageRange && (
+              <DetailItem icon={<Gauge size={13} />} label="Mileage" value={mileageRange} />
             )}
             <DetailItem icon={<Clock size={13} />} label="Created" value={new Date(s.createdAt).toLocaleDateString()} />
           </div>

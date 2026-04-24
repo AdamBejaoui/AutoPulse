@@ -1,63 +1,88 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 import { ApifyClient } from 'apify-client';
-import * as dotenv from 'dotenv';
-import { MARKETPLACE_CITIES } from '../lib/cities';
 
-dotenv.config();
-
+import { PrismaClient } from '@prisma/client';
 const client = new ApifyClient({
   token: process.env.APIFY_API_TOKEN,
 });
 
 async function runMegaHarvest() {
-  console.log('🚀 INITIALIZING MEGA HARVEST V2...');
+  const prisma = new PrismaClient();
+  console.log('🚀 INITIALIZING SMART PRIORITY HARVEST...');
 
-  // 1. Pick a random batch of 25 cities to stay under the radar
-  const batchSize = 25;
-  const shuffled = [...MARKETPLACE_CITIES].sort(() => 0.5 - Math.random());
-  const selectedCities = shuffled.slice(0, batchSize);
+  // 1. Fetch search criteria from active subscriptions to prioritize
+  const subs = await prisma.subscription.findMany({
+    select: { make: true, model: true, city: true },
+    where: {
+        OR: [
+            { make: { not: null } },
+            { model: { not: null } }
+        ]
+    }
+  });
 
-  console.log(`📍 Selected ${batchSize} target cities for this cycle.`);
+  // Deduplicate combinations
+  const combos = Array.from(new Set(subs.map(s => `${s.make || ''} ${s.model || ''}`.trim()))).filter(Boolean);
+  console.log(`🎯 Found ${combos.length} unique subscription pairs to prioritize.`);
 
-  // 2. Build the search URLs
-  // We target "vehicles" specifically with "sort by creation time" to get newest leads
-  const searchUrls = selectedCities.map(city => 
-    `https://www.facebook.com/marketplace/${city.slug}/vehicles?sort=CREATION_TIME_DESCEND`
-  );
+  // 2. High-probability cities (Short Slugs)
+  const priorityCities = ['nyc', 'la', 'chicago', 'houston', 'miami', 'atlanta', 'dallas', 'philly'];
+  const generalCities = ['denver', 'seattle', 'boston', 'austin', 'phoenix'];
 
-  // 3. Handle Cookies if available
-  // Cleaning up potential spacing issues in the .env variable
-  const rawCookies = process.env.FB_COOKIES || process.env.FB_SESSION_COOKIES || '';
-  // The .env might have spaces between every char and escaped quotes
-  const cleanedCookies = rawCookies.replace(/\s/g, '').replace(/\\"/g, '"'); 
-  let cookies = [];
-  try {
-    if (cleanedCookies) cookies = JSON.parse(cleanedCookies);
-  } catch (e) {
-    console.warn('⚠️ Could not parse FB_COOKIES, proceeding without them.');
+  const startUrls: any[] = [];
+
+  // 3. ADAPTING TO PRIORITIES: Search specifically for what people WANT in major cities
+  // These go FIRST in the queue.
+  for (const combo of combos) {
+      for (const city of priorityCities.slice(0, 3)) { // Top 3 cities for every specific sub to keep costs low
+          startUrls.push({ 
+              url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(combo)}&category_id=vehicles&sort=CREATION_TIME_DESCEND` 
+          });
+      }
   }
 
-  // 4. Define the optimized input for apify/facebook-marketplace-scraper
+  // 4. GENERAL HARVEST: Catch everything else in other cities
+  for (const city of [...priorityCities, ...generalCities]) {
+      startUrls.push({ 
+          url: `https://www.facebook.com/marketplace/${city}/vehicles?sort=CREATION_TIME_DESCEND` 
+      });
+  }
+
+  console.log(`📍 Generated ${startUrls.length} total target URLs (${combos.length * 3} prioritized search URLs).`);
+
+  // 5. Build Input for OFFICIAL Apify Scraper (apify/facebook-marketplace-scraper)
+  const rawCookies = process.env.FB_COOKIES || process.env.FB_SESSION_COOKIES || '';
+  const cleanedCookies = rawCookies.replace(/\s/g, '').replace(/\\/g, ''); 
+  
+  let cookies: any[] = [];
+  try {
+    if (cleanedCookies) {
+        cookies = JSON.parse(cleanedCookies);
+    }
+  } catch (e) {
+    console.warn('⚠️ Could not parse FB_COOKIES JSON.');
+  }
+
   const input = {
-    "startUrls": searchUrls.map(url => ({ "url": url })),
-    "maxPagesPerUrl": 5,           
-    "resultsPerPage": 24,
-    "maxRequestsPerRun": 500,
-    "concurrency": 5,             
+    "startUrls": startUrls.slice(0, 50), // Limit to top 50 starts per run to save money
+    "maxResultsPerQuery": 40,           
+    "resultsLimit": 500,                
     "proxyConfiguration": {
       "useApifyProxy": true,
-      "groups": ["RESIDENTIAL"]    
+      "apifyProxyGroups": ["RESIDENTIAL"]    
     },
-    "viewAction": "SEARCH",
-    "getListingDetails": true,     
-    "sessionCookies": cookies,     // Include cookies for logged-in scraping
+    "cookies": cookies,
+    "viewPortWidth": 1280,
+    "viewPortHeight": 720
   };
 
-  console.log('📡 Triggering Apify actor (apify/facebook-marketplace-scraper)...');
+  console.log('📡 Triggering OFFICIAL actor (apify/facebook-marketplace-scraper)...');
 
   try {
     const run = await client.actor('apify/facebook-marketplace-scraper').start(input, {
-        // Automatically trigger our webhook when the run is finished
         webhooks: [
             {
                 eventTypes: ['ACTOR.RUN.SUCCEEDED'],
@@ -66,13 +91,15 @@ async function runMegaHarvest() {
         ]
     });
 
-    console.log(`✅ MEGA HARVEST COMINCED!`);
+    console.log(`✅ PRIORITY HARVEST COMMENCED!`);
     console.log(`🔗 Run ID: ${run.id}`);
-    console.log(`📊 View progress: https://console.apify.com/actors/runs/${run.id}`);
-    console.log(`🔔 Webhook will trigger: ${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/apify upon completion.`);
-
+    console.log(`📊 View: https://console.apify.com/actors/runs/${run.id}`);
+    
+    // Save cookies back if they rotate? (Scraper usually handles this via session)
   } catch (error: any) {
-    console.error('❌ Failed to start Mega Harvest:', error.message);
+    console.error('❌ Failed to start Priority Harvest:', error.message);
+  } finally {
+      await prisma.$disconnect();
   }
 }
 

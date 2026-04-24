@@ -17,6 +17,7 @@ const SEARCH_KEYS = [
   "yearMax",
   "priceMin",
   "priceMax",
+  "mileageMin",
   "mileageMax",
   "city",
   "trim",

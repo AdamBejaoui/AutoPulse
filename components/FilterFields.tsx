@@ -24,6 +24,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   const [yearMax, setYearMax] = useState(initial.yearMax || "");
   const [priceMin, setPriceMin] = useState(initial.priceMin || "");
   const [priceMax, setPriceMax] = useState(initial.priceMax || "");
+  const [mileageMin, setMileageMin] = useState(initial.mileageMin || "");
   const [mileageMax, setMileageMax] = useState(initial.mileageMax || "");
   const [city, setCity] = useState(initial.city || "");
   const [transmission, setTransmission] = useState(initial.transmission || "");
@@ -42,6 +43,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
     setOrDelete("yearMax", yearMax);
     setOrDelete("priceMin", priceMin);
     setOrDelete("priceMax", priceMax);
+    setOrDelete("mileageMin", mileageMin);
     setOrDelete("mileageMax", mileageMax);
     setOrDelete("city", city);
     setOrDelete("transmission", transmission);
@@ -53,13 +55,13 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
     const q = params.toString();
     router.push(q ? `/search?${q}` : "/search", { scroll: false });
     if (onApply) onApply();
-  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, router, searchParams, onApply]);
+  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, router, searchParams, onApply]);
 
   useEffect(() => {
     if (firstRender.current) { firstRender.current = false; return; }
     const timer = setTimeout(() => apply(), 600);
     return () => clearTimeout(timer);
-  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle]);
+  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,10 +115,13 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
         </div>
       </FilterSection>
 
-      {/* Year & Mileage */}
       <FilterSection label="Year & Mileage">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           <InputField label="From year" value={yearMin} onChange={setYearMin} placeholder="2015" type="number" />
+          <InputField label="To year" value={yearMax} onChange={setYearMax} placeholder="2024" type="number" />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <InputField label="Min mileage" value={mileageMin} onChange={setMileageMin} placeholder="Any" />
           <InputField label="Max mileage" value={mileageMax} onChange={setMileageMax} placeholder="100k" />
         </div>
       </FilterSection>

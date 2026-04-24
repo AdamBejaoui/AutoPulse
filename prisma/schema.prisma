@@ -79,6 +79,7 @@ model Subscription {
   yearMax       Int?
   priceMin      Int?
   priceMax      Int?
+  mileageMin    Int?
   mileageMax    Int?
   city          String?
   lastCheckedAt DateTime?

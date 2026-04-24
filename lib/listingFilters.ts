@@ -58,6 +58,7 @@ const paramsSchema = z.object({
   yearMax: optionalInt,
   priceMin: optionalPriceDollars,
   priceMax: optionalPriceDollars,
+  mileageMin: optionalInt,
   mileageMax: optionalInt,
   city: z.string().optional(),
   trim: z.string().optional(),
@@ -163,8 +164,10 @@ export function buildStructuredWhere(
       where.price.lte = Math.round(p.priceMax * 100);
     }
   }
-  if (p.mileageMax != null) {
-    where.mileage = { lte: p.mileageMax };
+  if (p.mileageMin != null || p.mileageMax != null) {
+    where.mileage = {};
+    if (p.mileageMin != null) where.mileage.gte = p.mileageMin;
+    if (p.mileageMax != null) where.mileage.lte = p.mileageMax;
   }
   if (p.trim) {
     where.trim = { contains: p.trim, mode: "insensitive" };
@@ -272,6 +275,6 @@ export function buildListingOrderBy(
       return { year: "asc" };
     case "newest":
     default:
-      return [{ postedAt: "desc" }, { createdAt: "desc" }];
+      return [{ createdAt: "desc" }, { postedAt: "desc" }];
   }
 }

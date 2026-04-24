@@ -7,6 +7,7 @@ export type AlertFilters = {
   yearMax?: number;
   priceMin?: number;
   priceMax?: number;
+  mileageMin?: number;
   mileageMax?: number;
   city?: string;
 };
@@ -49,8 +50,10 @@ function filterSummaryHtml(filters: AlertFilters): string {
       `Price: ${filters.priceMin != null ? formatUsdFromCents(filters.priceMin) : "any"} – ${filters.priceMax != null ? formatUsdFromCents(filters.priceMax) : "any"}`,
     );
   }
-  if (filters.mileageMax != null) {
-    parts.push(`Max mileage: ${filters.mileageMax.toLocaleString()} mi`);
+  if (filters.mileageMin != null || filters.mileageMax != null) {
+    const a = filters.mileageMin != null ? `${filters.mileageMin.toLocaleString()} mi` : "any";
+    const b = filters.mileageMax != null ? `${filters.mileageMax.toLocaleString()} mi` : "any";
+    parts.push(`Mileage: ${a} – ${b}`);
   }
   if (filters.city) parts.push(`City: ${filters.city}`);
   return parts.length > 0 ? parts.join("<br/>") : "Any vehicle";
@@ -70,8 +73,10 @@ function filterSummaryPlain(filters: AlertFilters): string {
       filters.priceMax != null ? formatUsdFromCents(filters.priceMax) : "…";
     parts.push(`${a} – ${b}`);
   }
-  if (filters.mileageMax != null) {
-    parts.push(`Under ${filters.mileageMax.toLocaleString()} mi`);
+  if (filters.mileageMin != null || filters.mileageMax != null) {
+    const a = filters.mileageMin != null ? `${filters.mileageMin.toLocaleString()} mi` : "…";
+    const b = filters.mileageMax != null ? `${filters.mileageMax.toLocaleString()} mi` : "…";
+    parts.push(`Mileage: ${a}–${b}`);
   }
   if (filters.city) parts.push(filters.city);
   return parts.join(" · ") || "Any criteria";

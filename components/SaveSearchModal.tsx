@@ -27,6 +27,8 @@ export function SaveSearchModal(): React.ReactElement {
   const [model, setModel] = React.useState("");
   const [priceMin, setPriceMin] = React.useState("");
   const [priceMax, setPriceMax] = React.useState("");
+  const [mileageMin, setMileageMin] = React.useState("");
+  const [mileageMax, setMileageMax] = React.useState("");
   const [keywords, setKeywords] = React.useState("");
 
   React.useEffect(() => {
@@ -35,6 +37,8 @@ export function SaveSearchModal(): React.ReactElement {
       setModel(filters.model || "");
       setPriceMin(filters.priceMin || "");
       setPriceMax(filters.priceMax || "");
+      setMileageMin(filters.mileageMin || "");
+      setMileageMax(filters.mileageMax || "");
       setKeywords(filters.keywords || "");
     }
   }, [alertOpen, filters]);
@@ -62,7 +66,8 @@ export function SaveSearchModal(): React.ReactElement {
         yearMax: filters.yearMax ? Number(filters.yearMax) : undefined,
         priceMin: priceMin ? Number(priceMin) : undefined,
         priceMax: priceMax ? Number(priceMax) : undefined,
-        mileageMax: filters.mileageMax ? Number(filters.mileageMax) : undefined,
+        mileageMin: mileageMin ? Number(mileageMin) : undefined,
+        mileageMax: mileageMax ? Number(mileageMax) : undefined,
         city: filters.city || undefined,
         keywords: keywords ? [keywords] : undefined,
       };
@@ -95,6 +100,8 @@ export function SaveSearchModal(): React.ReactElement {
     model && `Model: ${model}`,
     priceMin && `Min: $${priceMin}`,
     priceMax && `Max: $${priceMax}`,
+    mileageMin && `Min Mi: ${mileageMin}`,
+    mileageMax && `Max Mi: ${mileageMax}`,
     keywords && `"${keywords}"`,
   ].filter(Boolean);
 
@@ -135,6 +142,10 @@ export function SaveSearchModal(): React.ReactElement {
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Min price ($)" value={priceMin} onChange={setPriceMin} placeholder="5,000" type="number" />
                 <Field label="Max price ($)" value={priceMax} onChange={setPriceMax} placeholder="30,000" type="number" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Min mileage" value={mileageMin} onChange={setMileageMin} placeholder="0" />
+                <Field label="Max mileage" value={mileageMax} onChange={setMileageMax} placeholder="100k" />
               </div>
               <Field label="Keywords" value={keywords} onChange={setKeywords} placeholder='e.g. "clean title"' />
 

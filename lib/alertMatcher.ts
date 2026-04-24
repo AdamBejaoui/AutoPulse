@@ -55,6 +55,12 @@ export async function findMatchingSubscriptions(listing: Listing): Promise<Subsc
       },
       {
         OR: [
+          { mileageMin: null },
+          { mileageMin: { lte: listing.mileage ?? 0 } }
+        ]
+      },
+      {
+        OR: [
           { mileageMax: null },
           { mileageMax: { gte: listing.mileage ?? 9999999 } }
         ]
@@ -160,6 +166,7 @@ export async function matchListingToSubscriptions(listing: Listing) {
             yearMax: sub.yearMax || undefined,
             priceMin: sub.priceMin || undefined,
             priceMax: sub.priceMax || undefined,
+            mileageMin: sub.mileageMin || undefined,
             mileageMax: sub.mileageMax || undefined,
             city: sub.city || undefined,
           }

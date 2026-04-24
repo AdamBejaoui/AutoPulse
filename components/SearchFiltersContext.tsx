@@ -10,6 +10,7 @@ export type SearchFilterValues = {
   yearMax: string;
   priceMin: string;
   priceMax: string;
+  mileageMin: string;
   mileageMax: string;
   city: string;
   // NEW Fields
@@ -32,6 +33,7 @@ const emptyFilters: SearchFilterValues = {
   yearMax: "",
   priceMin: "",
   priceMax: "",
+  mileageMin: "",
   mileageMax: "",
   city: "",
   trim: "",
@@ -105,6 +107,7 @@ export function filtersFromSearchParams(
     yearMax: g("yearMax"),
     priceMin: g("priceMin"),
     priceMax: g("priceMax"),
+    mileageMin: g("mileageMin"),
     mileageMax: g("mileageMax"),
     city: g("city"),
     trim: g("trim"),

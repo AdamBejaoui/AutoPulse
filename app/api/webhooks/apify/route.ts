@@ -106,10 +106,12 @@ export async function POST(req: Request) {
 
         if (listing) {
           count++;
-          // Trigger alert matcher
-          matchListingToSubscriptions(listing).catch((err) => {
+          // Await alert matcher to ensure emails go out before function closes
+          try {
+            await matchListingToSubscriptions(listing);
+          } catch (err) {
             console.error(`[webhook] Alert error for ${listing.id}:`, err);
-          });
+          }
         }
       } catch (err) {
         console.error(`[webhook] Item error:`, err);
