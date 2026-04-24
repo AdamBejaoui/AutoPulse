@@ -137,6 +137,9 @@ export function SaveSearchModal(): React.ReactElement {
       });
     } finally {
       setLoading(false);
+    }
+  }
+
   return (
     <Dialog open={alertOpen} onOpenChange={setAlertOpen}>
       <DialogContent className="sm:max-w-md bg-background border border-foreground/10 rounded-[2rem] p-8 shadow-2xl overflow-hidden">
