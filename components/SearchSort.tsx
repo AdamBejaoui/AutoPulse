@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
@@ -16,10 +16,13 @@ const SORT_OPTIONS = [
 export function SearchSort() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentSort = searchParams.get("sort") || "newest";
+  const [isOpen, setIsOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleSort = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value;
+  const currentSortId = searchParams.get("sort") || "newest";
+  const currentLabel = SORT_OPTIONS.find(o => o.id === currentSortId)?.label || "Sort";
+
+  const handleSort = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (id === "newest") {
       params.delete("sort");
@@ -28,32 +31,61 @@ export function SearchSort() {
     }
     params.delete("page"); 
     router.push(`/search?${params.toString()}`);
+    setIsOpen(false);
   };
 
+  // Close on outside click
+  React.useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest hidden sm:block">
-        Sort:
-      </span>
-      <div className="relative group">
-        <select
-          value={currentSort}
-          onChange={handleSort}
-          className={cn(
-            "appearance-none h-10 pl-4 pr-10 rounded-xl border-black/10 dark:border-white/10 glass",
-            "text-sm font-medium transition-all hover:bg-black/5 dark:hover:bg-white/5",
-            "bg-background text-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-          )}
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.id} value={option.id} className="bg-background text-foreground">
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <ArrowUpDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground group-hover:text-primary transition-colors" />
-      </div>
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "h-10 px-4 rounded-xl border border-border bg-surface flex items-center gap-2.5 transition-all outline-none",
+          "hover:border-primary/40 hover:bg-surface-raised",
+          isOpen && "border-primary ring-2 ring-primary/10 bg-surface-raised"
+        )}
+      >
+        <ArrowUpDown size={14} className={cn("text-muted-foreground transition-colors", isOpen && "text-primary")} />
+        <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+          {currentLabel}
+        </span>
+        <ChevronDown size={14} className={cn("text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
+      </button>
+
+      {/* Dropdown Panel */}
+      {isOpen && (
+        <div className="absolute right-0 top-[calc(100%+6px)] z-[100] min-w-[200px] p-1.5 rounded-xl bg-background border border-border shadow-modal animate-in fade-in zoom-in-95 duration-150">
+          {SORT_OPTIONS.map((option) => {
+            const isActive = option.id === currentSortId;
+            return (
+              <button
+                key={option.id}
+                onClick={() => handleSort(option.id)}
+                className={cn(
+                  "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors",
+                  isActive 
+                    ? "bg-primary/5 text-primary font-semibold" 
+                    : "text-muted-foreground hover:bg-surface hover:text-foreground"
+                )}
+              >
+                {option.label}
+                {isActive && <Check size={14} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
