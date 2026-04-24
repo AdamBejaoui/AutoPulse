@@ -25,30 +25,30 @@ export function SearchLayout({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* Superior Dashboard Header */}
-        <div className="relative mb-6 overflow-hidden rounded-[2rem] border border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/40 p-5 backdrop-blur-3xl shadow-glass-surface sm:mb-12 sm:rounded-[3rem] sm:p-8 lg:p-12">
+        <div className="relative mb-6 overflow-hidden rounded-3xl sm:rounded-[3rem] border border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/40 p-5 backdrop-blur-3xl shadow-glass-surface sm:mb-12 sm:p-8 lg:p-12">
            <div className="absolute top-0 right-0 -mr-10 -mt-10 h-64 w-64 rounded-full bg-primary/5 blur-[80px]" />
            
-           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-              <div className="relative z-10 max-w-2xl">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="relative z-10 max-w-2xl text-center lg:text-left">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary">
                    <Activity size={12} className="animate-pulse" />
-                   Real-time Indexing Active
+                   Live Indexing
                 </div>
-                <h1 className="font-display text-3xl font-black leading-[1.1] tracking-tighter text-foreground sm:text-6xl">
-                  Discover Your <br />
+                <h1 className="font-display text-4xl font-black leading-[1.1] tracking-tighter text-foreground sm:text-6xl md:text-7xl italic uppercase">
+                  Find Your <br className="hidden sm:block" />
                   <span className="text-gradient">Dream Machine</span>
                 </h1>
-                <p className="mt-6 text-lg font-medium text-muted-foreground max-w-lg">
-                   Explore <span className="text-foreground font-bold">{total.toLocaleString()}</span> listings curated from across the United States. Advanced filters enabled.
+                <p className="mt-4 sm:mt-6 text-sm sm:text-lg font-medium text-muted-foreground mx-auto lg:mx-0 max-w-md">
+                   Sifting through <span className="text-foreground font-bold">{total.toLocaleString()}</span> active records. High-fidelity filtering enabled.
                 </p>
               </div>
 
-              <div className="flex shrink-0 items-center gap-4">
-                 <div className="flex items-center rounded-2xl bg-black/5 dark:bg-white/5 p-1 border border-black/5 dark:border-white/5">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+                 <div className="flex w-full sm:w-auto items-center justify-between rounded-2xl bg-black/5 dark:bg-white/5 p-1 border border-black/5 dark:border-white/5">
                     <SearchSort />
-                 </div>
-                 <div className="lg:hidden">
-                    <MobileFilters initial={sidebarInitial} />
+                    <div className="lg:hidden pl-1">
+                       <MobileFilters initial={sidebarInitial} />
+                    </div>
                  </div>
               </div>
            </div>

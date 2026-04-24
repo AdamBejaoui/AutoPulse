@@ -61,39 +61,39 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
     ? `${(listing.mileage / 1000).toFixed(1)}k mi`
     : "N/A";
 
-  return (    <ListingDetailModal listing={listing}>
-      <article className="group relative flex flex-col overflow-hidden rounded-[2.5rem] bg-card/40 backdrop-blur-3xl ring-1 ring-white/5 transition-all duration-700 hover:shadow-[0_0_80px_rgba(0,216,255,0.25)] hover:-translate-y-3 hover:ring-cyber-blue/50 cursor-pointer active:scale-[0.98] border border-white/5">
+  return (
+    <ListingDetailModal listing={listing}>
+      <article className="group relative flex flex-col overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-card/40 backdrop-blur-3xl ring-1 ring-white/5 transition-all duration-700 hover:shadow-[0_0_80px_rgba(0,216,255,0.2)] hover:-translate-y-2 hover:ring-cyber-blue/40 cursor-pointer active:scale-[0.98] border border-white/5 h-full">
         
         {/* Visual Engine */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
+        <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden shrink-0">
           <Image
             src={src}
             alt={title}
             fill
-            className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.2]"
+            className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.1]"
             onError={() => setImgOk(false)}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           
-          {/* Overlays - Immersive Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-black/20 opacity-100 transition-opacity duration-700 group-hover:opacity-40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-transparent to-black/10 opacity-100" />
           
-          {/* FLOATING PRICE BADGE (NEW) */}
-          <div className="absolute right-6 top-6 z-30">
-             <div className="rounded-2xl bg-cyber-blue px-4 py-2 shadow-[0_0_30px_rgba(0,216,255,0.6)] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                <p className="text-xl font-black tracking-tighter text-black leading-none">
+          {/* Price Badge */}
+          <div className="absolute right-4 top-4 sm:right-6 sm:top-6 z-30">
+             <div className="rounded-xl sm:rounded-2xl bg-cyber-blue px-3 py-1.5 sm:px-4 sm:py-2 shadow-[0_0_20px_rgba(0,216,255,0.5)] transition-all duration-500 group-hover:scale-105">
+                <p className="text-lg sm:text-xl font-black tracking-tighter text-black leading-none">
                   {formatUsd(listing.price)}
                 </p>
              </div>
           </div>
 
-          {/* DEAL INTEL - MOVED TO TOP LEFT */}
+          {/* Deal Rating */}
           {listing.analysis && listing.analysis.rating !== 'unknown' && (
-            <div className="absolute left-6 top-6 z-20">
+            <div className="absolute left-4 top-4 sm:left-6 sm:top-6 z-20">
               <div className={cn(
-                "flex h-8 items-center justify-center rounded-xl px-4 text-[9px] font-black tracking-[0.2em] shadow-2xl backdrop-blur-xl border uppercase italic transition-all duration-500 group-hover:-translate-y-1",
+                "flex h-7 sm:h-8 items-center justify-center rounded-lg sm:rounded-xl px-2.5 sm:px-4 text-[8px] sm:text-[9px] font-black tracking-[0.2em] backdrop-blur-xl border uppercase transition-all duration-500",
                 listing.analysis.rating === 'great' ? "bg-emerald-500/90 text-white border-emerald-400" :
-                listing.analysis.rating === 'good' ? "bg-white/10 text-cyber-blue border-cyber-blue/50" :
+                listing.analysis.rating === 'good' ? "bg-white/10 text-cyber-blue border-cyber-blue/30" :
                 "bg-orange-500/80 text-white border-orange-400"
               )}>
                 {listing.analysis.rating === 'great' ? "🔥 GREAT DEAL" : 
@@ -102,70 +102,70 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
             </div>
           )}
           
-          {/* HIGH-DENSITY SPEC BAR (NEW) */}
-          <div className="absolute bottom-6 inset-x-6 z-20 flex gap-2">
-            <div className="flex flex-1 items-center gap-3 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 px-4 py-2.5 shadow-xl transition-all duration-500 group-hover:bg-cyber-blue/10 group-hover:border-cyber-blue/30 overflow-hidden">
-               <div className="flex items-center gap-1.5 border-r border-white/10 pr-3">
-                  <Gauge size={12} className="text-cyber-blue" />
-                  <span className="text-[10px] font-black tracking-widest text-white/90">{mileage}</span>
+          {/* Spec Bar */}
+          <div className="absolute bottom-4 sm:bottom-6 inset-x-4 sm:inset-x-6 z-20 flex gap-2">
+            <div className="flex flex-1 items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/10 px-3 py-2 sm:px-4 sm:py-2.5 transition-all duration-500 overflow-hidden">
+               <div className="flex items-center gap-1.5 border-r border-white/10 pr-2 sm:pr-3 shrink-0">
+                  <Gauge size={10} className="text-cyber-blue sm:size-3" />
+                  <span className="text-[9px] sm:text-[10px] font-black tracking-widest text-white/90">{mileage}</span>
                </div>
                <div className="flex items-center gap-1.5 truncate">
-                  <MapPin size={12} className="text-cyber-blue" />
-                  <span className="text-[10px] font-black tracking-widest text-white/90 truncate">{listing.city || "USA"}</span>
+                  <MapPin size={10} className="text-cyber-blue sm:size-3" />
+                  <span className="text-[9px] sm:text-[10px] font-black tracking-widest text-white/90 truncate">{listing.city || "USA"}</span>
                </div>
             </div>
             
-            <div className="flex shrink-0 translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 gap-1.5">
+            <div className="hidden sm:flex shrink-0 translate-y-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                <ComparisonToggle listing={listing} />
             </div>
           </div>
-
-          {/* HOLOGRAPHIC SHIMMER */}
-          <div className="absolute inset-x-0 top-0 h-[100%] w-[100%] -translate-x-[150%] skew-x-[-30deg] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-[1500ms] group-hover:translate-x-[150%] z-40" />
         </div>
 
-        {/* Content Body - Refined Typography */}
-        <div className="relative z-10 flex flex-1 flex-col px-8 pb-8 pt-6">
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-               <span className="text-[9px] font-black tracking-[0.3em] text-cyber-blue uppercase opacity-60">
+        {/* Content Body */}
+        <div className="relative z-10 flex flex-1 flex-col px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-6">
+          <div className="mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+               <span className="text-[8px] sm:text-[9px] font-black tracking-[0.3em] text-cyber-blue/70 uppercase">
                  {listing.year || "New Entry"}
                </span>
-               <div className="h-px flex-1 bg-gradient-to-r from-cyber-blue/30 to-transparent" />
+               <div className="h-px flex-1 bg-gradient-to-r from-cyber-blue/20 to-transparent" />
             </div>
-            <h2 className="line-clamp-2 font-display text-2xl font-black leading-[1.1] tracking-tight text-foreground group-hover:text-cyber-blue transition-colors duration-500 uppercase italic">
+            <h2 className="line-clamp-1 font-display text-lg sm:text-2xl font-black leading-tight tracking-tight text-foreground transition-colors duration-500 uppercase italic">
               {title}
             </h2>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 mb-5 opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="flex flex-wrap gap-1.5 mb-4 sm:mb-5">
             {listing.transmission && (
-              <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground">
+              <span className="rounded-full bg-white/5 border border-white/5 px-2.5 py-0.5 text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-muted-foreground">
                 {listing.transmission}
               </span>
             )}
             {listing.trim && (
-               <span className="rounded-full bg-cyber-blue/10 border border-cyber-blue/20 px-3 py-1 text-[8px] font-black uppercase tracking-widest text-cyber-blue">
+               <span className="rounded-full bg-cyber-blue/10 border border-cyber-blue/10 px-2.5 py-0.5 text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-cyber-blue/80">
                  {listing.trim}
                </span>
             )}
             {listing.parseScore > 80 && (
-               <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[8px] font-black uppercase tracking-widest text-emerald-400">
-                 Enhanced Data Parsing
+               <span className="hidden xs:inline-block rounded-full bg-emerald-500/10 border border-emerald-500/10 px-2.5 py-0.5 text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-emerald-400/80">
+                 High Accuracy
                </span>
             )}
           </div>
 
-          <div className="mt-auto flex items-center justify-between">
+          <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-4">
             <div className="flex items-center gap-2">
-               <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                  <div className="h-2 w-2 rounded-full bg-cyber-blue animate-pulse" />
+               <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-white/5 border border-white/5 flex items-center justify-center">
+                  <div className="h-1.5 w-1.5 rounded-full bg-cyber-blue animate-pulse" />
                </div>
-               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                 Live Analysis active
+               <span className="text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest">
+                 Live Analysis
                </span>
             </div>
-            <ArrowRightLeft size={16} className="text-white/20 group-hover:text-cyber-blue group-hover:scale-110 transition-all" />
+            <div className="sm:hidden">
+                <ComparisonToggle listing={listing} compact />
+            </div>
+            <ArrowRightLeft size={14} className="hidden sm:block text-white/10 group-hover:text-cyber-blue transition-all" />
           </div>
         </div>
       </article>
@@ -183,7 +183,7 @@ function ButtonIcon({ icon: Icon }: { icon: any }) {
   );
 }
 
-function ComparisonToggle({ listing }: { listing: any }) {
+function ComparisonToggle({ listing, compact }: { listing: any, compact?: boolean }) {
   const { addToComparison, removeFromComparison, isInComparison, comparisonList } = useComparison();
   const active = isInComparison(listing.id);
   const isFull = comparisonList.length >= 4 && !active;
@@ -202,14 +202,15 @@ function ComparisonToggle({ listing }: { listing: any }) {
       onClick={toggle}
       disabled={isFull}
       className={cn(
-        "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 border-2",
+        "flex items-center justify-center rounded-full transition-all duration-300 border",
+        compact ? "h-8 w-8" : "h-10 w-10 border-2",
         active 
           ? "bg-cyber-blue border-white shadow-[0_0_20px_rgba(0,216,255,0.6)] animate-pulse" 
           : "bg-black/60 backdrop-blur-md border-white/20 hover:border-cyber-blue hover:text-cyber-blue text-white",
         isFull && "opacity-50 cursor-not-allowed grayscale"
       )}
     >
-      {active ? <Check size={18} className="text-black" /> : <ArrowRightLeft size={18} />}
+      {active ? <Check size={compact ? 14 : 18} className="text-black" /> : <ArrowRightLeft size={compact ? 14 : 18} />}
     </button>
   );
 }

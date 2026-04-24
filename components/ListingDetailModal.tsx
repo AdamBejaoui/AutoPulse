@@ -175,18 +175,25 @@ export function ListingDetailModal({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-[95vw] sm:max-w-[1000px] h-[90vh] sm:h-[650px] p-0 overflow-hidden border-none bg-background/80 backdrop-blur-3xl shadow-[0_0_120px_rgba(0,0,0,0.8)] dark:shadow-[0_0_150px_rgba(0,216,255,0.15)] flex flex-col sm:flex-row rounded-[2.5rem]">
+      <DialogContent className="max-w-[100vw] sm:max-w-[1000px] h-full sm:h-[650px] p-0 overflow-hidden border-none bg-background sm:bg-background/80 backdrop-blur-3xl shadow-2xl flex flex-col sm:flex-row rounded-none sm:rounded-[2.5rem]">
         
         {/* LEFT DECK: Sticky Media & Action Portal */}
-        <div className="w-full sm:w-[45%] h-[280px] sm:h-full relative bg-black shrink-0 group">
+        <div className="w-full sm:w-[45%] h-[240px] sm:h-full relative bg-black shrink-0 group">
           <img 
             src={(listing.imageUrls && listing.imageUrls.length > 0) ? listing.imageUrls[0] : "/placeholder-car.svg"} 
             alt={title} 
             className="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black via-black/40 to-transparent" />
           
-          {/* Persistent Price & Status Area */}
+          {/* Mobile Price Overlay */}
+          <div className="absolute bottom-4 left-6 z-20 sm:hidden">
+             <div className="text-3xl font-black tracking-tighter text-white drop-shadow-lg">
+                {formatUsd(listing.price)}
+             </div>
+          </div>
+
+          {/* Persistent Price Area (Desktop) */}
           <div className="absolute bottom-10 left-10 right-10 z-20 hidden sm:block">
             <div className="mb-4">
                <span className="text-[10px] font-black tracking-[0.4em] text-cyber-blue uppercase drop-shadow-lg">
@@ -210,10 +217,10 @@ export function ListingDetailModal({
           </div>
 
           {/* Top Left Vitals Indicator */}
-          <div className="absolute top-8 left-8 flex flex-col gap-2">
-             <div className="flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-1.5 shadow-xl">
-                <div className="h-2 w-2 rounded-full bg-cyber-blue animate-pulse" />
-                <span className="text-[9px] font-black text-white/90 uppercase tracking-widest">
+          <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex flex-col gap-2">
+             <div className="flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 px-3 py-1 sm:px-4 sm:py-1.5 shadow-xl">
+                <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-cyber-blue animate-pulse" />
+                <span className="text-[8px] sm:text-[9px] font-black text-white/90 uppercase tracking-widest">
                   {listing.source || "Facebook"} Live
                 </span>
              </div>
@@ -221,34 +228,34 @@ export function ListingDetailModal({
         </div>
 
         {/* RIGHT DECK: Data Feed */}
-        <div className="flex-1 flex flex-col h-full min-w-0">
+        <div className="flex-1 flex flex-col h-full min-w-0 bg-background/50 backdrop-blur-md">
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-12">
             
             {/* Header Content */}
-            <header className="mb-10">
-               <div className="flex items-center gap-3 mb-4">
-                  <span className="text-[11px] font-black tracking-[0.5em] text-cyber-blue uppercase opacity-60">
+            <header className="mb-8 sm:mb-10">
+               <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                  <span className="text-[9px] sm:text-[11px] font-black tracking-[0.4em] text-cyber-blue uppercase opacity-60">
                     Vehicle Intel Profile
                   </span>
                   <div className="h-px flex-1 bg-gradient-to-r from-cyber-blue/40 to-transparent" />
                </div>
-               <DialogTitle className="text-3xl sm:text-5xl font-black tracking-tighter text-foreground uppercase italic leading-none mb-6">
+               <DialogTitle className="text-2xl sm:text-5xl font-black tracking-tighter text-foreground uppercase italic leading-tight mb-4 sm:mb-6">
                  {title}
                </DialogTitle>
                
-               <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="h-8 rounded-lg border-white/5 bg-white/5 px-3 text-[10px] font-bold text-muted-foreground gap-2">
-                    <MapPin size={12} className="text-cyber-blue" /> {loc || "USA"}
+               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <Badge variant="outline" className="h-7 sm:h-8 rounded-lg border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-bold text-muted-foreground gap-1.5">
+                    <MapPin size={10} className="text-cyber-blue" /> {loc || "USA"}
                   </Badge>
-                  <Badge variant="outline" className="h-8 rounded-lg border-white/5 bg-white/5 px-3 text-[10px] font-bold text-muted-foreground gap-2">
-                    <Gauge size={12} className="text-cyber-blue" /> {mileage}
+                  <Badge variant="outline" className="h-7 sm:h-8 rounded-lg border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-bold text-muted-foreground gap-1.5">
+                    <Gauge size={10} className="text-cyber-blue" /> {mileage}
                   </Badge>
-                  <Badge variant="outline" className="h-8 rounded-lg border-white/5 bg-white/5 px-3 text-[10px] font-bold text-muted-foreground gap-2">
-                    <Clock size={12} className="text-cyber-blue" /> {timeAgo(listing.postedAt, isRefreshing)}
+                  <Badge variant="outline" className="h-7 sm:h-8 rounded-lg border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-bold text-muted-foreground gap-1.5">
+                    <Clock size={10} className="text-cyber-blue" /> {timeAgo(listing.postedAt, isRefreshing)}
                   </Badge>
                   {isRefreshing && (
-                    <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                       <Loader2 size={14} className="text-cyan-400 animate-spin" />
+                    <div className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                       <Loader2 size={12} className="text-cyan-400 animate-spin" />
                     </div>
                   )}
                </div>
@@ -263,33 +270,33 @@ export function ListingDetailModal({
                       <div className="h-1.5 w-1.5 rounded-full bg-cyber-blue animate-ping" />
                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em]">Market Vitals</h3>
                    </div>
-                   <div className="relative group/intel overflow-hidden rounded-[2rem] bg-cyber-blue/5 border border-cyber-blue/20 p-8 shadow-[0_0_40px_rgba(0,216,255,0.05)]">
+                   <div className="relative group/intel overflow-hidden rounded-2xl sm:rounded-[2rem] bg-cyber-blue/5 border border-cyber-blue/20 p-5 sm:p-8 shadow-[0_0_40px_rgba(0,216,255,0.05)]">
                       <div className="absolute top-0 right-0 p-8 opacity-10">
                          <TrendingUp size={80} className="text-cyber-blue" />
                       </div>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 relative z-10">
                          <div>
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-2">Market Median Index</span>
-                            <div className="text-3xl font-black text-foreground tabular-nums">
+                            <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Market Median</span>
+                            <div className="text-xl sm:text-3xl font-black text-foreground tabular-nums leading-tight">
                                ${(listing.analysis.medianPrice / 100).toLocaleString()}
                             </div>
                          </div>
                          <div>
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-2">Performance Rating</span>
+                            <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Deal Quality</span>
                             <div className={cn(
-                              "text-3xl font-black italic uppercase tracking-tight",
-                              listing.analysis.rating === 'great' ? "text-emerald-400" :
-                              listing.analysis.rating === 'good' ? "text-cyber-blue" :
-                              "text-orange-400"
-                            )}>
-                              {listing.analysis.rating === 'great' ? "🔥 Incredible Deal" :
-                               listing.analysis.rating === 'good' ? "✨ Good Value" : "Fair Price"}
+                               "text-xl sm:text-3xl font-black italic uppercase tracking-tight leading-tight",
+                               listing.analysis.rating === 'great' ? "text-emerald-400" :
+                               listing.analysis.rating === 'good' ? "text-cyber-blue" :
+                               "text-orange-400"
+                             )}>
+                               {listing.analysis.rating === 'great' ? "🔥🔥 GREAT" :
+                                listing.analysis.rating === 'good' ? "✨ GOOD" : "FAIR"}
                             </div>
                          </div>
-                         <div className="col-span-full pt-6 border-t border-white/10">
-                            <p className="text-sm font-medium leading-relaxed text-muted-foreground/90">
-                              This listing sits <span className="text-white font-black">{Math.abs(listing.analysis.diffPercent)}% {listing.analysis.diffAmount > 0 ? "below" : "above"}</span> national averages. Our engine detected potential savings of <span className="text-cyber-blue font-black">${(Math.abs(listing.analysis.diffAmount) / 100).toLocaleString()}</span> compared to local peers.
+                         <div className="col-span-full pt-4 sm:pt-6 border-t border-white/10">
+                            <p className="text-[12px] sm:text-sm font-medium leading-relaxed text-muted-foreground/90">
+                               Sitting <span className="text-white font-black">{Math.abs(listing.analysis.diffPercent)}% {listing.analysis.diffAmount > 0 ? "below" : "above"}</span> national averages. Detected potential savings of <span className="text-cyber-blue font-black">${(Math.abs(listing.analysis.diffAmount) / 100).toLocaleString()}</span>.
                             </p>
                          </div>
                       </div>
@@ -302,14 +309,14 @@ export function ListingDetailModal({
                 <div className="flex items-center gap-2 mb-4 text-foreground/40">
                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em]">Vehicle Matrix</h3>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                   {specs.map((s, idx) => (
-                    <div key={idx} className="flex flex-col gap-1 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group/spec">
+                    <div key={idx} className="flex flex-col gap-1 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:border-cyber-blue/30 transition-all group/spec">
                       <div className="flex items-center gap-2 mb-1">
-                         <s.icon size={12} className="text-muted-foreground group-hover/spec:text-cyber-blue transition-colors" />
-                         <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{s.label}</span>
+                         <s.icon size={10} className="text-muted-foreground group-hover/spec:text-cyber-blue transition-colors" />
+                         <span className="text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest">{s.label}</span>
                       </div>
-                      <div className="text-sm font-bold text-foreground truncate">{s.value}</div>
+                      <div className="text-xs sm:text-sm font-bold text-foreground truncate">{s.value}</div>
                     </div>
                   ))}
                 </div>

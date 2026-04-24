@@ -37,20 +37,19 @@ export default async function HomePage(): Promise<ReactElement> {
               <span className="tracking-widest uppercase text-[11px]">Live: {totalListings.toLocaleString()} Listings</span>
             </div>
             
-            <h1 className="font-display text-4xl font-black tracking-tighter sm:text-7xl lg:text-8xl drop-shadow-2xl">
-              <span className="bg-gradient-to-r from-foreground via-primary/80 to-primary bg-clip-text text-transparent">Nationwide</span> Car Search, 
-              <br />One Simple Interface.
+            <h1 className="font-display text-5xl font-black tracking-tighter sm:text-8xl lg:text-9xl drop-shadow-2xl italic uppercase leading-[0.9]">
+              <span className="bg-gradient-to-r from-foreground via-primary/80 to-primary bg-clip-text text-transparent">Nationwide</span> <br />Car Search
             </h1>
             
-            <p className="mx-auto mt-8 max-w-2xl text-lg font-medium text-muted-foreground sm:text-xl">
-              We continuously scrape Facebook Marketplace across the entire USA. 
-              Search instantly and set precision alerts without ever opening Facebook.
+            <p className="mx-auto mt-6 sm:mt-10 max-w-2xl text-base sm:text-xl font-medium text-muted-foreground leading-relaxed px-4">
+              Continuous high-volume data capture across Facebook Marketplace USA. 
+              Find deals instantly with precision metadata parsing and live email sentinel alerts.
             </p>
             
-            <div className="mx-auto mt-12 max-w-5xl relative z-20">
-              <div className="absolute -inset-1 rounded-[2.5rem] bg-gradient-to-r from-primary/20 via-cyber-purple/20 to-primary/20 opacity-50 blur-lg" />
-              <div className="relative glass shadow-[0_0_50px_rgba(0,216,255,0.15)] rounded-[3rem] p-2 border border-black/10 dark:border-white/10 bg-background/50 backdrop-blur-2xl">
-                <React.Suspense fallback={<div className="h-[80px] w-full animate-pulse bg-primary/5 rounded-2xl" />}>
+            <div className="mx-auto mt-10 sm:mt-16 max-w-5xl relative z-20 px-2 sm:px-0">
+              <div className="absolute -inset-1 rounded-[2rem] sm:rounded-[3rem] bg-gradient-to-r from-primary/20 via-cyber-purple/20 to-primary/20 opacity-40 blur-xl" />
+              <div className="relative glass shadow-2xl rounded-[2.5rem] sm:rounded-[3.5rem] p-1.5 sm:p-2 border border-white/5 dark:border-white/5 bg-background/40 backdrop-blur-3xl">
+                <React.Suspense fallback={<div className="h-[70px] sm:h-[80px] w-full animate-pulse bg-primary/5 rounded-3xl" />}>
                   <StructuredSearchBar />
                 </React.Suspense>
               </div>
