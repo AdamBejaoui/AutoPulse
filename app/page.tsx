@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { StructuredSearchBar } from "@/components/StructuredSearchBar";
-import { Search, Bell, Globe, ChevronRight, Zap, ShieldCheck, Activity } from "lucide-react";
+import { Search, Bell, ShieldCheck, Activity, ArrowRight } from "lucide-react";
 import { unstable_cache } from "next/cache";
 
 const getCachedListingCount = unstable_cache(
@@ -17,88 +17,106 @@ const getCachedListingCount = unstable_cache(
 
 export default async function HomePage(): Promise<ReactElement> {
   const totalListings = await getCachedListingCount().catch(() => 0);
+
   return (
-    <div className="flex flex-col relative bg-black min-h-screen">
-      <div className="absolute inset-0 z-0 bg-mesh-dark pointer-events-none opacity-50" />
+    <div className="relative min-h-screen bg-background overflow-hidden">
+      
+      {/* Subtle gradient orbs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-primary/3 blur-[120px]" />
+      </div>
 
-      {/* HERO SECTION */}
-      <section className="relative overflow-hidden pt-12 pb-24 lg:pt-40 lg:pb-48">
-        <div className="container relative z-10 px-4 sm:px-6 mx-auto">
-          <div className="mx-auto max-w-6xl text-center">
-            
-            <div className="mb-10 inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/5 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.4em] text-white/50 backdrop-blur-3xl shadow-2xl">
-               <Activity size={14} className="text-primary animate-pulse" />
-               Live Intel: {totalListings.toLocaleString()} Active Nodes
-            </div>
-            
-            <h1 className="font-display text-5xl font-black tracking-tighter sm:text-[140px] lg:text-[180px] drop-shadow-2xl italic uppercase leading-[0.8] mb-8 sm:mb-12">
-               <span className="text-white">FORCE</span> <br />
-               <span className="text-white/10">MULTIPLIER</span>
-            </h1>
-            
-            <p className="mx-auto mt-8 sm:mt-12 max-w-2xl text-[10px] sm:text-xl font-medium text-white/40 uppercase tracking-[0.3em] leading-relaxed px-6">
-              Continuous high-volume data capture <br className="hidden sm:block" /> across Facebook Marketplace USA. 
-            </p>
-            
-            <div className="mx-auto mt-16 sm:mt-24 max-w-5xl relative z-20 px-4 sm:px-0">
-               <div className="relative glass-card border border-white/5 bg-white/[0.01] rounded-[2.5rem] sm:rounded-[4rem] p-1.5 sm:p-3 shadow-[0_50px_100px_rgba(0,0,0,0.8)] transition-all hover:border-white/10">
-                  <React.Suspense fallback={<div className="h-[100px] w-full animate-pulse bg-white/5 rounded-full" />}>
-                     <StructuredSearchBar />
-                  </React.Suspense>
-               </div>
-            </div>
+      {/* HERO */}
+      <section className="relative pt-24 pb-16 sm:pt-36 sm:pb-28 px-4">
+        <div className="mx-auto max-w-4xl text-center">
 
-            <div className="mt-16 flex items-center justify-center gap-8">
-               <Link
-                 href="/search"
-                 className="group flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all"
-               >
-                 Access Search Terminal
-                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 group-hover:border-white/20 transition-all">
-                    <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
-                 </div>
-               </Link>
-            </div>
+          {/* Eyebrow */}
+          <div className="animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-dot" />
+            {totalListings.toLocaleString()} live listings nationwide
+          </div>
+
+          {/* Headline */}
+          <h1 className="animate-fade-up-delay font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1] mb-5">
+            Find your next car,{" "}
+            <span className="text-primary">faster.</span>
+          </h1>
+
+          {/* Sub */}
+          <p className="animate-fade-up-delay-2 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
+            We continuously monitor Facebook Marketplace across the entire USA — so you don&apos;t have to.
+            Set alerts and we&apos;ll notify you instantly.
+          </p>
+
+          {/* Search Bar */}
+          <div className="animate-fade-up-delay-2 max-w-3xl mx-auto">
+            <React.Suspense
+              fallback={
+                <div className="h-16 rounded-2xl bg-surface border border-border animate-pulse" />
+              }
+            >
+              <StructuredSearchBar />
+            </React.Suspense>
+          </div>
+
+          {/* Sublinks */}
+          <div className="mt-6 flex items-center justify-center gap-6 flex-wrap">
+            <Link
+              href="/search"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Browse all listings
+              <ArrowRight size={14} />
+            </Link>
+            <Link
+              href="/alerts"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              My alerts
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
-      <section className="container mx-auto px-4 py-32 sm:px-6 max-w-7xl">
-        <div className="grid gap-6 md:grid-cols-3">
-          <FeatureCard 
-            icon={<Search />}
-            title="Sectored Aggregation"
-            description="Search across 50+ major US metropolitan areas simultaneously with advanced filtering parameters."
-          />
-          <FeatureCard 
-            icon={<Bell />}
-            title="Search Sentinel"
-            description="Get notified via encrypted email the moment a vehicle matching your exact criteria enters the index."
-          />
-          <FeatureCard 
-            icon={<ShieldCheck />}
-            title="Metadata Integrity"
-            description="Our specialized NLP parsers verify condition, title status, and specs before delivery."
-          />
+      {/* FEATURE GRID */}
+      <section className="relative px-4 pb-24">
+        <div className="mx-auto max-w-4xl">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FeatureCard
+              icon={<Search size={20} />}
+              title="Nationwide search"
+              description="Search 50+ major US metro areas simultaneously with powerful filters."
+            />
+            <FeatureCard
+              icon={<Bell size={20} />}
+              title="Instant alerts"
+              description="Get emailed the second a matching vehicle enters our database."
+            />
+            <FeatureCard
+              icon={<ShieldCheck size={20} />}
+              title="Smart filtering"
+              description="Our parser verifies condition, title status, and specs automatically."
+            />
+          </div>
         </div>
       </section>
+
     </div>
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string, description: string }) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <article className="group relative flex flex-col rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 transition-all hover:bg-white/[0.04] hover:border-white/10 hover:-translate-y-1">
-      <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-black transition-all group-hover:scale-110 group-hover:bg-primary">
-        {React.cloneElement(icon as React.ReactElement, { size: 24 })}
+    <div className="group flex flex-col gap-3 p-5 rounded-xl bg-surface border border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        {icon}
       </div>
-      <h2 className="text-xl font-black uppercase tracking-tighter text-white italic">
-        {title}
-      </h2>
-      <p className="mt-4 text-[11px] font-bold uppercase tracking-widest leading-relaxed text-white/30">
-        {description}
-      </p>
-    </article>
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-1">{title}</h3>
+        <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+    </div>
   );
 }

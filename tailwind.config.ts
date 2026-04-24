@@ -10,10 +10,8 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      padding: { DEFAULT: "1rem", sm: "2rem" },
+      screens: { "2xl": "1400px" },
     },
     extend: {
       colors: {
@@ -21,6 +19,8 @@ const config: Config = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
+        surface: "hsl(var(--surface))",
+        "surface-raised": "hsl(var(--surface-raised))",
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -50,24 +50,12 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Premium Aurora Palette
-        aurora: {
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          500: '#10b981', // Neon Green
-          600: '#059669',
-        },
-        cyber: {
-          blue: "#00D8FF",
-          purple: "#4facfe",
-          deep: "#0A0C0F",
-        }
       },
       borderRadius: {
-        xl: "1rem",
-        "2xl": "1.5rem",
-        "3xl": "2rem",
-        lg: "var(--radius)",
+        lg: "var(--radius)",              /* 12px */
+        xl: "calc(var(--radius) + 4px)", /* 16px */
+        "2xl": "calc(var(--radius) * 2)", /* 24px */
+        "3xl": "calc(var(--radius) * 2.5)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
@@ -75,22 +63,21 @@ const config: Config = {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-outfit)", "system-ui", "sans-serif"],
       },
-      backgroundImage: {
-        "header-gradient": "linear-gradient(to bottom, rgba(5, 5, 16, 1) 0%, rgba(5, 5, 16, 0) 100%)",
-        "cyber-gradient": "linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)",
-        "aurora-gradient": "linear-gradient(135deg, #10b981 0%, #00f2fe 100%)",
-      },
       boxShadow: {
-        "neon-blue": "0 0 20px rgba(0, 242, 254, 0.3)",
-        "neon-purple": "0 0 20px rgba(79, 172, 254, 0.3)",
-        "glass-surface": "0 8px 32px 0 rgba(0, 0, 0, 0.8)",
+        "card": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        "card-hover": "0 10px 25px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        "blue": "0 4px 14px 0 hsl(var(--primary) / 0.35)",
+        "blue-lg": "0 8px 30px 0 hsl(var(--primary) / 0.4)",
+        "modal": "0 25px 60px -10px rgb(0 0 0 / 0.5), 0 0 0 1px hsl(var(--border))",
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-glow": "pulse-glow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "shimmer": "shimmer 2s linear infinite",
-        "float": "float 8s ease-in-out infinite",
+        "shimmer": "shimmer 1.8s ease-in-out infinite",
+        "spring-in": "spring-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "fade-up": "fade-up 0.6s ease-out forwards",
+        "pulse-dot": "pulse-dot 2s ease-in-out infinite",
+        "spin-slow": "spin 3s linear infinite",
       },
       keyframes: {
         "accordion-down": {
@@ -101,28 +88,25 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-glow": {
-          "0%, 100%": { opacity: "1", transform: "scale(1)" },
-          "50%": { opacity: "0.6", transform: "scale(1.05)" },
-        },
         "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
         },
-        "float": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-20px)" },
+        "spring-in": {
+          "0%": { opacity: "0", transform: "scale(0.92) translateY(8px)" },
+          "60%": { opacity: "1", transform: "scale(1.01) translateY(-2px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
         },
-        "slide-in-right": {
-          "0%": { transform: "translateX(100%)" },
-          "100%": { transform: "translateX(0)" },
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        "slide-out-right": {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(100%)" },
-        }
+        "pulse-dot": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.4" },
+        },
       },
     },
-
   },
   plugins: [],
 };

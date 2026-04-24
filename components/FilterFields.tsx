@@ -3,14 +3,7 @@
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState, useEffect, useRef } from "react";
-import { Label } from "@/components/ui/label";
-import { 
-  Search, 
-  MapPin, 
-  Zap,
-  Palette,
-  DollarSign
-} from "lucide-react";
+import { Search, MapPin, ChevronDown } from "lucide-react";
 import { SearchFilterValues } from "./SearchFiltersContext";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +16,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
   const firstRender = useRef(true);
-  
+
   const [keywords, setKeywords] = useState(initial.keywords || "");
   const [make, setMake] = useState(initial.make || "");
   const [model, setModel] = useState(initial.model || "");
@@ -37,16 +30,11 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   const [fuelType, setFuelType] = useState(initial.fuelType || "");
   const [driveType, setDriveType] = useState(initial.driveType || "");
   const [titleStatus, setTitleStatus] = useState(initial.titleStatus || "");
-  const [color, setColor] = useState(initial.color || "");
   const [bodyStyle, setBodyStyle] = useState(initial.bodyStyle || "");
 
   const apply = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
-    const setOrDelete = (k: string, v: string): void => {
-      if (v) params.set(k, v);
-      else params.delete(k);
-    };
-    
+    const setOrDelete = (k: string, v: string) => { if (v) params.set(k, v); else params.delete(k); };
     setOrDelete("keywords", keywords);
     setOrDelete("make", make);
     setOrDelete("model", model);
@@ -60,231 +48,188 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
     setOrDelete("fuelType", fuelType);
     setOrDelete("driveType", driveType);
     setOrDelete("titleStatus", titleStatus);
-    setOrDelete("color", color);
     setOrDelete("bodyStyle", bodyStyle);
-
     params.delete("page");
     const q = params.toString();
     router.push(q ? `/search?${q}` : "/search", { scroll: false });
     if (onApply) onApply();
-  }, [
-    keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMax, city,
-    transmission, fuelType, driveType, titleStatus, color, bodyStyle,
-    router, searchParams, onApply
-  ]);
+  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, router, searchParams, onApply]);
 
   useEffect(() => {
-    if (firstRender.current) {
-        firstRender.current = false;
-        return;
-    }
-    const timer = setTimeout(() => apply(), 500);
+    if (firstRender.current) { firstRender.current = false; return; }
+    const timer = setTimeout(() => apply(), 600);
     return () => clearTimeout(timer);
-  }, [
-    keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMax, city,
-    transmission, fuelType, driveType, titleStatus, color, bodyStyle, apply
-  ]);
-
-  const resetAll = () => {
-    router.push("/search");
-  };
+  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, apply]);
 
   return (
-    <div className="flex flex-col gap-10">
-      
-      {/* SECTION: IDENTITY */}
-      <section className="space-y-6">
-        <SectionHeader icon={Search} label="Identity" />
-        <div className="space-y-4">
-           <div className="relative group">
-             <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" />
-             <input
-               value={keywords}
-               onChange={(e) => setKeywords(e.target.value)}
-               placeholder="SEARCH KEYWORDS..."
-               className="w-full h-12 bg-foreground/[0.03] border border-foreground/5 rounded-2xl pl-12 pr-4 text-[11px] font-black uppercase tracking-widest text-foreground placeholder:text-muted-foreground/30 outline-none focus:border-foreground/40 focus:bg-foreground/5 transition-all text-center sm:text-left"
-             />
-           </div>
-           
-           <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                 <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Make</Label>
-                 <input
-                   value={make}
-                   onChange={(e) => setMake(e.target.value)}
-                   className="w-full h-10 bg-foreground/[0.03] border border-foreground/5 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-foreground outline-none focus:border-foreground/40 transition-all"
-                 />
-              </div>
-              <div className="space-y-2">
-                 <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Model</Label>
-                 <input
-                   value={model}
-                   onChange={(e) => setModel(e.target.value)}
-                   className="w-full h-10 bg-foreground/[0.03] border border-foreground/5 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-foreground outline-none focus:border-foreground/40 transition-all"
-                 />
-              </div>
-           </div>
+    <div className="flex flex-col gap-6">
+
+      {/* Keywords */}
+      <div>
+        <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Search</label>
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={keywords}
+            onChange={e => setKeywords(e.target.value)}
+            placeholder="Keywords..."
+            className="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/50"
+          />
         </div>
-      </section>
-
-      {/* SECTION: PERFORMANCE */}
-      <section className="space-y-6">
-        <SectionHeader icon={Zap} label="Performance" />
-        <div className="space-y-6">
-           <FilterGroup label="Drivetrain">
-              {["AWD", "4WD", "FWD", "RWD"].map(d => (
-                 <Pill key={d} label={d} active={driveType === d} onClick={() => setDriveType(driveType === d ? "" : d)} />
-              ))}
-           </FilterGroup>
-
-           <FilterGroup label="Transmission">
-              {["Automatic", "Manual"].map(t => (
-                 <Pill key={t} label={t} active={transmission === t.toLowerCase()} onClick={() => setTransmission(transmission === t.toLowerCase() ? "" : t.toLowerCase())} />
-              ))}
-           </FilterGroup>
-
-           <FilterGroup label="Energy">
-              {["Gasoline", "Hybrid", "Electric"].map(f => (
-                 <Pill key={f} label={f} active={fuelType === f.toLowerCase()} onClick={() => setFuelType(fuelType === f.toLowerCase() ? "" : f.toLowerCase())} />
-              ))}
-           </FilterGroup>
-        </div>
-      </section>
-
-      {/* SECTION: BUDGET & ANALYTICS */}
-      <section className="space-y-6">
-        <SectionHeader icon={DollarSign} label="Financials" />
-        <div className="space-y-6">
-           <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-foreground/5">
-              <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground block mb-4">Price Threshold (USD)</Label>
-              <div className="flex items-center gap-3">
-                 <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-[10px]">$</span>
-                    <input
-                      type="number"
-                      value={priceMin}
-                      onChange={(e) => setPriceMin(e.target.value)}
-                      placeholder="MIN"
-                      className="w-full h-10 bg-background/40 border border-foreground/5 rounded-xl pl-7 pr-3 text-[10px] font-black tracking-widest text-foreground outline-none focus:border-foreground/40"
-                    />
-                 </div>
-                 <div className="h-px w-3 bg-foreground/10" />
-                 <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-[10px]">$</span>
-                    <input
-                      type="number"
-                      value={priceMax}
-                      onChange={(e) => setPriceMax(e.target.value)}
-                      placeholder="MAX"
-                      className="w-full h-10 bg-background/40 border border-foreground/5 rounded-xl pl-7 pr-3 text-[10px] font-black tracking-widest text-foreground outline-none focus:border-foreground/40"
-                    />
-                 </div>
-              </div>
-           </div>
-
-           <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-2">
-                 <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Max Mileage</Label>
-                 <input
-                   value={mileageMax}
-                   onChange={(e) => setMileageMax(e.target.value)}
-                   placeholder="100K"
-                   className="w-full h-10 bg-foreground/[0.03] border border-foreground/5 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-foreground outline-none focus:border-foreground/40 transition-all"
-                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                 <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Production Year</Label>
-                 <input
-                   type="number"
-                   value={yearMin}
-                   onChange={(e) => setYearMin(e.target.value)}
-                   placeholder="2018"
-                   className="w-full h-10 bg-foreground/[0.03] border border-foreground/5 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-foreground outline-none focus:border-foreground/40 transition-all"
-                 />
-              </div>
-           </div>
-        </div>
-      </section>
-
-      {/* SECTION: BODY & LOCATION */}
-      <section className="space-y-6">
-        <SectionHeader icon={Palette} label="Body & Sector" />
-        <div className="space-y-6">
-           <FilterGroup label="Configuration">
-              {["SUV", "Truck", "Sedan", "Coupe"].map(b => (
-                 <Pill key={b} label={b} active={bodyStyle === b.toLowerCase()} onClick={() => setBodyStyle(bodyStyle === b.toLowerCase() ? "" : b.toLowerCase())} />
-              ))}
-           </FilterGroup>
-
-           <div className="space-y-2">
-              <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Operation Sector</Label>
-              <div className="relative group">
-                 <MapPin size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground" />
-                 <input
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="LOCATE CITY..."
-                    className="w-full h-11 bg-foreground/[0.02] border border-foreground/5 rounded-xl pl-10 pr-4 text-[10px] font-black uppercase tracking-widest text-foreground outline-none focus:border-foreground/40 transition-all text-center sm:text-left"
-                 />
-              </div>
-           </div>
-        </div>
-      </section>
-
-      <div className="pt-10 flex flex-col gap-3">
-         <button 
-           onClick={resetAll}
-           className="w-full h-12 rounded-2xl bg-foreground text-background text-[11px] font-black uppercase tracking-[0.2em] hover:opacity-90 transition-all active:scale-[0.98]"
-         >
-            SYNC PARAMETERS
-         </button>
-         <button 
-           onClick={() => router.push("/search")}
-           className="w-full h-10 text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-colors"
-         >
-            Nuke All Filters
-         </button>
       </div>
 
+      {/* Make / Model */}
+      <FilterSection label="Vehicle">
+        <div className="grid grid-cols-2 gap-2">
+          <InputField label="Make" value={make} onChange={setMake} placeholder="Any" />
+          <InputField label="Model" value={model} onChange={setModel} placeholder="Any" />
+        </div>
+      </FilterSection>
+
+      {/* Price */}
+      <FilterSection label="Price">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+            <input
+              type="number"
+              value={priceMin}
+              onChange={e => setPriceMin(e.target.value)}
+              placeholder="Min"
+              className="w-full h-10 pl-6 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
+            />
+          </div>
+          <div className="text-muted-foreground text-sm">—</div>
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+            <input
+              type="number"
+              value={priceMax}
+              onChange={e => setPriceMax(e.target.value)}
+              placeholder="Max"
+              className="w-full h-10 pl-6 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+      </FilterSection>
+
+      {/* Year & Mileage */}
+      <FilterSection label="Year & Mileage">
+        <div className="grid grid-cols-2 gap-2">
+          <InputField label="From year" value={yearMin} onChange={setYearMin} placeholder="2015" type="number" />
+          <InputField label="Max mileage" value={mileageMax} onChange={setMileageMax} placeholder="100k" />
+        </div>
+      </FilterSection>
+
+      {/* Drivetrain */}
+      <FilterSection label="Drivetrain">
+        <div className="flex flex-wrap gap-2">
+          {["AWD", "4WD", "FWD", "RWD"].map(d => (
+            <Chip key={d} active={driveType === d} onClick={() => setDriveType(driveType === d ? "" : d)}>{d}</Chip>
+          ))}
+        </div>
+      </FilterSection>
+
+      {/* Transmission */}
+      <FilterSection label="Transmission">
+        <div className="flex gap-2">
+          {["Automatic", "Manual"].map(t => (
+            <Chip key={t} active={transmission === t.toLowerCase()} onClick={() => setTransmission(transmission === t.toLowerCase() ? "" : t.toLowerCase())}>{t}</Chip>
+          ))}
+        </div>
+      </FilterSection>
+
+      {/* Fuel */}
+      <FilterSection label="Fuel type">
+        <div className="flex flex-wrap gap-2">
+          {["Gasoline", "Hybrid", "Electric"].map(f => (
+            <Chip key={f} active={fuelType === f.toLowerCase()} onClick={() => setFuelType(fuelType === f.toLowerCase() ? "" : f.toLowerCase())}>{f}</Chip>
+          ))}
+        </div>
+      </FilterSection>
+
+      {/* Body style */}
+      <FilterSection label="Body style">
+        <div className="flex flex-wrap gap-2">
+          {["SUV", "Truck", "Sedan", "Coupe"].map(b => (
+            <Chip key={b} active={bodyStyle === b.toLowerCase()} onClick={() => setBodyStyle(bodyStyle === b.toLowerCase() ? "" : b.toLowerCase())}>{b}</Chip>
+          ))}
+        </div>
+      </FilterSection>
+
+      {/* Location */}
+      <FilterSection label="Location">
+        <div className="relative">
+          <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={city}
+            onChange={e => setCity(e.target.value)}
+            placeholder="City or state..."
+            className="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/50"
+          />
+        </div>
+      </FilterSection>
+
+      {/* Reset */}
+      <button
+        onClick={() => router.push("/search")}
+        className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center py-1"
+      >
+        Clear all filters
+      </button>
     </div>
   );
 }
 
-function SectionHeader({ icon: Icon, label }: { icon: any, label: string }) {
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true);
   return (
-    <div className="flex items-center gap-4">
-       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/5 border border-foreground/5 text-foreground">
-          <Icon size={14} />
-       </div>
-       <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-foreground">{label}</h3>
-       <div className="h-px flex-1 bg-foreground/[0.05]" />
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-between w-full mb-2.5 group"
+      >
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
+          {label}
+        </span>
+        <ChevronDown size={14} className={cn("text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && children}
     </div>
   );
 }
 
-function FilterGroup({ label, children }: { label: string, children: React.ReactNode }) {
+function InputField({ label, value, onChange, placeholder, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+}) {
   return (
-    <div className="space-y-3">
-       <Label className="text-[8px] font-black uppercase tracking-[0.4em] text-muted-foreground ml-1">{label}</Label>
-       <div className="flex flex-wrap gap-1.5">
-          {children}
-       </div>
+    <div>
+      <label className="block text-[10px] font-medium text-muted-foreground mb-1">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full h-9 px-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/40"
+      />
     </div>
   );
 }
 
-function Pill({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) {
+function Chip({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border",
-        active 
-          ? "bg-foreground border-foreground text-background" 
-          : "bg-foreground/[0.02] border-foreground/5 text-muted-foreground hover:text-foreground hover:border-foreground/20"
+        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+        active
+          ? "bg-primary text-white border-primary shadow-blue"
+          : "bg-background border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
       )}
     >
-      {label}
+      {children}
     </button>
   );
 }

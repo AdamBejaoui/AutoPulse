@@ -2,27 +2,23 @@
 
 import * as React from "react";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Search, MapPin, Car, BookOpen, ChevronDown, X, Sparkles, Zap } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Search, MapPin, ChevronDown, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MAKES, MODEL_MAP } from "@/lib/constants";
 import { MARKETPLACE_CITIES } from "@/lib/cities";
-import { SmartSearchBar } from "./SmartSearchBar";
 
 export function StructuredSearchBar() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  
-  const [mode, setMode] = useState<"structured" | "smart">("structured");
+
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [city, setCity] = useState("");
-  
+
   const [makeOpen, setMakeOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
-  const [modelSuggestionsOpen, setModelSuggestionsOpen] = useState(false);
-  
+  const [modelOpen, setModelOpen] = useState(false);
+
   const makeRef = useRef<HTMLDivElement>(null);
   const cityRef = useRef<HTMLDivElement>(null);
   const modelRef = useRef<HTMLDivElement>(null);
@@ -34,9 +30,9 @@ export function StructuredSearchBar() {
 
   const filteredCities = useMemo(() => {
     const q = city.toLowerCase();
-    return MARKETPLACE_CITIES.filter(c => 
+    return MARKETPLACE_CITIES.filter(c =>
       c.label.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q)
-    );
+    ).slice(0, 60);
   }, [city]);
 
   const rawModels = useMemo(() => {
@@ -50,11 +46,12 @@ export function StructuredSearchBar() {
     return rawModels.filter(m => m.toLowerCase().includes(q)).sort();
   }, [model, rawModels]);
 
+  // Close on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (makeRef.current && !makeRef.current.contains(e.target as Node)) setMakeOpen(false);
       if (cityRef.current && !cityRef.current.contains(e.target as Node)) setCityOpen(false);
-      if (modelRef.current && !modelRef.current.contains(e.target as Node)) setModelSuggestionsOpen(false);
+      if (modelRef.current && !modelRef.current.contains(e.target as Node)) setModelOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -66,240 +63,381 @@ export function StructuredSearchBar() {
     if (make) params.set("make", make);
     if (model) params.set("model", model);
     if (city) {
-        const found = MARKETPLACE_CITIES.find(c => 
-          c.label.toLowerCase() === city.toLowerCase() || 
-          c.slug.toLowerCase() === city.toLowerCase()
-        );
-        params.set("city", found ? found.label : city);
+      const found = MARKETPLACE_CITIES.find(
+        c => c.label.toLowerCase() === city.toLowerCase() || c.slug.toLowerCase() === city.toLowerCase()
+      );
+      params.set("city", found ? found.label : city);
     }
     router.push(`/search?${params.toString()}`);
   };
 
-  if (mode === "smart") {
-    return (
-      <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 max-w-4xl mx-auto">
-        <SmartSearchBar />
-        <button 
-            onClick={() => setMode("structured")}
-            className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-primary transition-all flex items-center justify-center gap-3 mx-auto"
-        >
-            <Car size={14} />
-            Reverse to Manual Entry
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <form 
-        onSubmit={handleSearch}
-        className="relative flex flex-col md:flex-row items-stretch gap-0 bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[2rem] sm:rounded-full overflow-visible shadow-2xl p-1.5 md:p-2 group hover:border-white/20 transition-all"
-      >
-        {/* Make Column */}
-        <div className="relative flex-1" ref={makeRef}>
-            <div className="flex items-center h-full px-5 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item" onClick={() => setMakeOpen(true)}>
-                <div className="flex flex-col flex-1 truncate">
-                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-0.5 group-hover/item:text-primary transition-colors">Manufacturer</span>
-                    <input 
-                        className="bg-transparent border-none outline-none text-white font-black text-sm md:text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
-                        placeholder="ALL MAKES"
-                        value={make}
-                        onChange={(e) => {
-                            setMake(e.target.value);
-                            setMakeOpen(true);
-                        }}
-                        onFocus={() => setMakeOpen(true)}
-                    />
-                </div>
-                {make && (
-                    <button onClick={(e) => { e.stopPropagation(); setMake(""); }} className="p-1 hover:bg-white/10 rounded-full text-white/40">
-                        <X size={14} />
-                    </button>
-                )}
-                <ChevronDown size={14} className={cn("ml-2 text-white/20 transition-transform duration-300", makeOpen && "rotate-180")} />
+    <form
+      onSubmit={handleSearch}
+      className="relative w-full"
+    >
+      {/* Desktop: unified pill bar */}
+      <div className="hidden sm:flex items-stretch bg-surface border border-border rounded-2xl shadow-card overflow-visible hover:border-primary/30 transition-colors">
+
+        {/* Make */}
+        <div className="relative flex-1 min-w-0" ref={makeRef}>
+          <button
+            type="button"
+            onClick={() => { setMakeOpen(v => !v); setCityOpen(false); setModelOpen(false); }}
+            className="w-full flex flex-col items-start px-5 py-4 hover:bg-surface-raised transition-colors rounded-l-2xl"
+          >
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Make</span>
+            <div className="flex items-center gap-2 w-full">
+              <span className={cn("text-sm font-medium truncate flex-1 text-left", make ? "text-foreground" : "text-muted-foreground")}>
+                {make || "Any make"}
+              </span>
+              {make
+                ? <X size={14} className="text-muted-foreground shrink-0" onClick={e => { e.stopPropagation(); setMake(""); }} />
+                : <ChevronDown size={14} className={cn("text-muted-foreground shrink-0 transition-transform", makeOpen && "rotate-180")} />
+              }
             </div>
-            
-            {/* Mobile Divider */}
-            <div className="md:hidden h-px bg-white/5 mx-5" />
+          </button>
 
-            {makeOpen && (
-                <div className="fixed md:absolute inset-x-4 md:inset-x-auto top-[20%] md:top-[calc(100%+12px)] md:left-0 md:right-[-200px] z-[100] bg-background/95 backdrop-blur-3xl border border-foreground/10 rounded-[2rem] shadow-[0_32px_64px_rgba(0,0,0,0.8)] max-h-[60vh] md:max-h-[450px] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 md:slide-in-from-top-4 duration-300">
-                    <div className="p-6 border-b border-foreground/5 bg-foreground/[0.02] flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Select Operational Unit</span>
-                        <button onClick={() => setMakeOpen(false)} className="md:hidden p-2 hover:bg-foreground/5 rounded-full">
-                            <X size={16} />
-                        </button>
-                    </div>
-                    <div className="p-2 overflow-y-auto custom-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-1">
-                        <button
-                            type="button"
-                            className="w-full text-left px-5 py-4 hover:bg-foreground/5 rounded-2xl transition-all font-black text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground border border-transparent hover:border-foreground/10"
-                            onClick={() => {
-                                setMake("");
-                                setMakeOpen(false);
-                            }}
-                        >
-                            <span className="opacity-40">ALL MANUFACTURERS</span>
-                        </button>
-                        {filteredMakes.map(m => (
-                            <button
-                                key={m}
-                                type="button"
-                                className="w-full text-left px-5 py-4 hover:bg-foreground/5 rounded-2xl transition-all font-black text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground border border-transparent hover:border-foreground/10"
-                                onClick={() => {
-                                    setMake(m);
-                                    setMakeOpen(false);
-                                }}
-                            >
-                                {m}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+          {makeOpen && (
+            <DropdownPanel
+              onClose={() => setMakeOpen(false)}
+              items={filteredMakes}
+              emptyLabel="Any make"
+              onSelect={v => { setMake(v); setMakeOpen(false); }}
+              onClear={() => { setMake(""); setMakeOpen(false); }}
+              search={make}
+              onSearch={setMake}
+              searchPlaceholder="Search makes..."
+              columns={2}
+            />
+          )}
         </div>
 
-        <div className="hidden md:block w-px bg-white/10 my-4 h-10 self-center" />
+        <div className="w-px bg-border my-3" />
 
-        {/* Model Column */}
-        <div className="relative flex-1" ref={modelRef}>
-            <div className="flex items-center h-full px-5 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item">
-                <div className="flex flex-col flex-1 truncate">
-                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-0.5 group-hover/item:text-primary transition-colors">Designation</span>
-                    <input 
-                        className="bg-transparent border-none outline-none text-white font-black text-sm md:text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
-                        placeholder={make ? "ANY MODEL" : "LOCKED"}
-                        value={model}
-                        onChange={(e) => {
-                            setModel(e.target.value);
-                            setModelSuggestionsOpen(true);
-                        }}
-                        onFocus={() => setModelSuggestionsOpen(true)}
-                        disabled={!make}
-                    />
-                </div>
-                {model && (
-                    <button onClick={() => setModel("")} className="p-1 hover:bg-white/10 rounded-full text-white/40">
-                        <X size={14} />
-                    </button>
-                )}
+        {/* Model */}
+        <div className="relative flex-1 min-w-0" ref={modelRef}>
+          <button
+            type="button"
+            disabled={!make}
+            onClick={() => { setModelOpen(v => !v); setMakeOpen(false); setCityOpen(false); }}
+            className="w-full flex flex-col items-start px-5 py-4 hover:bg-surface-raised transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Model</span>
+            <div className="flex items-center gap-2 w-full">
+              <span className={cn("text-sm font-medium truncate flex-1 text-left", model ? "text-foreground" : "text-muted-foreground")}>
+                {model || (make ? "Any model" : "Select make first")}
+              </span>
+              {model
+                ? <X size={14} className="text-muted-foreground shrink-0" onClick={e => { e.stopPropagation(); setModel(""); }} />
+                : <ChevronDown size={14} className={cn("text-muted-foreground shrink-0 transition-transform", modelOpen && "rotate-180")} />
+              }
             </div>
-            
-            {/* Mobile Divider */}
-            <div className="md:hidden h-px bg-white/5 mx-5" />
+          </button>
 
-            {modelSuggestionsOpen && make && filteredModels.length > 0 && (
-                 <div className="fixed md:absolute inset-x-4 md:inset-x-auto top-[20%] md:top-[calc(100%+12px)] md:left-0 md:right-0 z-[100] bg-background/95 backdrop-blur-3xl border border-foreground/10 rounded-[2rem] shadow-[0_32px_64px_rgba(0,0,0,0.8)] max-h-[60vh] md:max-h-[350px] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 md:slide-in-from-top-4 duration-300">
-                    <div className="p-6 border-b border-foreground/5 bg-foreground/[0.02] flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Common Varieties</span>
-                        <button onClick={() => setModelSuggestionsOpen(false)} className="md:hidden p-2 hover:bg-foreground/5 rounded-full">
-                            <X size={16} />
-                        </button>
-                    </div>
-                    <div className="p-2 overflow-y-auto custom-scrollbar space-y-1">
-                        {filteredModels.map(m => (
-                            <button
-                                key={m}
-                                type="button"
-                                className="w-full text-left px-5 py-3.5 hover:bg-foreground/5 rounded-2xl transition-all font-black text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground border border-transparent hover:border-foreground/10"
-                                onClick={() => {
-                                    setModel(m);
-                                    setModelSuggestionsOpen(false);
-                                }}
-                            >
-                                {m}
-                            </button>
-                        ))}
-                    </div>
-                 </div>
-            )}
+          {modelOpen && make && filteredModels.length > 0 && (
+            <DropdownPanel
+              onClose={() => setModelOpen(false)}
+              items={filteredModels}
+              emptyLabel="Any model"
+              onSelect={v => { setModel(v); setModelOpen(false); }}
+              onClear={() => { setModel(""); setModelOpen(false); }}
+              search={model}
+              onSearch={setModel}
+              searchPlaceholder="Search models..."
+              columns={2}
+            />
+          )}
         </div>
 
-        <div className="hidden md:block w-px bg-white/10 my-4 h-10 self-center" />
+        <div className="w-px bg-border my-3" />
 
-        {/* City Column */}
-        <div className="relative flex-1" ref={cityRef}>
-            <div className="flex items-center h-full px-5 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item" onClick={() => setCityOpen(true)}>
-                <div className="flex flex-col flex-1 truncate">
-                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-0.5 group-hover/item:text-primary transition-colors">Sector</span>
-                    <input 
-                        className="bg-transparent border-none outline-none text-white font-black text-sm md:text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
-                        placeholder="NATIONWIDE"
-                        value={city}
-                        onChange={(e) => {
-                            setCity(e.target.value);
-                            setCityOpen(true);
-                        }}
-                        onFocus={() => setCityOpen(true)}
-                    />
-                </div>
-                {city && (
-                    <button onClick={(e) => { e.stopPropagation(); setCity(""); }} className="p-1 hover:bg-white/10 rounded-full text-white/40">
-                        <X size={14} />
-                    </button>
-                )}
-                <ChevronDown size={14} className={cn("ml-2 text-white/20 transition-transform duration-300", cityOpen && "rotate-180")} />
+        {/* City */}
+        <div className="relative flex-1 min-w-0" ref={cityRef}>
+          <button
+            type="button"
+            onClick={() => { setCityOpen(v => !v); setMakeOpen(false); setModelOpen(false); }}
+            className="w-full flex flex-col items-start px-5 py-4 hover:bg-surface-raised transition-colors"
+          >
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Location</span>
+            <div className="flex items-center gap-2 w-full">
+              <MapPin size={13} className="text-muted-foreground shrink-0" />
+              <span className={cn("text-sm font-medium truncate flex-1 text-left", city ? "text-foreground" : "text-muted-foreground")}>
+                {city || "Nationwide"}
+              </span>
+              {city
+                ? <X size={14} className="text-muted-foreground shrink-0" onClick={e => { e.stopPropagation(); setCity(""); }} />
+                : <ChevronDown size={14} className={cn("text-muted-foreground shrink-0 transition-transform", cityOpen && "rotate-180")} />
+              }
             </div>
+          </button>
 
-            {cityOpen && (
-                <div className="fixed md:absolute inset-x-4 md:inset-x-auto top-[20%] md:top-[calc(100%+12px)] md:left-[-200px] md:right-0 z-[100] bg-background/95 backdrop-blur-3xl border border-foreground/10 rounded-[2rem] shadow-[0_32px_64px_rgba(0,0,0,0.8)] max-h-[60vh] md:max-h-[450px] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 md:slide-in-from-top-4 duration-300">
-                    <div className="p-6 border-b border-foreground/5 bg-foreground/[0.02] flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Select Deployment Sector</span>
-                        <button onClick={() => setCityOpen(false)} className="md:hidden p-2 hover:bg-foreground/5 rounded-full">
-                            <X size={16} />
-                        </button>
-                    </div>
-                    <div className="p-2 overflow-y-auto custom-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-1">
-                        <button
-                            type="button"
-                            className="w-full text-left px-5 py-4 hover:bg-foreground/5 rounded-2xl transition-all font-black text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground border border-transparent hover:border-foreground/10"
-                            onClick={() => {
-                                setCity("");
-                                setCityOpen(false);
-                            }}
-                        >
-                            <span className="opacity-40">NATIONWIDE</span>
-                        </button>
-                        {filteredCities.map(c => (
-                            <button
-                                key={c.slug}
-                                type="button"
-                                className="w-full text-left px-5 py-4 hover:bg-foreground/5 rounded-2xl transition-all font-black text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground border border-transparent hover:border-foreground/10"
-                                onClick={() => {
-                                    setCity(c.label);
-                                    setCityOpen(false);
-                                }}
-                            >
-                                {c.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+          {cityOpen && (
+            <DropdownPanel
+              onClose={() => setCityOpen(false)}
+              items={filteredCities.map(c => c.label)}
+              emptyLabel="Nationwide"
+              onSelect={v => { setCity(v); setCityOpen(false); }}
+              onClear={() => { setCity(""); setCityOpen(false); }}
+              search={city}
+              onSearch={setCity}
+              searchPlaceholder="Search cities..."
+              columns={2}
+              alignRight
+            />
+          )}
         </div>
 
-        {/* Search Button */}
-        <div className="p-1 md:p-1.5 flex items-center">
-            <Button 
-                type="submit"
-                className="w-full md:w-auto h-16 md:h-full px-10 rounded-full bg-white text-black font-black uppercase tracking-[0.2em] text-[11px] hover:bg-primary transition-all flex items-center justify-center gap-3 active:scale-95 group/btn"
-            >
-                <Search size={16} className="group-hover/btn:scale-110 transition-transform" />
-                <span>EXECUTE</span>
-            </Button>
+        {/* Search button */}
+        <div className="p-2 flex items-center justify-center">
+          <button
+            type="submit"
+            className="h-12 px-6 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
+          >
+            <Search size={16} />
+            Search
+          </button>
         </div>
-      </form>
+      </div>
 
-      <div className="text-center">
-            <button 
-                onClick={() => setMode("smart")}
-                className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-primary transition-all flex items-center justify-center gap-3 mx-auto"
-            >
-                <Sparkles size={14} className="animate-pulse text-primary" />
-                Engage AI Vector Search
-            </button>
+      {/* Mobile: stacked card */}
+      <div className="sm:hidden flex flex-col rounded-2xl bg-surface border border-border shadow-card overflow-hidden">
+        
+        {/* Make row */}
+        <MobileField
+          label="Make"
+          value={make}
+          placeholder="Any make"
+          onClick={() => { setMakeOpen(v => !v); setCityOpen(false); setModelOpen(false); }}
+          onClear={() => setMake("")}
+          isOpen={makeOpen}
+        />
+        {makeOpen && (
+          <MobileDropdown
+            items={filteredMakes}
+            emptyLabel="Any make"
+            onSelect={v => { setMake(v); setMakeOpen(false); }}
+            onClear={() => { setMake(""); setMakeOpen(false); }}
+            onClose={() => setMakeOpen(false)}
+            search={make}
+            onSearch={setMake}
+            searchPlaceholder="Search makes..."
+          />
+        )}
+
+        <div className="h-px bg-border mx-4" />
+
+        {/* Model row */}
+        <MobileField
+          label="Model"
+          value={model}
+          placeholder={make ? "Any model" : "Select make first"}
+          onClick={() => { if (!make) return; setModelOpen(v => !v); setMakeOpen(false); setCityOpen(false); }}
+          onClear={() => setModel("")}
+          isOpen={modelOpen}
+          disabled={!make}
+        />
+        {modelOpen && make && filteredModels.length > 0 && (
+          <MobileDropdown
+            items={filteredModels}
+            emptyLabel="Any model"
+            onSelect={v => { setModel(v); setModelOpen(false); }}
+            onClear={() => { setModel(""); setModelOpen(false); }}
+            onClose={() => setModelOpen(false)}
+            search={model}
+            onSearch={setModel}
+            searchPlaceholder="Search models..."
+          />
+        )}
+
+        <div className="h-px bg-border mx-4" />
+
+        {/* City row */}
+        <MobileField
+          label="Location"
+          value={city}
+          placeholder="Nationwide"
+          onClick={() => { setCityOpen(v => !v); setMakeOpen(false); setModelOpen(false); }}
+          onClear={() => setCity("")}
+          isOpen={cityOpen}
+          icon={<MapPin size={14} className="text-muted-foreground" />}
+        />
+        {cityOpen && (
+          <MobileDropdown
+            items={filteredCities.map(c => c.label)}
+            emptyLabel="Nationwide"
+            onSelect={v => { setCity(v); setCityOpen(false); }}
+            onClear={() => { setCity(""); setCityOpen(false); }}
+            onClose={() => setCityOpen(false)}
+            search={city}
+            onSearch={setCity}
+            searchPlaceholder="Search cities..."
+          />
+        )}
+
+        {/* Search button */}
+        <div className="p-3">
+          <button
+            type="submit"
+            className="w-full h-12 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <Search size={16} />
+            Search
+          </button>
         </div>
+      </div>
+    </form>
+  );
+}
+
+// --- Shared Dropdown Panel (Desktop) ---
+function DropdownPanel({
+  items,
+  emptyLabel,
+  onSelect,
+  onClear,
+  onClose,
+  search,
+  onSearch,
+  searchPlaceholder,
+  columns = 1,
+  alignRight = false,
+}: {
+  items: string[];
+  emptyLabel: string;
+  onSelect: (v: string) => void;
+  onClear: () => void;
+  onClose: () => void;
+  search: string;
+  onSearch: (v: string) => void;
+  searchPlaceholder: string;
+  columns?: number;
+  alignRight?: boolean;
+}) {
+  return (
+    <div className={cn(
+      "absolute top-[calc(100%+6px)] z-[200] bg-background border border-border rounded-xl shadow-modal min-w-[280px] max-w-[380px] overflow-hidden animate-in fade-in zoom-in-95 duration-150",
+      alignRight ? "right-0" : "left-0"
+    )}>
+      {/* Search input */}
+      <div className="p-3 border-b border-border">
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            autoFocus
+            value={search}
+            onChange={e => onSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full h-9 pl-9 pr-3 text-sm bg-surface rounded-lg border border-border focus:border-primary/50 focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+      {/* Items */}
+      <div className={cn(
+        "max-h-60 overflow-y-auto p-2",
+        columns === 2 && "grid grid-cols-2 gap-1"
+      )}>
+        <button
+          type="button"
+          onClick={onClear}
+          className="col-span-2 w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors"
+        >
+          {emptyLabel}
+        </button>
+        {items.map(item => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onSelect(item)}
+            className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors truncate"
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Mobile Field Row ---
+function MobileField({ label, value, placeholder, onClick, onClear, isOpen, disabled, icon }: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onClick: () => void;
+  onClear: () => void;
+  isOpen: boolean;
+  disabled?: boolean;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center gap-3 px-4 py-3.5 text-left disabled:opacity-40 hover:bg-surface-raised transition-colors"
+    >
+      {icon && <span className="shrink-0">{icon}</span>}
+      <div className="flex flex-col flex-1 min-w-0">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">{label}</span>
+        <span className={cn("text-sm font-medium truncate", value ? "text-foreground" : "text-muted-foreground")}>
+          {value || placeholder}
+        </span>
+      </div>
+      {value
+        ? <X size={16} className="text-muted-foreground shrink-0" onClick={e => { e.stopPropagation(); onClear(); }} />
+        : <ChevronDown size={16} className={cn("text-muted-foreground shrink-0 transition-transform", isOpen && "rotate-180")} />
+      }
+    </button>
+  );
+}
+
+// --- Mobile Dropdown ---
+function MobileDropdown({ items, emptyLabel, onSelect, onClear, onClose, search, onSearch, searchPlaceholder }: {
+  items: string[];
+  emptyLabel: string;
+  onSelect: (v: string) => void;
+  onClear: () => void;
+  onClose: () => void;
+  search: string;
+  onSearch: (v: string) => void;
+  searchPlaceholder: string;
+}) {
+  return (
+    <div className="bg-surface border-y border-border animate-in fade-in duration-150">
+      {/* Search */}
+      <div className="px-4 pt-3 pb-2">
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            autoFocus
+            value={search}
+            onChange={e => onSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full h-9 pl-9 pr-3 text-sm bg-background rounded-lg border border-border focus:border-primary/50 focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+      {/* Items */}
+      <div className="max-h-52 overflow-y-auto px-2 pb-2">
+        <button
+          type="button"
+          onClick={onClear}
+          className="w-full text-left px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-background rounded-lg transition-colors"
+        >
+          {emptyLabel}
+        </button>
+        {items.map(item => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onSelect(item)}
+            className="w-full text-left px-3 py-2.5 text-sm text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+          >
+            {item}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
