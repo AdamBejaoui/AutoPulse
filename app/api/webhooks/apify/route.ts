@@ -95,6 +95,8 @@ export async function POST(req: Request) {
           owners: parsed.owners,
           features: parsed.features,
           vin: parsed.vin,
+          isJunk: parsed.isJunk,
+          isCar: !parsed.isJunk && parsed.make !== "Unknown",
           parseScore: parsed.parseScore,
           parsedAt: new Date(),
         };

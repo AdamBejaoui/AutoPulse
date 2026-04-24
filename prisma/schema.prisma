@@ -49,6 +49,8 @@ model Listing {
   rawDescription String?
   
   parseScore    Int?
+  isJunk        Boolean   @default(false)
+  isCar         Boolean   @default(true)
   parsedAt      DateTime?
 
   @@index([postedAt])
@@ -64,6 +66,8 @@ model Listing {
   @@index([titleStatus])
   @@index([color])
   @@index([driveType])
+  @@index([isJunk])
+  @@index([isCar])
 }
 
 model Subscription {

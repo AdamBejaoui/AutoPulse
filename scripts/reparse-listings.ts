@@ -52,6 +52,8 @@ async function main() {
       owners: parsed.owners,
       features: parsed.features,
       parseScore: parsed.parseScore,
+      isJunk: parsed.isJunk,
+      isCar: !parsed.isJunk && parsed.make !== "Unknown",
       vin: parsed.vin,
       parsedAt: new Date(),
     };

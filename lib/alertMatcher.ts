@@ -7,13 +7,10 @@ import { newListingsEmail, sendMail, MailListing } from "./mailer";
 export async function findMatchingSubscriptions(listing: Listing): Promise<Subscription[]> {
   const { prisma } = await import("./db");
 
-  // --- GLOBAL MOTORCYCLE/JUNK FILTER ---
-  const blockRegex = /\b(motorcycle|motercycle|scooter|moped|dirt bike|atv|utv|harley|yamaha|kawasaki|ducati|ninja|polaris|can-am|sea-doo|ski-doo|snowmobile|rv|camper|trailer|tráiler|boat|jet ski|bicycle|bycycle|tractor|mower|coachmen|jayco|winnebago|keystone|equipment)\b/i;
-  const titleText = (listing.rawTitle || "").toLowerCase();
-  const descText = (listing.description || "").toLowerCase();
-  
-  if (blockRegex.test(titleText) || blockRegex.test(descText)) {
-    console.log(`[alertMatcher] Blocking notification for non-car vehicle: ${listing.rawTitle}`);
+  // --- PERFECT CAR-ONLY FILTER ---
+  // Rely on the database-backed 'isCar' and 'isJunk' flags set by the AI parser.
+  if (listing.isJunk || !listing.isCar) {
+    console.log(`[alertMatcher] Filtering out non-car or junk: ${listing.rawTitle}`);
     return [];
   }
   // ------------------------------------
