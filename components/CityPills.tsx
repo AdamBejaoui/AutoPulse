@@ -17,56 +17,61 @@ export function CityPills(): React.ReactElement {
     setPendingCity(label);
     startTransition(() => {
       const params = new URLSearchParams(searchParams.toString());
-      params.set("city", label);
+      if (currentCity === label) {
+        params.delete("city");
+      } else {
+        params.set("city", label);
+      }
       params.delete("page");
       router.push(`/search?${params.toString()}`);
     });
   }
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-6">
-        <div className="flex shrink-0 items-center gap-3">
-           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-black">
-              {isPending ? <Loader2 size={16} className="animate-spin" /> : <Target size={18} />}
-           </div>
-           <div className="hidden sm:flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Capture Zone</span>
-              <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Active US Clusters</span>
-           </div>
-        </div>
-        
-        <div className="relative flex-1 overflow-hidden">
-          <div className="flex gap-2 overflow-x-auto pb-6 -mb-6 scrollbar-none snap-x">
-            {MARKETPLACE_CITIES.map((c) => {
-              const isActive = currentCity === c.label;
-              const isSearching = isPending && pendingCity === c.label;
-              
-              return (
-                <button
-                  key={c.slug}
-                  onClick={() => handleCityClick(c.label)}
-                  disabled={isPending}
-                  className={cn(
-                    "shrink-0 rounded-lg border px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all snap-start flex items-center gap-3 active:scale-95",
-                    isActive
-                      ? "bg-white text-black border-white shadow-[0_10px_30px_rgba(255,255,255,0.2)]"
-                      : "bg-white/[0.02] text-white/40 border-white/5 hover:border-white/20 hover:text-white hover:bg-white/5",
-                    isPending && !isSearching && "opacity-30 grayscale cursor-not-allowed",
-                  )}
-                >
-                  {isSearching && <Loader2 size={10} className="animate-spin" />}
-                  {c.label}
-                </button>
-              );
-            })}
-          </div>
+    <div className="flex items-center gap-4">
 
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black via-black/20 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/20 to-transparent" />
+      {/* Label */}
+      <div className="hidden sm:flex shrink-0 items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          {isPending ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
         </div>
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold text-foreground leading-none">Capture Zone</span>
+          <span className="text-[10px] text-muted-foreground mt-0.5">Active US Clusters</span>
+        </div>
+      </div>
+
+      {/* Scrollable pills */}
+      <div className="relative flex-1 overflow-hidden">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x">
+          {MARKETPLACE_CITIES.map((c) => {
+            const isActive = currentCity === c.label;
+            const isSearching = isPending && pendingCity === c.label;
+
+            return (
+              <button
+                key={c.slug}
+                onClick={() => handleCityClick(c.label)}
+                disabled={isPending}
+                className={cn(
+                  "shrink-0 snap-start rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap",
+                  isActive
+                    ? "bg-primary text-white border-primary shadow-blue"
+                    : "bg-surface border-border text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-surface-raised",
+                  isPending && !isSearching && "opacity-40 cursor-not-allowed"
+                )}
+              >
+                {isSearching && <Loader2 size={10} className="animate-spin" />}
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Fade edges */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
       </div>
     </div>
   );
 }
-

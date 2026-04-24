@@ -1,17 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { 
-  X, 
-  Gauge, 
-  MapPin, 
-  Calendar, 
-  Fuel, 
-  Zap, 
-  Info, 
-  ExternalLink, 
-  User, 
-  Facebook,
+import {
+  X,
+  Gauge,
+  MapPin,
+  Calendar,
+  Fuel,
+  Zap,
+  Info,
+  ExternalLink,
+  User,
   ShieldCheck,
   CheckCircle2,
   Clock,
@@ -19,28 +18,27 @@ import {
   Car,
   Palette,
   Loader2,
-  Activity,
   Share2,
   History,
   TrendingUp,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Facebook,
 } from "lucide-react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
-  DialogDescription
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Listing } from "@prisma/client";
 
 function formatUsd(cents: number): string {
-  if (cents === 0) return "FREE";
+  if (cents === 0) return "Contact seller";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -48,27 +46,25 @@ function formatUsd(cents: number): string {
   }).format(cents / 100);
 }
 
-function timeAgo(date: Date | null | undefined, isRefreshing?: boolean): string {
-  if (!date) return isRefreshing ? "Analyzing lead timing..." : "Lead Intake Verified";
+function timeAgo(date: Date | null | undefined): string {
+  if (!date) return "Recently listed";
   const now = new Date();
   const past = new Date(date);
-  const diffInMs = now.getTime() - past.getTime();
-  const diffInSeconds = Math.floor(diffInMs / 1000);
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  const diffInDays = Math.floor(diffInHours / 24);
-
-  if (diffInDays > 7) return past.toLocaleDateString();
-  if (diffInDays > 0) return `${diffInDays}d ago`;
-  if (diffInHours > 0) return `${diffInHours}h ago`;
-  if (diffInMinutes > 0) return `${diffInMinutes}m ago`;
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays > 7) return past.toLocaleDateString();
+  if (diffDays > 0) return `${diffDays}d ago`;
+  if (diffHours > 0) return `${diffHours}h ago`;
+  if (diffMins > 0) return `${diffMins}m ago`;
   return "Just now";
 }
 
-export function ListingDetailModal({ 
-  listing: initialListing, 
-  children 
-}: { 
+export function ListingDetailModal({
+  listing: initialListing,
+  children,
+}: {
   listing: any;
   children: React.ReactNode;
 }) {
@@ -78,9 +74,9 @@ export function ListingDetailModal({
   const [syncStatus, setSyncStatus] = React.useState<"idle" | "syncing" | "busy" | "error">("idle");
 
   React.useEffect(() => {
-    const isFallback = 
-      !listing.condition || 
-      listing.rawDescription?.includes("AutoPulse local capture") || 
+    const isFallback =
+      !listing.condition ||
+      listing.rawDescription?.includes("AutoPulse local capture") ||
       listing.rawDescription?.toLowerCase().includes("connectez-vous") ||
       listing.rawDescription?.toLowerCase().includes("log in to") ||
       listing.description?.toLowerCase().includes("connectez-vous") ||
@@ -88,332 +84,273 @@ export function ListingDetailModal({
 
     if (isFallback && !isRefreshing) {
       let retryTimer: NodeJS.Timeout;
-
       const triggerSync = async () => {
         setIsRefreshing(true);
         setSyncStatus("syncing");
-
         try {
           const response = await fetch("/api/listings/enrich", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ listingId: listing.id, url: listing.listingUrl }),
           });
-
-          if (response.status === 202) {
-            retryTimer = setTimeout(triggerSync, 3000);
-            return;
-          }
-
-          if (response.status === 503) {
-            setSyncStatus("busy");
-            retryTimer = setTimeout(triggerSync, 10000);
-            return;
-          }
-
+          if (response.status === 202) { retryTimer = setTimeout(triggerSync, 3000); return; }
+          if (response.status === 503) { setSyncStatus("busy"); retryTimer = setTimeout(triggerSync, 10000); return; }
           if (!response.ok) throw new Error(`Status ${response.status}`);
-          
           const data = await response.json();
-          if (data?.listing) {
-            setListing(data.listing);
-            setIsRefreshing(false);
-            setSyncStatus("idle");
-          }
+          if (data?.listing) { setListing(data.listing); setIsRefreshing(false); setSyncStatus("idle"); }
         } catch (err: any) {
-          console.log("On-demand sync skipped or timed out:", err.message);
+          console.log("On-demand sync skipped:", err.message);
           setIsRefreshing(false);
           setSyncStatus("error");
         }
       };
-
       const initialTimer = setTimeout(triggerSync, 1200);
-
-      return () => {
-        clearTimeout(initialTimer);
-        if (retryTimer) clearTimeout(retryTimer);
-      };
+      return () => { clearTimeout(initialTimer); if (retryTimer) clearTimeout(retryTimer); };
     }
-  }, [
-    listing.id, 
-    listing.condition, 
-    listing.listingUrl, 
-    listing.rawDescription, 
-    listing.description, 
-    listing.description?.length, 
-    isRefreshing
-  ]);
+  }, [listing.id, listing.condition, listing.listingUrl, listing.rawDescription, listing.description, isRefreshing]);
 
-  const hasParsedMake = listing.make !== "Unknown";
-  const hasParsedModel = listing.model !== "Unknown";
+  const hasMake = listing.make && listing.make !== "Unknown";
+  const hasModel = listing.model && listing.model !== "Unknown";
   const isGeneric = (listing.rawTitle || "").toLowerCase().includes("marketplace listing");
-  
-  const title = (hasParsedMake || listing.year > 0)
-    ? `${listing.year > 0 ? listing.year + ' ' : ''}${hasParsedMake ? listing.make : 'Vehicle'}${hasParsedModel ? ' ' + listing.model : ''}`
-    : (isGeneric ? "Vehicle Intelligence Report" : (listing.rawTitle?.trim() || "Automotive Entry"));
+
+  const title = (hasMake || listing.year > 0)
+    ? `${listing.year > 0 ? listing.year + " " : ""}${hasMake ? listing.make : "Vehicle"}${hasModel ? " " + listing.model : ""}`
+    : (isGeneric ? "Vehicle Details" : (listing.rawTitle?.trim() || "Vehicle"));
 
   const loc = [listing.city, listing.state].filter(Boolean).join(", ");
-  const mileage = listing.mileage != null ? `${listing.mileage.toLocaleString()} mi` : "N/A";
+  const mileage = listing.mileage != null ? `${listing.mileage.toLocaleString()} mi` : null;
 
   const specs = [
     { label: "Condition", value: listing.condition, icon: ShieldCheck },
-    { label: "Title", value: listing.titleStatus || "Unknown", icon: FileText },
+    { label: "Title", value: listing.titleStatus || null, icon: FileText },
     { label: "Transmission", value: listing.transmission, icon: Settings },
-    { label: "Drive Type", value: listing.driveType, icon: Car },
+    { label: "Drive type", value: listing.driveType, icon: Car },
     { label: "Fuel", value: listing.fuelType, icon: Fuel },
     { label: "Engine", value: listing.engine, icon: Zap },
-    { label: "Body Style", value: listing.bodyStyle, icon: Car },
+    { label: "Body style", value: listing.bodyStyle, icon: Car },
     { label: "Trim", value: listing.trim, icon: CheckCircle2 },
     { label: "VIN", value: listing.vin, icon: ShieldCheck },
-    { label: "Interior", value: listing.features?.find((f: string) => f.includes('interior'))?.replace(' interior', ''), icon: Palette },
     { label: "Color", value: listing.color, icon: Palette },
-    { label: "Owners", value: listing.owners ? `${listing.owners} owner${listing.owners > 1 ? 's' : ''}` : null, icon: User },
-    { label: "Accidents", value: listing.accidents === false ? "Accident Free" : listing.accidents === true ? "Reported" : null, icon: AlertTriangle },
-  ].filter(s => s.value);
+    { label: "Owners", value: listing.owners ? `${listing.owners} owner${listing.owners > 1 ? "s" : ""}` : null, icon: User },
+    { label: "Accidents", value: listing.accidents === false ? "Accident free" : listing.accidents === true ? "Reported" : null, icon: AlertTriangle },
+  ].filter((s) => s.value);
+
+  const fbUrl = listing.listingUrl || `https://www.facebook.com/marketplace/item/${listing.externalId}/`;
+
+  const description = (() => {
+    const desc = listing.rawDescription || listing.description || "";
+    if (desc.toLowerCase().includes("connectez-vous") || desc.toLowerCase().includes("log in to")) {
+      return "Seller description is loading — deep scan in progress...";
+    }
+    return desc.replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim() || "No description available.";
+  })();
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="max-w-[100vw] sm:max-w-[1000px] h-[100dvh] sm:h-[650px] p-0 overflow-hidden border-none bg-background sm:bg-background/80 backdrop-blur-3xl shadow-2xl flex flex-col sm:flex-row rounded-none sm:rounded-[2.5rem]">
-        
-        {/* LEFT DECK: Sticky Media & Action Portal */}
-        <div className="w-full sm:w-[45%] h-[280px] sm:h-full relative bg-background shrink-0 group border-b sm:border-b-0 sm:border-r border-foreground/5">
-          <img 
-            src={(listing.imageUrls && listing.imageUrls.length > 0) ? listing.imageUrls[0] : "/placeholder-car.svg"} 
-            alt={title} 
-            className="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-110"
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="max-w-[100vw] sm:max-w-[960px] h-[100dvh] sm:h-[680px] p-0 overflow-hidden border border-border bg-background shadow-modal flex flex-col sm:flex-row rounded-none sm:rounded-2xl">
+
+        {/* LEFT: Image + CTA */}
+        <div className="w-full sm:w-[42%] h-[240px] sm:h-full relative shrink-0 bg-surface overflow-hidden">
+          <img
+            src={(listing.imageUrls?.length > 0) ? listing.imageUrls[0] : ""}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.04]"
           />
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          
-          {/* Mobile Price Overlay */}
-          <div className="absolute bottom-4 left-6 z-20 sm:hidden">
-             <div className="text-3xl font-black tracking-tighter text-foreground drop-shadow-lg">
-                {formatUsd(listing.price)}
-             </div>
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-transparent" />
+
+          {/* Source badge */}
+          <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
+            <span className="text-[10px] font-semibold text-foreground">{listing.source || "Facebook"} Live</span>
           </div>
 
-          {/* Persistent Price Area (Desktop) */}
-          <div className="absolute bottom-10 left-10 right-10 z-20 hidden sm:block">
-            <div className="mb-4">
-               <span className="text-[10px] font-black tracking-[0.4em] text-muted-foreground uppercase drop-shadow-lg">
-                 Current Offering
-               </span>
-               <div className="text-5xl font-black tracking-tighter text-foreground drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-                 {formatUsd(listing.price)}
-               </div>
-            </div>
-            
-            <Button asChild className="w-full h-16 rounded-2xl bg-foreground text-background font-black text-xs tracking-widest uppercase shadow-2xl hover:scale-[1.02] hover:opacity-90 active:scale-95 transition-all border-none group/item">
-              <a 
-                href={listing.listingUrl || `https://www.facebook.com/marketplace/item/${listing.externalId}/`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex items-center justify-center gap-2"
-              >
-                 VIEW ON FACEBOOK <ExternalLink size={18} className="transition-transform group-hover/item:translate-x-1" />
-              </a>
-            </Button>
+          {/* Mobile price */}
+          <div className="absolute bottom-4 left-5 z-10 sm:hidden">
+            <p className="text-2xl font-bold text-foreground drop-shadow-lg">{formatUsd(listing.price)}</p>
           </div>
 
-          {/* Top Left Vitals Indicator */}
-          <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex flex-col gap-2">
-             <div className="flex items-center gap-2 rounded-full bg-background/60 backdrop-blur-xl border border-foreground/10 px-3 py-1 sm:px-4 sm:py-1.5 shadow-xl">
-                <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-foreground animate-pulse" />
-                <span className="text-[8px] sm:text-[9px] font-black text-foreground/90 uppercase tracking-widest">
-                  {listing.source || "Facebook"} Live
-                </span>
-             </div>
+          {/* Desktop CTA area */}
+          <div className="absolute bottom-6 left-6 right-6 z-10 hidden sm:block">
+            <p className="text-xs text-muted-foreground mb-1">Listed price</p>
+            <p className="text-4xl font-bold text-foreground mb-5">{formatUsd(listing.price)}</p>
+            <a
+              href={fbUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all"
+            >
+              <ExternalLink size={16} />
+              View on Facebook
+            </a>
           </div>
         </div>
 
-        {/* RIGHT DECK: Data Feed */}
-        <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-background/50 backdrop-blur-md overflow-hidden">
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-12 touch-pan-y">
-            
-            {/* Header Content */}
-            <header className="mb-8 sm:mb-10">
-               <div className="flex items-center gap-3 mb-3 sm:mb-4">
-                  <span className="text-[9px] sm:text-[11px] font-black tracking-[0.4em] text-muted-foreground uppercase">
-                    Vehicle Intel Profile
-                  </span>
-                  <div className="h-px flex-1 bg-foreground/[0.05]" />
-               </div>
-               <DialogTitle className="text-2xl sm:text-5xl font-black tracking-tighter text-foreground uppercase italic leading-tight mb-4 sm:mb-6">
-                 {title}
-               </DialogTitle>
-               
-               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <Badge variant="outline" className="h-7 sm:h-8 rounded-lg border-foreground/5 bg-foreground/5 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-bold text-muted-foreground gap-1.5">
-                    <MapPin size={10} className="text-muted-foreground" /> {loc || "USA"}
-                  </Badge>
-                  <Badge variant="outline" className="h-7 sm:h-8 rounded-lg border-foreground/5 bg-foreground/5 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-bold text-muted-foreground gap-1.5">
-                    <Gauge size={10} className="text-muted-foreground" /> {mileage}
-                  </Badge>
-                  <Badge variant="outline" className="h-7 sm:h-8 rounded-lg border-foreground/5 bg-foreground/5 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-bold text-muted-foreground gap-1.5">
-                    <Clock size={10} className="text-muted-foreground" /> {timeAgo(listing.postedAt, isRefreshing)}
-                  </Badge>
-                  {isRefreshing && (
-                    <div className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg bg-foreground/5 border border-foreground/10">
-                       <Loader2 size={12} className="text-foreground animate-spin" />
-                    </div>
-                  )}
-               </div>
+        {/* RIGHT: Data panel */}
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-7">
+
+            {/* Header */}
+            <header>
+              <div className="flex items-center gap-2 mb-3">
+                {isRefreshing && <Loader2 size={13} className="animate-spin text-primary" />}
+                <span className="text-xs text-muted-foreground font-medium">Vehicle details</span>
+              </div>
+              <DialogTitle className="text-xl sm:text-3xl font-bold text-foreground leading-tight mb-4">
+                {title}
+              </DialogTitle>
+              <div className="flex flex-wrap gap-2">
+                {loc && (
+                  <Chip icon={<MapPin size={11} />}>{loc}</Chip>
+                )}
+                {mileage && (
+                  <Chip icon={<Gauge size={11} />}>{mileage}</Chip>
+                )}
+                <Chip icon={<Clock size={11} />}>{timeAgo(listing.postedAt)}</Chip>
+              </div>
             </header>
 
-            <div className="space-y-12">
-              
-              {/* MARKET VITALS: The Intelligence Card */}
-              {listing.analysis && (
-                <section>
-                   <div className="flex items-center gap-2 mb-4 text-muted-foreground">
-                      <div className="h-1.5 w-1.5 rounded-full bg-foreground animate-ping" />
-                      <h3 className="text-[11px] font-black uppercase tracking-[0.3em]">Market Vitals</h3>
-                   </div>
-                   <div className="relative group/intel overflow-hidden rounded-2xl sm:rounded-[2rem] bg-foreground/[0.03] border border-foreground/10 p-5 sm:p-8 shadow-2xl">
-                      <div className="absolute top-0 right-0 p-8 opacity-5">
-                         <TrendingUp size={80} className="text-foreground" />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 relative z-10">
-                         <div>
-                            <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Market Median</span>
-                            <div className="text-xl sm:text-3xl font-black text-foreground tabular-nums leading-tight">
-                               ${(listing.analysis.medianPrice / 100).toLocaleString()}
-                            </div>
-                         </div>
-                         <div>
-                            <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Deal Quality</span>
-                            <div className={cn(
-                               "text-xl sm:text-3xl font-black italic uppercase tracking-tight leading-tight",
-                               listing.analysis.rating === 'great' ? "text-foreground" :
-                               listing.analysis.rating === 'good' ? "text-foreground/60" :
-                               "text-foreground/40"
-                             )}>
-                               {listing.analysis.rating === 'great' ? "🔥🔥 PRIORITY" :
-                                listing.analysis.rating === 'good' ? "✨ TARGET" : "NODE"}
-                            </div>
-                         </div>
-                         <div className="col-span-full pt-4 sm:pt-6 border-t border-foreground/10">
-                            <p className="text-[12px] sm:text-sm font-medium leading-relaxed text-muted-foreground/90">
-                               Sitting <span className="text-foreground font-black">{Math.abs(listing.analysis.diffPercent)}% {listing.analysis.diffAmount > 0 ? "below" : "above"}</span> national averages. Detected potential savings of <span className="text-foreground font-black">${(Math.abs(listing.analysis.diffAmount) / 100).toLocaleString()}</span>.
-                            </p>
-                         </div>
-                      </div>
-                   </div>
-                </section>
-              )}
-
-              {/* SPECIFICATION MATRIX */}
+            {/* Market analysis */}
+            {listing.analysis && (
               <section>
-                <div className="flex items-center gap-2 mb-4 text-muted-foreground">
-                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em]">Vehicle Matrix</h3>
+                <SectionLabel>Market analysis</SectionLabel>
+                <div className="rounded-xl bg-surface border border-border p-5">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Market median</p>
+                      <p className="text-2xl font-bold text-foreground tabular-nums">
+                        ${(listing.analysis.medianPrice / 100).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Deal rating</p>
+                      <p className={cn(
+                        "text-2xl font-bold",
+                        listing.analysis.rating === "great" ? "text-emerald-500" :
+                        listing.analysis.rating === "good" ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {listing.analysis.rating === "great" ? "🔥 Great" :
+                         listing.analysis.rating === "good" ? "✓ Good" : "Fair"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      This listing is{" "}
+                      <span className="font-semibold text-foreground">
+                        {Math.abs(listing.analysis.diffPercent)}% {listing.analysis.diffAmount > 0 ? "below" : "above"}
+                      </span>{" "}
+                      the national median — a potential saving of{" "}
+                      <span className="font-semibold text-foreground">
+                        ${(Math.abs(listing.analysis.diffAmount) / 100).toLocaleString()}
+                      </span>.
+                    </p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
+              </section>
+            )}
+
+            {/* Specs grid */}
+            {specs.length > 0 && (
+              <section>
+                <SectionLabel>Specifications</SectionLabel>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {specs.map((s, idx) => (
-                    <div key={idx} className="flex flex-col gap-1 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-foreground/[0.03] border border-foreground/5 hover:border-foreground/20 transition-all group/spec">
-                      <div className="flex items-center gap-2 mb-1">
-                         <s.icon size={10} className="text-muted-foreground group-hover/spec:text-foreground transition-colors" />
-                         <span className="text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest">{s.label}</span>
+                    <div key={idx} className="flex flex-col gap-1 p-3 rounded-lg bg-surface border border-border">
+                      <div className="flex items-center gap-1.5">
+                        <s.icon size={11} className="text-muted-foreground" />
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{s.label}</span>
                       </div>
-                      <div className="text-xs sm:text-sm font-bold text-foreground truncate">{s.value}</div>
+                      <p className="text-sm font-semibold text-foreground truncate">{s.value}</p>
                     </div>
                   ))}
                 </div>
               </section>
+            )}
 
-              {/* FEATURE TAGS */}
-              {listing.features && listing.features.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 mb-4 text-muted-foreground">
-                     <h3 className="text-[11px] font-black uppercase tracking-[0.3em]">Premium Features</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {listing.features.map((feat: string, idx: number) => (
-                      <Badge key={idx} variant="outline" className="h-8 rounded-lg border-foreground/10 bg-foreground/5 px-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                        {feat}
-                      </Badge>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* INTELLIGENCE FEED (DESCRIPTION) */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em]">Seller Intelligence</h3>
-                </div>
-                <div className={cn(
-                  "rounded-[2rem] bg-foreground/[0.03] border border-foreground/5 p-8 transition-all duration-500",
-                  isRefreshing ? "opacity-30 blur-sm scale-[0.98]" : "opacity-100"
-                )}>
-                  <div className={cn(
-                    "leading-relaxed text-foreground/70 text-[15px] font-medium whitespace-pre-wrap transition-all duration-700",
-                    !isExpanded && "line-clamp-3 overflow-hidden"
-                  )}>
-                    {(() => {
-                      const desc = (listing.rawDescription || listing.description || "");
-                      if (desc.toLowerCase().includes("connectez-vous") || desc.toLowerCase().includes("log in to")) {
-                          return "Detailed telemetry pending (Login Wall detected). Deep scan initiated...";
-                      }
-                      const cleanDesc = desc.replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim();
-                      return cleanDesc || "Detailed telemetry pending.";
-                    })()}
-                  </div>
-                  
-                  {((listing.rawDescription || listing.description || "").length > 200) && (
-                    <button 
-                      onClick={() => setIsExpanded(!isExpanded)}
-                      className="mt-6 text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] hover:text-foreground flex items-center gap-2 transition-colors duration-300"
-                    >
-                      <History size={12} />
-                      {isExpanded ? "COLLAPSE DOSSIER" : "EXPAND FULL DOSSIER"}
-                    </button>
-                  )}
+            {/* Features */}
+            {listing.features?.length > 0 && (
+              <section>
+                <SectionLabel>Features</SectionLabel>
+                <div className="flex flex-wrap gap-1.5">
+                  {listing.features.map((feat: string, idx: number) => (
+                    <span key={idx} className="px-2.5 py-1 rounded-full bg-surface border border-border text-xs text-muted-foreground">
+                      {feat}
+                    </span>
+                  ))}
                 </div>
               </section>
+            )}
 
+            {/* Description */}
+            <section>
+              <SectionLabel>Seller description</SectionLabel>
+              <div className={cn(
+                "rounded-xl bg-surface border border-border p-5 transition-all duration-500",
+                isRefreshing && "opacity-40 blur-sm"
+              )}>
+                <p className={cn(
+                  "text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap",
+                  !isExpanded && "line-clamp-4"
+                )}>
+                  {description}
+                </p>
+                {description.length > 250 && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="mt-3 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                  >
+                    {isExpanded ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </div>
+            </section>
+
+          </div>
+
+          {/* Mobile sticky footer */}
+          <div className="sm:hidden p-4 border-t border-border bg-background/95 backdrop-blur-xl">
+            <a
+              href={fbUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all"
+            >
+              <ExternalLink size={16} />
+              View on Facebook — {formatUsd(listing.price)}
+            </a>
+          </div>
+
+          {/* Desktop footer */}
+          <div className="hidden sm:flex items-center justify-between px-8 py-4 border-t border-border bg-surface">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <ShieldCheck size={13} />
+              <span className="text-xs">Verified by AutoPulse</span>
             </div>
+            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-raised transition-colors">
+              <Share2 size={15} />
+            </button>
           </div>
-
-          {/* MOBILE ONLY: Persistent Sticky Footer */}
-          <div className="sm:hidden p-6 bg-background/90 backdrop-blur-3xl border-t border-foreground/5">
-             <Button asChild className="w-full h-14 rounded-2xl bg-foreground text-background font-black text-xs tracking-widest uppercase shadow-xl hover:opacity-90 border-none">
-                <a href={listing.listingUrl} target="_blank" rel="noopener noreferrer">
-                   VIEW ON FACEBOOK — {formatUsd(listing.price)}
-                </a>
-             </Button>
-          </div>
-          
-          {/* Universal Share Portal */}
-          <div className="px-12 py-8 flex items-center justify-between border-t border-foreground/5 bg-foreground/[0.03] hidden sm:flex">
-             <div className="flex items-center gap-2 text-muted-foreground/30">
-                <ShieldCheck size={14} />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em]">Validated by AutoPulse Core</span>
-             </div>
-             <div className="flex gap-4">
-                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-foreground/5">
-                   <Share2 size={18} />
-                </Button>
-             </div>
-          </div>
-
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-function InfoChip({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-black/5 dark:bg-white/5 p-4 border border-black/5 dark:border-white/5">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <Icon size={18} />
-      </div>
-      <div>
-        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{label}</div>
-        <div className="text-sm font-bold text-foreground truncate max-w-[120px] tracking-tight">{value}</div>
-      </div>
-    </div>
+    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+      {children}
+    </h3>
+  );
+}
+
+function Chip({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface border border-border text-xs text-muted-foreground">
+      {icon}
+      {children}
+    </span>
   );
 }
