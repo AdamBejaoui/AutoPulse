@@ -19,7 +19,7 @@ export default async function HomePage(): Promise<ReactElement> {
   const totalListings = await getCachedListingCount().catch(() => 0);
 
   return (
-    <div className="relative min-h-screen bg-background overflow-hidden">
+    <div className="relative min-h-screen bg-background">
       
       {/* Subtle gradient orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -28,7 +28,7 @@ export default async function HomePage(): Promise<ReactElement> {
       </div>
 
       {/* HERO */}
-      <section className="relative pt-24 pb-16 sm:pt-36 sm:pb-28 px-4">
+      <section className="relative z-10 pt-24 pb-16 sm:pt-36 sm:pb-28 px-4">
         <div className="mx-auto max-w-4xl text-center">
 
           {/* Eyebrow */}
@@ -49,8 +49,8 @@ export default async function HomePage(): Promise<ReactElement> {
             Set alerts and we&apos;ll notify you instantly.
           </p>
 
-          {/* Search Bar */}
-          <div className="animate-fade-up-delay-2 max-w-3xl mx-auto">
+          {/* Search Bar — relative+z-50 so dropdowns float above feature cards */}
+          <div className="animate-fade-up-delay-2 max-w-3xl mx-auto relative z-50">
             <React.Suspense
               fallback={
                 <div className="h-16 rounded-2xl bg-surface border border-border animate-pulse" />
@@ -80,8 +80,8 @@ export default async function HomePage(): Promise<ReactElement> {
         </div>
       </section>
 
-      {/* FEATURE GRID */}
-      <section className="relative px-4 pb-24">
+      {/* FEATURE GRID — z-0 keeps it below the search dropdowns */}
+      <section className="relative z-0 px-4 pb-24">
         <div className="mx-auto max-w-4xl">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FeatureCard

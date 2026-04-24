@@ -316,7 +316,7 @@ function DropdownPanel({
 }) {
   return (
     <div className={cn(
-      "absolute top-[calc(100%+6px)] z-[200] bg-background border border-border rounded-xl shadow-modal min-w-[280px] max-w-[380px] overflow-hidden animate-in fade-in zoom-in-95 duration-150",
+      "absolute top-[calc(100%+6px)] z-[9999] bg-background border border-border rounded-xl shadow-modal min-w-[280px] max-w-[380px] overflow-hidden animate-in fade-in zoom-in-95 duration-150",
       alignRight ? "right-0" : "left-0"
     )}>
       {/* Search input */}
