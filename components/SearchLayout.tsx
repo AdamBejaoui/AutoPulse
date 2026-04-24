@@ -7,7 +7,7 @@ import { SearchAlertBanner } from "@/components/SearchAlertBanner";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { MobileFilters } from "@/components/MobileFilters";
 import { SearchSort } from "@/components/SearchSort";
-import { CarFront, LayoutGrid, ListFilter, Activity } from "lucide-react";
+import { ListFilter, LayoutGrid, Activity, ShieldCheck, Zap } from "lucide-react";
 
 export function SearchLayout({
   total,
@@ -19,34 +19,34 @@ export function SearchLayout({
   children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <div className="min-h-screen bg-cyber-mesh dark:bg-cyber-mesh pt-20 pb-20 sm:pt-32">
+    <div className="min-h-screen bg-black bg-mesh-dark pt-20 pb-20 sm:pt-32">
       <SearchFiltersSync />
       
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-12">
         
-        {/* Superior Dashboard Header */}
-        <div className="relative mb-6 overflow-hidden rounded-3xl sm:rounded-[3rem] border border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/40 p-5 backdrop-blur-3xl shadow-glass-surface sm:mb-12 sm:p-8 lg:p-12">
-           <div className="absolute top-0 right-0 -mr-10 -mt-10 h-64 w-64 rounded-full bg-primary/5 blur-[80px]" />
+        {/* CONCIERGE HUD HEADER */}
+        <div className="relative mb-12 overflow-hidden rounded-[2.5rem] sm:rounded-[4rem] border border-white/[0.05] bg-white/[0.02] p-8 sm:p-16 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
+           <div className="absolute top-0 right-0 -mr-20 -mt-20 h-96 w-96 rounded-full bg-primary/5 blur-[120px]" />
            
-           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="relative z-10 max-w-2xl text-center lg:text-left">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                   <Activity size={12} className="animate-pulse" />
-                   Live Indexing
+           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between relative z-10">
+              <div className="max-w-3xl">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.4em] text-white/50">
+                   <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                   High-Volume Data Capture Active
                 </div>
-                <h1 className="font-display text-4xl font-black leading-[1.1] tracking-tighter text-foreground sm:text-6xl md:text-7xl italic uppercase">
-                  Find Your <br className="hidden sm:block" />
-                  <span className="text-gradient">Dream Machine</span>
+                <h1 className="font-display text-5xl font-black leading-[0.9] tracking-tighter text-white sm:text-8xl md:text-9xl italic uppercase">
+                  Target <br className="hidden sm:block" />
+                  <span className="text-white/40">Inventory</span>
                 </h1>
-                <p className="mt-4 sm:mt-6 text-sm sm:text-lg font-medium text-muted-foreground mx-auto lg:mx-0 max-w-md">
-                   Sifting through <span className="text-foreground font-bold">{total.toLocaleString()}</span> active records. High-fidelity filtering enabled.
+                <p className="mt-8 text-sm sm:text-xl font-medium text-white/40 max-w-xl leading-relaxed">
+                   Currently analyzing <span className="text-white font-black">{total.toLocaleString()}</span> live vehicle records across US sectors. Intelligence filters engaged.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-                 <div className="flex w-full sm:w-auto items-center justify-between rounded-2xl bg-black/5 dark:bg-white/5 p-1 border border-black/5 dark:border-white/5">
+              <div className="flex flex-col gap-4">
+                 <div className="flex items-center justify-between rounded-3xl bg-white/[0.03] p-1.5 border border-white/5">
                     <SearchSort />
-                    <div className="lg:hidden pl-1">
+                    <div className="lg:hidden ml-2">
                        <MobileFilters initial={sidebarInitial} />
                     </div>
                  </div>
@@ -54,46 +54,50 @@ export function SearchLayout({
            </div>
         </div>
 
-        {/* Global Components */}
-        <div className="mb-10 flex flex-col gap-4">
+        {/* Global Components Area */}
+        <div className="mb-12 flex flex-col gap-6">
           <CityPills />
-          <SearchAlertBanner />
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
+        {/* Main Operating Terminal */}
+        <div className="flex flex-col gap-12 lg:flex-row lg:items-start">
           
-          {/* Sidebar Area */}
-          <aside className="hidden lg:block w-80 sticky top-32">
-             <div className="rounded-[2.5rem] border border-black/5 dark:border-white/5 bg-white/30 dark:bg-black/30 p-8 backdrop-blur-2xl shadow-xl">
-                <div className="flex items-center justify-between mb-8 pb-4 border-b border-black/10 dark:border-white/10">
-                   <h2 className="flex items-center gap-2 text-xl font-black tracking-tighter text-foreground dark:text-white">
-                      <ListFilter size={20} className="text-primary" />
-                      FILTERS
-                   </h2>
+          {/* CONTROL SIDEBAR */}
+          <aside className="hidden lg:block w-[340px] sticky top-32">
+             <div className="group relative overflow-hidden rounded-[3rem] border border-white/5 bg-white/[0.02] p-10 backdrop-blur-3xl shadow-2xl transition-all duration-500 hover:border-white/10">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <ListFilter size={120} />
                 </div>
+                
+                <div className="flex items-center justify-between mb-10 relative z-10">
+                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-black">
+                      <ListFilter size={20} />
+                   </div>
+                   <h2 className="text-xs font-black uppercase tracking-[0.4em] text-white">Manual Parameters</h2>
+                </div>
+                
                 <FilterSidebar initial={sidebarInitial} />
              </div>
              
-             {/* Secondary Sidebar Widget (Promo/Info) */}
-             <div className="mt-6 rounded-[2rem] border border-black/5 dark:border-white/5 bg-primary/5 p-6 backdrop-blur-xl">
-                <div className="flex items-center gap-3 mb-2">
-                   <CarFront size={18} className="text-primary" />
-                   <h4 className="text-xs font-black uppercase tracking-widest text-foreground dark:text-white">Pro Tip</h4>
-                </div>
-                <p className="text-[11px] font-bold leading-relaxed text-muted-foreground uppercase tracking-wider">
-                   Combine &apos;Trim&apos; and &apos;Keywords&apos; (like AWD) for the most accurate results.
-                </p>
+             {/* Alert Integration Widget */}
+             <div className="mt-6">
+                <SearchAlertBanner />
              </div>
           </aside>
 
-          {/* Results Grid Area */}
+          {/* INTELLIGENCE FEEDArea */}
           <div className="min-w-0 flex-1">
-             <div className="flex items-center gap-3 mb-8">
-                <LayoutGrid size={18} className="text-primary" />
-                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-muted-foreground">Inventory Feed</h3>
-                <div className="h-px flex-1 bg-black/5 dark:bg-white/5" />
+             <div className="flex items-center gap-4 mb-10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-primary">
+                   <Activity size={20} />
+                </div>
+                <div className="flex flex-col">
+                   <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white">Live Intelligence Feed</h3>
+                   <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-1">Real-time Nationwide Capture</span>
+                </div>
+                <div className="h-px flex-1 bg-white/5" />
              </div>
+             
              {children}
           </div>
 

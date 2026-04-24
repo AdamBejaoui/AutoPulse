@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Menu, X, Bell, Search, CarFront, Zap } from "lucide-react";
+import { Moon, Sun, Menu, X, Bell, Search, CarFront, Zap, Activity } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,32 +22,28 @@ export function Navbar(): React.ReactElement {
 
   const navItems = [
     { label: "Find Cars", href: "/search", icon: Search },
-    { label: "My Alerts", href: "/alerts", icon: Bell },
+    { label: "Market Alerts", href: "/alerts", icon: Bell },
   ];
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 w-full sm:top-6 sm:left-1/2 sm:w-auto sm:max-w-5xl sm:-translate-x-1/2">
-      <header className="relative overflow-hidden border-b border-black/10 dark:border-white/10 bg-white/60 dark:bg-black/60 px-4 py-2 backdrop-blur-3xl shadow-lg transition-all duration-500 sm:rounded-full sm:border sm:px-6 sm:py-3 sm:bg-white/40 sm:dark:bg-black/40">
-        <div className="flex h-11 items-center justify-between sm:h-12">
+    <div className="fixed top-0 left-0 right-0 z-50 w-full sm:top-6 sm:left-1/2 sm:w-auto sm:max-w-4xl sm:-translate-x-1/2 px-2 sm:px-0">
+      <header className="relative overflow-hidden rounded-2xl sm:rounded-full border border-white/[0.08] bg-black/80 p-1.5 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500">
+        <div className="flex h-11 items-center justify-between px-3 sm:h-12 sm:px-1">
           
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <div className="absolute inset-0 animate-pulse-glow rounded-lg bg-primary/20 blur-md sm:rounded-xl" />
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyber-blue to-cyber-purple text-primary-foreground shadow-lg transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl">
-                <CarFront size={18} className="drop-shadow-sm sm:size-[22px]" />
-              </div>
+          <Link href="/" className="flex items-center gap-3 pl-2 sm:pl-4 group">
+            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black transition-all duration-500 group-hover:bg-primary sm:h-9 sm:w-9 sm:rounded-xl">
+              <Zap size={18} className="fill-current" />
             </div>
             <div className="flex flex-col">
-              <span className="font-display text-lg font-black leading-tight tracking-tighter text-foreground sm:text-xl">
-                AUTO<span className="text-primary">PULSE</span>
+              <span className="font-display text-base font-black leading-none tracking-[0.1em] text-white uppercase sm:text-lg">
+                AUTO<span className="opacity-40">PULSE</span>
               </span>
-              <span className="hidden text-[10px] font-bold uppercase tracking-widest text-primary/60 leading-none sm:block">USA Aggregator</span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5">
+          <nav className="hidden md:flex items-center gap-1 mx-4">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -55,16 +51,15 @@ export function Navbar(): React.ReactElement {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "relative flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold tracking-tight transition-all duration-300",
+                    "relative flex items-center gap-2 rounded-full px-5 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300",
                     isActive 
-                      ? "text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground"
+                      ? "text-black" 
+                      : "text-white/40 hover:text-white"
                   )}
                 >
                   {isActive && (
-                    <div className="absolute inset-0 -z-10 rounded-full bg-cyber-gradient shadow-[0_4px_12px_rgba(0,242,254,0.4)]" />
+                    <div className="absolute inset-0 -z-10 rounded-full bg-white" />
                   )}
-                  <item.icon size={16} />
                   {item.label}
                 </Link>
               );
@@ -72,26 +67,24 @@ export function Navbar(): React.ReactElement {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 pr-1.5">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-9 w-9 rounded-full bg-black/5 dark:bg-white/5 text-muted-foreground transition-colors hover:bg-black/10 dark:hover:bg-white/10 hover:text-foreground sm:h-10 sm:w-10"
+              className="hidden sm:flex h-9 w-9 rounded-full text-white/40 hover:bg-white/5 hover:text-white"
             >
-              {mounted && (theme === "dark" ? <Sun size={18} className="text-amber-400 sm:size-5" /> : <Moon size={18} className="sm:size-5" />)}
+              {mounted && (theme === "dark" ? <Sun size={16} /> : <Moon size={16} />)}
             </Button>
             
             <Button
               size="sm"
               onClick={() => setAlertOpen(true)}
-              className="relative h-9 w-9 overflow-hidden rounded-full bg-black/10 dark:bg-white/10 p-0 font-bold text-foreground dark:text-white transition-all hover:bg-black/20 dark:hover:bg-white/20 active:scale-95 group/btn sm:h-auto sm:w-auto sm:px-5 sm:py-5"
+              className="rounded-full bg-white/5 h-9 px-4 sm:px-6 text-[10px] font-black uppercase tracking-widest text-white border border-white/10 hover:bg-white/10 active:scale-95 transition-all"
             >
-              <div className="absolute inset-0 -translate-x-full bg-cyber-gradient transition-transform duration-500 group-hover/btn:translate-x-0" />
-              <span className="relative flex items-center justify-center gap-2">
-                <Bell size={16} className="group-hover/btn:animate-bounce" />
-                <span className="hidden sm:inline">Notify Me</span>
-              </span>
+              <Activity size={14} className="mr-2 text-primary" />
+              <span className="hidden sm:inline">Initialize Sentinel</span>
+              <span className="sm:hidden">Alerts</span>
             </Button>
 
             {/* Mobile Menu Button */}
@@ -99,7 +92,7 @@ export function Navbar(): React.ReactElement {
               variant="ghost"
               size="icon"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex h-9 w-9 rounded-full bg-black/5 dark:bg-white/5 text-muted-foreground hover:bg-black/10 dark:hover:bg-white/10 hover:text-foreground md:hidden"
+              className="flex h-9 w-9 rounded-full text-white/40 hover:bg-white/5 md:hidden"
             >
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
@@ -108,33 +101,23 @@ export function Navbar(): React.ReactElement {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="mt-4 flex flex-col gap-2 rounded-2xl bg-white/40 dark:bg-black/20 p-2 border border-black/5 dark:border-white/5 md:hidden animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="mt-2 flex flex-col gap-1.5 p-1 sm:hidden animate-in fade-in slide-in-from-top-2 duration-300">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMenuOpen(false)}
                 className={cn(
-                  "flex items-center gap-4 rounded-xl px-5 py-4 text-base font-bold transition-all",
+                  "flex items-center justify-between rounded-xl px-5 py-4 text-[10px] font-black uppercase tracking-widest transition-all",
                   pathname === item.href 
-                    ? "bg-cyber-gradient text-primary-foreground shadow-lg" 
-                    : "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground"
+                    ? "bg-white text-black" 
+                    : "bg-white/5 text-white/50 hover:bg-white/10"
                 )}
               >
-                <item.icon size={20} />
                 {item.label}
+                <item.icon size={14} />
               </Link>
             ))}
-            <Button
-              className="mt-2 w-full rounded-xl bg-cyber-gradient py-6 text-base font-bold text-primary-foreground shadow-lg active:scale-[0.98]"
-              onClick={() => {
-                setAlertOpen(true);
-                setIsMenuOpen(false);
-              }}
-            >
-              <Bell size={18} className="mr-2" />
-              AI Search Sentinel
-            </Button>
           </div>
         )}
       </header>

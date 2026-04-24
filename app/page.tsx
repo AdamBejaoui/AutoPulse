@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { StructuredSearchBar } from "@/components/StructuredSearchBar";
-import { Search, Bell, Globe, ChevronRight } from "lucide-react";
+import { Search, Bell, Globe, ChevronRight, Zap, ShieldCheck, Activity } from "lucide-react";
 import { unstable_cache } from "next/cache";
 
 const getCachedListingCount = unstable_cache(
@@ -18,72 +18,69 @@ const getCachedListingCount = unstable_cache(
 export default async function HomePage(): Promise<ReactElement> {
   const totalListings = await getCachedListingCount().catch(() => 0);
   return (
-    <div className="flex flex-col relative">
-      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+    <div className="flex flex-col relative bg-black min-h-screen">
+      <div className="absolute inset-0 z-0 bg-mesh-dark pointer-events-none opacity-50" />
 
-      <section className="relative overflow-hidden pt-8 pb-16 lg:pt-32 lg:pb-40 text-foreground">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none z-0" />
-        <div className="absolute top-0 right-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[150px] pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-cyber-purple/10 blur-[150px] pointer-events-none" />
-
-        <div className="container relative z-10 px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl text-center">
+      {/* HERO SECTION */}
+      <section className="relative overflow-hidden pt-12 pb-24 lg:pt-40 lg:pb-48">
+        <div className="container relative z-10 px-4 sm:px-6 mx-auto">
+          <div className="mx-auto max-w-6xl text-center">
             
-            <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-sm font-bold text-primary backdrop-blur-xl shadow-[0_0_20px_rgba(0,216,255,0.2)]">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary"></span>
-              </span>
-              <span className="tracking-widest uppercase text-[11px]">Live: {totalListings.toLocaleString()} Listings</span>
+            <div className="mb-10 inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/5 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.4em] text-white/50 backdrop-blur-3xl shadow-2xl">
+               <Activity size={14} className="text-primary animate-pulse" />
+               Live Intel: {totalListings.toLocaleString()} Active Nodes
             </div>
             
-            <h1 className="font-display text-5xl font-black tracking-tighter sm:text-8xl lg:text-9xl drop-shadow-2xl italic uppercase leading-[0.9]">
-              <span className="bg-gradient-to-r from-foreground via-primary/80 to-primary bg-clip-text text-transparent">Nationwide</span> <br />Car Search
+            <h1 className="font-display text-6xl font-black tracking-tighter sm:text-[140px] lg:text-[180px] drop-shadow-2xl italic uppercase leading-[0.8] mb-12">
+               <span className="text-white">FORCE</span> <br />
+               <span className="text-white/10">MULTIPLIER</span>
             </h1>
             
-            <p className="mx-auto mt-6 sm:mt-10 max-w-2xl text-base sm:text-xl font-medium text-muted-foreground leading-relaxed px-4">
+            <p className="mx-auto mt-12 max-w-2xl text-sm sm:text-xl font-medium text-white/40 uppercase tracking-[0.2em] leading-relaxed px-4">
               Continuous high-volume data capture across Facebook Marketplace USA. 
-              Find deals instantly with precision metadata parsing and live email sentinel alerts.
+              Find arbitrage opportunities with specialized metadata parsing.
             </p>
             
-            <div className="mx-auto mt-10 sm:mt-16 max-w-5xl relative z-20 px-2 sm:px-0">
-              <div className="absolute -inset-1 rounded-[2rem] sm:rounded-[3rem] bg-gradient-to-r from-primary/20 via-cyber-purple/20 to-primary/20 opacity-40 blur-xl" />
-              <div className="relative glass shadow-2xl rounded-[2.5rem] sm:rounded-[3.5rem] p-1.5 sm:p-2 border border-white/5 dark:border-white/5 bg-background/40 backdrop-blur-3xl">
-                <React.Suspense fallback={<div className="h-[70px] sm:h-[80px] w-full animate-pulse bg-primary/5 rounded-3xl" />}>
-                  <StructuredSearchBar />
-                </React.Suspense>
-              </div>
+            <div className="mx-auto mt-16 sm:mt-24 max-w-5xl relative z-20 px-4 sm:px-0">
+               <div className="relative glass-card border border-white/5 bg-white/[0.01] rounded-[2.5rem] sm:rounded-[4rem] p-1.5 sm:p-3 shadow-[0_50px_100px_rgba(0,0,0,0.8)] transition-all hover:border-white/10">
+                  <React.Suspense fallback={<div className="h-[100px] w-full animate-pulse bg-white/5 rounded-full" />}>
+                     <StructuredSearchBar />
+                  </React.Suspense>
+               </div>
             </div>
 
-            <p className="mt-10 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest">
-              <Link
-                href="/search"
-                className="group inline-flex items-center gap-2 text-primary hover:text-foreground transition-all drop-shadow-[0_0_8px_rgba(0,216,255,0.5)]"
-              >
-                Browse all indexed listings
-                <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-            </p>
+            <div className="mt-16 flex items-center justify-center gap-8">
+               <Link
+                 href="/search"
+                 className="group flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all"
+               >
+                 Access Search Terminal
+                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 group-hover:border-white/20 transition-all">
+                    <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+                 </div>
+               </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-24 sm:px-6">
-        <div className="grid gap-8 md:grid-cols-3">
+      {/* FEATURES SECTION */}
+      <section className="container mx-auto px-4 py-32 sm:px-6 max-w-7xl">
+        <div className="grid gap-6 md:grid-cols-3">
           <FeatureCard 
-            icon={<Search className="text-blue-500" />}
-            title="Aggregated Search"
-            description="Search across 50+ major US metropolitan areas simultaneously with advanced filtering."
+            icon={<Search />}
+            title="Sectored Aggregation"
+            description="Search across 50+ major US metropolitan areas simultaneously with advanced filtering parameters."
           />
           <FeatureCard 
-            icon={<Bell className="text-purple-500" />}
-            title="Instant Alerts"
-            description="Get notified via email the moment a vehicle matching your exact criteria is listed."
+            icon={<Bell />}
+            title="Search Sentinel"
+            description="Get notified via encrypted email the moment a vehicle matching your exact criteria enters the index."
           />
           <FeatureCard 
-            icon={<Globe className="text-emerald-500" />}
-            title="Real-time Indexing"
-            description="Our scrapers run around the clock to ensure you see deals before they're gone."
+            icon={<ShieldCheck />}
+            title="Metadata Integrity"
+            description="Our specialized NLP parsers verify condition, title status, and specs before delivery."
           />
         </div>
       </section>
@@ -93,16 +90,15 @@ export default async function HomePage(): Promise<ReactElement> {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string, description: string }) {
   return (
-    <article className="group relative flex flex-col rounded-3xl border border-border/50 glass-card p-8 transition-all hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1">
-      <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/5 text-primary group-hover:scale-110 transition-transform">
-        {React.cloneElement(icon as React.ReactElement, { size: 28 })}
+    <article className="group relative flex flex-col rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 transition-all hover:bg-white/[0.04] hover:border-white/10 hover:-translate-y-1">
+      <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-black transition-all group-hover:scale-110 group-hover:bg-primary">
+        {React.cloneElement(icon as React.ReactElement, { size: 24 })}
       </div>
-      <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+      <h2 className="text-xl font-black uppercase tracking-tighter text-white italic">
         {title}
       </h2>
-      <p className="mt-4 leading-relaxed text-muted-foreground">
+      <p className="mt-4 text-[11px] font-bold uppercase tracking-widest leading-relaxed text-white/30">
         {description}
       </p>
     </article>
-  );
 }

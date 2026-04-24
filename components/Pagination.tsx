@@ -1,6 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
   page: number;
@@ -38,26 +39,28 @@ export function Pagination({
 
   return (
     <nav
-      className="mt-10 flex flex-wrap items-center justify-center gap-2"
+      className="mt-16 flex flex-wrap items-center justify-center gap-2"
       aria-label="Pagination"
     >
       <PaginationLink href={page <= 1 ? null : hrefForPage(page - 1)}>
-        Previous
+        <ChevronLeft size={16} />
       </PaginationLink>
+      
       {sortedUnique.map((n, idx) => (
         <React.Fragment key={n}>
           {idx > 0 && sortedUnique[idx - 1] !== undefined && n - sortedUnique[idx - 1]! > 1 ? (
-            <span className="px-1 text-muted-foreground">…</span>
+            <span className="px-2 text-white/20 font-black">...</span>
           ) : null}
           <PaginationLink href={hrefForPage(n)} active={n === page}>
             {n}
           </PaginationLink>
         </React.Fragment>
       ))}
+      
       <PaginationLink
         href={page >= totalPages ? null : hrefForPage(page + 1)}
       >
-        Next
+        <ChevronRight size={16} />
       </PaginationLink>
     </nav>
   );
@@ -74,7 +77,7 @@ function PaginationLink({
 }): React.ReactElement {
   if (!href) {
     return (
-      <span className="rounded-full border border-border px-3 py-1 text-sm text-muted-foreground opacity-50">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 bg-white/[0.02] text-white/10">
         {children}
       </span>
     );
@@ -83,10 +86,10 @@ function PaginationLink({
     <Link
       href={href}
       className={cn(
-        "rounded-full border px-3 py-1 text-sm font-medium transition",
+        "flex h-10 min-w-[2.5rem] items-center justify-center rounded-full border text-[10px] font-black tracking-widest transition-all",
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-card text-foreground hover:border-primary/50",
+          ? "border-white bg-white text-black shadow-lg"
+          : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/5 hover:text-white hover:border-white/20",
       )}
     >
       {children}
