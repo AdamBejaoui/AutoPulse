@@ -31,10 +31,10 @@ function formatUsdFromCents(cents: number | null): string {
 function ConfigRow({ icon: Icon, value }: { icon: any, value: string }) {
   return (
     <div className="flex items-center gap-3">
-       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-white/20 transition-colors group-hover:text-white">
+       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground/5 text-muted-foreground transition-colors group-hover:text-foreground">
           <Icon size={14} />
        </div>
-       <span className="text-[10px] font-black uppercase tracking-widest text-white/40 truncate tracking-tight">{value}</span>
+       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground truncate tracking-tight">{value}</span>
     </div>
   );
 }
@@ -73,7 +73,7 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
         title: "System Error",
         description: "Could not terminate Sentinel signal.",
       });
-      setIsDeleting(true); // Keep grayscale
+      setIsDeleting(false);
     }
   }
 
@@ -112,33 +112,33 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
   }
 
   return (
-    <article className={`group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0A0C0F]/80 p-8 backdrop-blur-3xl shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_0_80px_rgba(255,255,255,0.05)] ${isDeleting ? "opacity-40 grayscale pointer-events-none scale-95" : ""}`}>
+    <article className={`group relative overflow-hidden rounded-[2rem] border border-foreground/10 bg-background/80 p-8 backdrop-blur-3xl shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:border-foreground/20 hover:shadow-2xl ${isDeleting ? "opacity-40 grayscale pointer-events-none scale-95" : ""}`}>
       
       {/* Decorative Glow */}
-      <div className="absolute top-0 right-0 h-[300px] w-[300px] -translate-y-1/2 translate-x-1/3 rounded-full bg-white/[0.02] blur-[80px] pointer-events-none opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
+      <div className="absolute top-0 right-0 h-[300px] w-[300px] -translate-y-1/2 translate-x-1/3 rounded-full bg-foreground/[0.02] blur-[80px] pointer-events-none opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
 
       <div className="relative z-10">
         <div className="mb-6 flex items-start justify-between">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black/50 border border-white/10 text-white shadow-inner transition-transform group-hover:scale-110 group-hover:border-white/40">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-foreground/5 border border-foreground/10 text-foreground shadow-inner transition-transform group-hover:scale-110 group-hover:border-foreground/40">
              <Car size={26} strokeWidth={1.5} />
           </div>
           <button 
             onClick={handleDelete}
             disabled={isDeleting || isUpdating}
-            className="h-10 w-10 text-white/20 hover:text-white hover:bg-white/5 rounded-full flex items-center justify-center transition-all bg-black/20 border border-transparent hover:border-white/10 disabled:opacity-50"
+            className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-full flex items-center justify-center transition-all bg-foreground/[0.02] border border-transparent hover:border-foreground/10 disabled:opacity-50"
           >
              <Trash2 size={16} />
           </button>
         </div>
 
-        <h3 className="text-2xl font-black font-display tracking-tight text-white mb-2 line-clamp-1 group-hover:text-white transition-colors uppercase italic">{title}</h3>
+        <h3 className="text-2xl font-black font-display tracking-tight text-foreground mb-2 line-clamp-1 group-hover:text-foreground transition-colors uppercase italic">{title}</h3>
         <div className="flex items-center gap-2 mb-8">
-           <div className="h-2 w-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,1)]" />
-           <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Operational</span>
+           <div className="h-2 w-2 rounded-full bg-foreground animate-pulse shadow-[0_0_8px_hsl(var(--foreground))]" />
+           <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Operational</span>
         </div>
 
         {/* Config Summary */}
-        <div className="space-y-4 mb-4 bg-black/30 p-5 rounded-2xl border border-white/5">
+        <div className="space-y-4 mb-4 bg-background/30 p-5 rounded-2xl border border-foreground/5">
            <ConfigRow icon={DollarSign} value={s.priceMin || s.priceMax ? `${formatUsdFromCents(s.priceMin)} - ${formatUsdFromCents(s.priceMax)}` : "All Budgets"} />
            <ConfigRow icon={Calendar} value={s.yearMin || s.yearMax ? `${s.yearMin || "Any"} - ${s.yearMax || "Any"}` : "Any Year"} />
            <ConfigRow icon={MapPin} value={s.city || "All Sectors"} />
@@ -148,33 +148,33 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
         </div>
 
         {/* Email Row */}
-        <div className="mb-8 px-5 py-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between group/email transition-colors hover:bg-white/[0.05]">
+        <div className="mb-8 px-5 py-3 rounded-xl bg-foreground/[0.03] border border-foreground/5 flex items-center justify-between group/email transition-colors hover:bg-foreground/[0.05]">
            <div className="flex items-center gap-3 overflow-hidden">
-              <Mail size={14} className="text-white/40 flex-shrink-0" />
+              <Mail size={14} className="text-muted-foreground flex-shrink-0" />
               {isEditing ? (
                 <Input 
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="h-7 bg-transparent border-b border-white/20 border-t-0 border-x-0 rounded-none px-0 text-xs font-black text-white focus-visible:ring-0 uppercase"
+                  className="h-7 bg-transparent border-b border-foreground/20 border-t-0 border-x-0 rounded-none px-0 text-xs font-black text-foreground focus-visible:ring-0 uppercase"
                   autoFocus
                 />
               ) : (
-                <span className="text-[10px] font-black text-white/60 truncate uppercase tracking-widest">{s.email}</span>
+                <span className="text-[10px] font-black text-muted-foreground truncate uppercase tracking-widest">{s.email}</span>
               )}
            </div>
            
            <div className="flex items-center gap-1">
              {isEditing ? (
                <>
-                 <button onClick={handleUpdateEmail} disabled={isUpdating} className="p-1.5 text-white/60 hover:text-white transition-colors">
+                 <button onClick={handleUpdateEmail} disabled={isUpdating} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
                     <Check size={14} />
                  </button>
-                 <button onClick={() => setIsEditing(false)} className="p-1.5 text-white/20 hover:text-white transition-colors">
+                 <button onClick={() => setIsEditing(false)} className="p-1.5 text-muted-foreground/20 hover:text-foreground transition-colors">
                     <X size={14} />
                  </button>
                </>
              ) : (
-               <button onClick={() => setIsEditing(true)} className="p-1.5 text-white/10 hover:text-white opacity-0 group-hover/email:opacity-100 transition-all">
+               <button onClick={() => setIsEditing(true)} className="p-1.5 text-muted-foreground/10 hover:text-foreground opacity-0 group-hover/email:opacity-100 transition-all">
                   <Pencil size={14} />
                </button>
              )}
@@ -182,12 +182,12 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
         </div>
 
         {/* Footer Info */}
-        <div className="pt-6 border-t border-white/10 flex items-center justify-between">
-           <div className="flex items-center gap-2 text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">
-              <Clock size={14} className="text-white/20" />
+        <div className="pt-6 border-t border-foreground/10 flex items-center justify-between">
+           <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-[0.3em]">
+              <Clock size={14} className="text-muted-foreground" />
               Capture: {new Date(s.createdAt).toLocaleDateString()}
            </div>
-           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/40 border border-white/10 shadow-2xl hover:scale-110 transition-transform">
+           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground border border-foreground/10 shadow-2xl hover:scale-110 transition-transform">
               <Zap size={14} className="animate-pulse" />
            </div>
         </div>
