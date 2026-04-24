@@ -9,7 +9,7 @@ import { unstable_cache } from "next/cache";
 const getCachedListingCount = unstable_cache(
   async () => {
     const { prisma } = await import("@/lib/db");
-    return prisma.listing.count();
+    return prisma.listing.count({ where: { isCar: true, isJunk: false } });
   },
   ["listing-count"],
   { revalidate: 300, tags: ["listing-count"] }
