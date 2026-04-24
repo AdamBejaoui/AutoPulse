@@ -31,14 +31,13 @@ export default async function HomePage(): Promise<ReactElement> {
                Live Intel: {totalListings.toLocaleString()} Active Nodes
             </div>
             
-            <h1 className="font-display text-6xl font-black tracking-tighter sm:text-[140px] lg:text-[180px] drop-shadow-2xl italic uppercase leading-[0.8] mb-12">
+            <h1 className="font-display text-5xl font-black tracking-tighter sm:text-[140px] lg:text-[180px] drop-shadow-2xl italic uppercase leading-[0.8] mb-8 sm:mb-12">
                <span className="text-white">FORCE</span> <br />
                <span className="text-white/10">MULTIPLIER</span>
             </h1>
             
-            <p className="mx-auto mt-12 max-w-2xl text-sm sm:text-xl font-medium text-white/40 uppercase tracking-[0.2em] leading-relaxed px-4">
-              Continuous high-volume data capture across Facebook Marketplace USA. 
-              Find arbitrage opportunities with specialized metadata parsing.
+            <p className="mx-auto mt-8 sm:mt-12 max-w-2xl text-[10px] sm:text-xl font-medium text-white/40 uppercase tracking-[0.3em] leading-relaxed px-6">
+              Continuous high-volume data capture <br className="hidden sm:block" /> across Facebook Marketplace USA. 
             </p>
             
             <div className="mx-auto mt-16 sm:mt-24 max-w-5xl relative z-20 px-4 sm:px-0">

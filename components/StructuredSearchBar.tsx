@@ -98,11 +98,11 @@ export function StructuredSearchBar() {
       >
         {/* Make Column */}
         <div className="relative flex-1" ref={makeRef}>
-            <div className="flex items-center h-full px-6 py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item" onClick={() => setMakeOpen(true)}>
+            <div className="flex items-center h-full px-5 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item" onClick={() => setMakeOpen(true)}>
                 <div className="flex flex-col flex-1 truncate">
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1 group-hover/item:text-primary transition-colors">Manufacturer</span>
+                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-0.5 group-hover/item:text-primary transition-colors">Manufacturer</span>
                     <input 
-                        className="bg-transparent border-none outline-none text-white font-black text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
+                        className="bg-transparent border-none outline-none text-white font-black text-sm md:text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
                         placeholder="ALL MAKES"
                         value={make}
                         onChange={(e) => {
@@ -119,6 +119,9 @@ export function StructuredSearchBar() {
                 )}
                 <ChevronDown size={14} className={cn("ml-2 text-white/20 transition-transform duration-300", makeOpen && "rotate-180")} />
             </div>
+            
+            {/* Mobile Divider */}
+            <div className="md:hidden h-px bg-white/5 mx-5" />
 
             {makeOpen && (
                 <div className="absolute top-[calc(100%+12px)] left-0 right-[-200px] z-[100] bg-background/95 backdrop-blur-3xl border border-foreground/10 rounded-[2rem] shadow-[0_32px_64px_rgba(0,0,0,0.5)] max-h-[450px] overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-4 duration-300">
@@ -158,11 +161,11 @@ export function StructuredSearchBar() {
 
         {/* Model Column */}
         <div className="relative flex-1" ref={modelRef}>
-            <div className="flex items-center h-full px-6 py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item">
+            <div className="flex items-center h-full px-5 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item">
                 <div className="flex flex-col flex-1 truncate">
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1 group-hover/item:text-primary transition-colors">Designation</span>
+                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-0.5 group-hover/item:text-primary transition-colors">Designation</span>
                     <input 
-                        className="bg-transparent border-none outline-none text-white font-black text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
+                        className="bg-transparent border-none outline-none text-white font-black text-sm md:text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
                         placeholder={make ? "ANY MODEL" : "LOCKED"}
                         value={model}
                         onChange={(e) => {
@@ -179,6 +182,9 @@ export function StructuredSearchBar() {
                     </button>
                 )}
             </div>
+            
+            {/* Mobile Divider */}
+            <div className="md:hidden h-px bg-white/5 mx-5" />
 
             {modelSuggestionsOpen && make && filteredModels.length > 0 && (
                  <div className="absolute top-[calc(100%+12px)] left-0 right-0 z-50 glass border border-white/10 rounded-3xl shadow-2xl max-h-[350px] overflow-y-auto animate-in fade-in slide-in-from-top-4">
@@ -206,11 +212,11 @@ export function StructuredSearchBar() {
 
         {/* City Column */}
         <div className="relative flex-1" ref={cityRef}>
-            <div className="flex items-center h-full px-6 py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item" onClick={() => setCityOpen(true)}>
+            <div className="flex items-center h-full px-5 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-white/5 transition-colors rounded-3xl group/item" onClick={() => setCityOpen(true)}>
                 <div className="flex flex-col flex-1 truncate">
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-1 group-hover/item:text-primary transition-colors">Sector</span>
+                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-white/30 mb-0.5 group-hover/item:text-primary transition-colors">Sector</span>
                     <input 
-                        className="bg-transparent border-none outline-none text-white font-black text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
+                        className="bg-transparent border-none outline-none text-white font-black text-sm md:text-lg placeholder:text-white/10 w-full uppercase tracking-tighter"
                         placeholder="NATIONWIDE"
                         value={city}
                         onChange={(e) => {
