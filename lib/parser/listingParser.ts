@@ -315,7 +315,22 @@ export function parseListingText(title: string, description: string = ""): Parse
   if (vin) featuresSet.add(`VIN: ${vin}`);
 
   const isJunk = isJunkTitle(title, description);
+
+  // 14. DYNAMIC SCORE BONUSES (NEW: Prioritize richness)
+  if (descriptionText.length > 500) parseScore += 25;
+  else if (descriptionText.length > 100) parseScore += 10;
+
+  if (transmission) parseScore += 5;
+  if (engine) parseScore += 5;
+  if (fuelType && fuelType !== "gasoline") parseScore += 5; // Hybrid/Diesel/EV are rare/good info
+  if (driveType) parseScore += 5;
+  if (color) parseScore += 5;
+  if (titleStatus) parseScore += 10; // High value info
+  if (vin) parseScore += 15; // VIN is the ultimate trust signal
   
+  // Feature bonus
+  parseScore += Math.min(10, featuresSet.size);
+
   return {
     make,
     model,
