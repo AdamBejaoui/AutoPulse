@@ -32,3 +32,9 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# temporary tools and scratch
+/scratch
+/artifacts
+/scripts/check-sold.ts.js
+/scripts/bulk-enrich.ts.js

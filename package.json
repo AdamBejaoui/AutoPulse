@@ -10,6 +10,7 @@
     "workers": "ts-node --project tsconfig.json scripts/keepAlive.ts",
     "harvest": "ts-node --project tsconfig.json scripts/mega-harvest-v2.ts",
     "harvest:dry": "ts-node --project tsconfig.json scripts/mega-harvest-v2.ts --dry-run",
+    "mission-control": "ts-node --project tsconfig.json scripts/mission-control.ts",
     "db:reset": "npx ts-node scratch/clear_db.ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",

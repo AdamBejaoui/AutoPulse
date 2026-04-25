@@ -7,10 +7,10 @@ import { ApifyClient } from 'apify-client';
 import { PrismaClient } from '@prisma/client';
 
 // ─── SAFETY CONFIG ────────────────────────────────────────────────────────────
-const MAX_URLS_PER_RUN = 15;          // Hard cap on number of start URLs
-const MAX_RESULTS_PER_URL = 20;       // Results fetched per URL
-const RESULTS_LIMIT = 200;            // Total results cap for entire run
-const USE_RESIDENTIAL = false;        // true = expensive, false = datacenter (cheaper)
+const MAX_URLS_PER_RUN = 8;           // Increased to user's 8 links
+const MAX_RESULTS_PER_URL = 500;      // Higher limit per URL
+const RESULTS_LIMIT = 3000;           // Goal: 3000 cars
+const USE_RESIDENTIAL = false;        // Standard cheap proxies
 const DRY_RUN = process.argv.includes('--dry-run'); // Pass --dry-run to preview only
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -63,87 +63,59 @@ async function runMegaHarvest() {
   const combos = Array.from(new Set(subs.map(s => `${s.make || ''} ${s.model || ''}`.trim()))).filter(Boolean);
   console.log(`\n🎯 Active subscriptions: ${subs.length} (${combos.length} unique combos)`);
 
-  // 3. Build targeted URLs — priority (subscription-matched) first
-  const priorityCities = ['nyc', 'la', 'chicago'];   // Only 3 cities for priority
-  const generalCities  = ['miami', 'dallas', 'houston', 'atlanta', 'boston'];
-
+  // 3. Build targeted URLs
+  const generalCities = ['miami', 'atlanta', 'dallas', 'houston', 'losangeles', 'chicago'];
   const startUrls: { url: string }[] = [];
 
-  // Priority: specific car+city searches for subscribers
-  for (const combo of combos) {
-    for (const city of priorityCities) {
-      startUrls.push({
-        url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(combo)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`
-      });
-    }
-  }
-
-  // General: vehicle browse pages (cheap, broad coverage)
+  // General browse for non-subscription cars
   for (const city of generalCities) {
     startUrls.push({
       url: `https://www.facebook.com/marketplace/${city}/vehicles?sort=CREATION_TIME_DESCEND`
     });
   }
 
-  // Hard cap
+  // Priority car+city searches from subscriptions
+  for (const combo of combos) {
+    for (const city of ['miami', 'atlanta']) { // Only 2 cities for targeted to save money
+      startUrls.push({
+        url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(combo)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`
+      });
+    }
+  }
+
   const finalUrls = startUrls.slice(0, MAX_URLS_PER_RUN);
 
-  // 4. Estimate cost and show plan
-  const estimatedRequests = finalUrls.length * MAX_RESULTS_PER_URL;
-  const proxyLabel = USE_RESIDENTIAL ? 'RESIDENTIAL (expensive)' : 'DATACENTER (cheap)';
-
-  console.log(`\n📋 PLAN:`);
-  console.log(`   URLs to scrape  : ${finalUrls.length} (cap: ${MAX_URLS_PER_RUN})`);
-  console.log(`   Max results/URL : ${MAX_RESULTS_PER_URL}`);
-  console.log(`   Total results   : up to ${RESULTS_LIMIT}`);
-  console.log(`   Proxy type      : ${proxyLabel}`);
-  console.log(`   Est. requests   : ~${estimatedRequests}`);
+  // 4. Plan
+  console.log(`\n📋 PLAN (Tight Budget Mode):`);
+  console.log(`   URLs to scrape  : ${finalUrls.length}`);
+  console.log(`   Max Results     : ${RESULTS_LIMIT} total`);
+  console.log(`   Scraper Actor   : curious_coder/facebook-marketplace`);
   console.log(`   Webhook URL     : ${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/apify`);
 
   if (DRY_RUN) {
-    console.log('\n📍 URLs that WOULD be scraped:');
     finalUrls.forEach((u, i) => console.log(`   ${i + 1}. ${u.url}`));
-    console.log('\n✅ Dry run complete. No credits used. Re-run without --dry-run to execute.');
     return;
   }
 
-  // 5. Ask for confirmation
-  console.log('');
-  const answer = await ask('▶  Start this run? (yes/no): ');
-  if (answer.trim().toLowerCase() !== 'yes') {
-    console.log('❌ Aborted — no credits used.');
-    return;
-  }
-
-  // 6. Parse cookies
-  const rawCookies = process.env.FB_COOKIES || '';
-  let cookies: any[] = [];
-  try {
-    if (rawCookies.replace(/\s/g, '')) {
-      cookies = JSON.parse(rawCookies.replace(/\s/g, '').replace(/\\/g, ''));
-    }
-  } catch {
-    console.warn('⚠️  Could not parse FB_COOKIES — running without session cookies.');
-  }
-
-  // 7. Build Apify input
+  // 5. Build Apify input (MATCHING USER'S EXACT SETTINGS)
   const input = {
-    startUrls: finalUrls,
-    maxResultsPerQuery: MAX_RESULTS_PER_URL,
-    resultsLimit: RESULTS_LIMIT,
-    proxyConfiguration: {
+    urls: finalUrls.map(u => u.url), 
+    maxPagesPerUrl: 4,             // Fixed to user's setting
+    maxItems: 3000,                // Goal: 3000 cars
+    proxyConfiguration: { 
       useApifyProxy: true,
-      apifyProxyGroups: USE_RESIDENTIAL ? ['RESIDENTIAL'] : ['SHADER'],
+      apifyProxyGroups: ['RESIDENTIAL'],
+      apifyProxyCountry: 'US'
     },
-    cookies,
-    viewPortWidth: 1280,
-    viewPortHeight: 720,
+    onlyPublic: false,
+    useFilters: true,
+    scrapeDetails: true            // Ensure full info is grabbed
   };
 
   // 8. Start run
   try {
     console.log('\n📡 Starting Apify run...');
-    const run = await apifyClient.actor('apify/facebook-marketplace-scraper').start(input, {
+    const run = await apifyClient.actor('curious_coder/facebook-marketplace').start(input, {
       webhooks: [{
         eventTypes: ['ACTOR.RUN.SUCCEEDED'],
         requestUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/apify`,

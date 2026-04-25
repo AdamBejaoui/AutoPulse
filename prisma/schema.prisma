@@ -52,6 +52,7 @@ model Listing {
   isJunk        Boolean   @default(false)
   isCar         Boolean   @default(true)
   parsedAt      DateTime?
+  isSold        Boolean   @default(false)
 
   @@index([postedAt])
   @@index([make])
@@ -68,6 +69,7 @@ model Listing {
   @@index([driveType])
   @@index([isJunk])
   @@index([isCar])
+  @@index([isSold])
 }
 
 model Subscription {

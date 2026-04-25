@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
         const parsed = parseListingText(title, description);
         if (parsed.isJunk) {
-          console.log(`[webhook] Skipping junk listing (parsed): ${title}`);
+          console.log(`[webhook] Skipping confirmed junk listing (parsed): ${title}`);
           continue;
         }
 
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
           features: parsed.features,
           vin: parsed.vin,
           isJunk: parsed.isJunk,
-          isCar: !parsed.isJunk && parsed.make !== "Unknown",
+          isCar: !parsed.isJunk, // Accept any non-junk listing as a car even if make is unknown
           parseScore: parsed.parseScore,
           parsedAt: new Date(),
         };

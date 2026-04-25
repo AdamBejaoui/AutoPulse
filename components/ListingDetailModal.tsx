@@ -176,13 +176,18 @@ export function ListingDetailModal({
             <p className="text-xs text-muted-foreground mb-1">Listed price</p>
             <p className="text-4xl font-bold text-foreground mb-5">{formatUsd(listing.price)}</p>
             <a
-              href={fbUrl}
-              target="_blank"
+              href={listing.isSold ? "#" : fbUrl}
+              target={listing.isSold ? undefined : "_blank"}
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all"
+              className={cn(
+                "flex items-center justify-center gap-2 w-full h-12 rounded-xl text-sm font-semibold transition-all",
+                listing.isSold 
+                  ? "bg-surface-raised text-muted-foreground cursor-not-allowed border border-border" 
+                  : "bg-primary text-white shadow-blue hover:bg-primary/90 active:scale-95"
+              )}
             >
-              <ExternalLink size={16} />
-              View on Facebook
+              {listing.isSold ? <X size={16} /> : <ExternalLink size={16} />}
+              {listing.isSold ? "Listing Unavailable" : "View on Facebook"}
             </a>
           </div>
         </div>
@@ -210,6 +215,20 @@ export function ListingDetailModal({
                 <Chip icon={<Clock size={11} />}>{timeAgo(listing.postedAt)}</Chip>
               </div>
             </header>
+
+            {/* Sold Warning */}
+            {listing.isSold && (
+              <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 flex items-start gap-3">
+                <AlertTriangle className="text-red-500 shrink-0" size={18} />
+                <div>
+                  <p className="text-sm font-semibold text-red-500 mb-0.5">This vehicle has been sold</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    This listing is no longer active on Facebook Marketplace. 
+                    Search updated to show current available options.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Market analysis */}
             {listing.analysis && (
@@ -312,13 +331,18 @@ export function ListingDetailModal({
           {/* Mobile sticky footer */}
           <div className="sm:hidden p-4 border-t border-border bg-background/95 backdrop-blur-xl">
             <a
-              href={fbUrl}
-              target="_blank"
+              href={listing.isSold ? "#" : fbUrl}
+              target={listing.isSold ? undefined : "_blank"}
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all"
+              className={cn(
+                "flex items-center justify-center gap-2 w-full h-12 rounded-xl text-sm font-semibold transition-all",
+                listing.isSold 
+                  ? "bg-surface-raised text-muted-foreground cursor-not-allowed border border-border" 
+                  : "bg-primary text-white shadow-blue hover:bg-primary/90 active:scale-95"
+              )}
             >
               <ExternalLink size={16} />
-              View on Facebook — {formatUsd(listing.price)}
+              {listing.isSold ? "Unavailable" : `View on Facebook — ${formatUsd(listing.price)}`}
             </a>
           </div>
 

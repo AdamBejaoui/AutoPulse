@@ -69,11 +69,20 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
             )}
             onLoad={() => setImgLoaded(true)}
             onError={() => { setImgOk(false); setImgLoaded(true); }}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
 
+          {/* Sold overlay */}
+          {listing.isSold && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
+              <span className="px-4 py-2 rounded-lg bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl transform -rotate-3 border-2 border-white/20">
+                Vehicle Sold
+              </span>
+            </div>
+          )}
+
           {/* Deal badge */}
-          {dealRating && dealRating !== "unknown" && (
+          {dealRating && dealRating !== "unknown" && !listing.isSold && (
             <div className="absolute top-3 left-3 z-10">
               <span className={cn(
                 "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold",
