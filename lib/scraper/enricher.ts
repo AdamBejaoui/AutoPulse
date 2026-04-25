@@ -40,6 +40,7 @@ export async function enrichListingDetails(listingId: string) {
         transmission: parsed.transmission || listing.transmission,
         trim: parsed.trim || listing.trim,
         isCar: !parsed.isJunk,
+        parseScore: parsed.parseScore,
         parsedAt: new Date(),
       }
     });
