@@ -78,7 +78,7 @@ export function SearchLayout({
                   Clear all
                 </button>
               </div>
-              <div className="p-4 overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar">
+              <div className="p-4">
                 <FilterSidebar initial={sidebarInitial} />
               </div>
             </div>
