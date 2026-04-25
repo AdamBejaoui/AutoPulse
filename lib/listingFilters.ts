@@ -264,17 +264,21 @@ export function buildListingWhere(
 export function buildListingOrderBy(
   p: ParsedListingParams,
 ): Prisma.ListingOrderByWithRelationInput | Prisma.ListingOrderByWithRelationInput[] {
+  // We apply a quality sort by default so "Fixed" cars show first
+  const qualitySort: Prisma.ListingOrderByWithRelationInput = { parseScore: "desc" };
+
   switch (p.sort) {
     case "price_asc":
-      return { price: "asc" };
+      return [{ price: "asc" }, qualitySort];
     case "price_desc":
-      return { price: "desc" };
+      return [{ price: "desc" }, qualitySort];
     case "year_desc":
-      return { year: "desc" };
+      return [{ year: "desc" }, qualitySort];
     case "year_asc":
-      return { year: "asc" };
+      return [{ year: "asc" }, qualitySort];
     case "newest":
     default:
-      return [{ createdAt: "desc" }, { postedAt: "desc" }];
+      // Primary: Full Details First, Secondary: Newest Postings
+      return [qualitySort, { postedAt: "desc" }, { createdAt: "desc" }];
   }
 }
