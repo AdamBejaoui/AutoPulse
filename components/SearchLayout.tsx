@@ -8,7 +8,9 @@ import { SearchAlertBanner } from "@/components/SearchAlertBanner";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { MobileFilters } from "@/components/MobileFilters";
 import { SearchSort } from "@/components/SearchSort";
+import { ActiveFilters } from "@/components/ActiveFilters";
 import { SlidersHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function SearchLayout({
   total,
@@ -61,7 +63,7 @@ export function SearchLayout({
           {/* Sidebar */}
           <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
             <div className="rounded-xl bg-surface border border-border overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
                 <div className="flex items-center gap-2.5">
                   <SlidersHorizontal size={16} className="text-primary" />
                   <h2 className="text-sm font-semibold text-foreground">Filters</h2>
@@ -69,13 +71,11 @@ export function SearchLayout({
                 <button
                   onClick={() => router.push("/search")}
                   className={cn(
-                    "text-[10px] uppercase tracking-wider font-bold transition-all px-2 py-1 rounded-md",
-                    hasFilters 
-                      ? "text-primary hover:bg-primary/10" 
-                      : "text-muted-foreground/30 pointer-events-none"
+                    "text-[10px] uppercase tracking-wider font-bold transition-all px-2 py-0.5 rounded-md border border-primary/20 bg-primary/5 hover:bg-primary/10",
+                    hasFilters ? "text-primary opacity-100" : "text-muted-foreground/30 opacity-0 pointer-events-none"
                   )}
                 >
-                  Clear all filters
+                  Clear all
                 </button>
               </div>
               <div className="p-4">
@@ -90,6 +90,7 @@ export function SearchLayout({
 
           {/* Results grid */}
           <div className="flex-1 min-w-0">
+            <ActiveFilters />
             {children}
           </div>
         </div>
