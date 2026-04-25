@@ -35,11 +35,10 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
   const hasModel = listing.model && listing.model !== "Unknown";
 
   let displayTitle = listing.rawTitle?.trim() || "Vehicle";
-  if (hasMake || listing.year > 0) {
+  if (hasMake) {
     const year = listing.year > 0 ? `${listing.year} ` : "";
-    const make = hasMake ? listing.make : "";
     const model = hasModel ? ` ${listing.model}` : "";
-    displayTitle = `${year}${make}${model}`.trim();
+    displayTitle = `${year}${listing.make}${model}`.trim();
   }
 
   const loc = [listing.city, listing.state].filter(Boolean).join(", ");
