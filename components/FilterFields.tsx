@@ -80,14 +80,6 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
         </div>
       </div>
 
-      {/* Make / Model */}
-      <FilterSection label="Vehicle">
-        <div className="grid grid-cols-2 gap-2">
-          <InputField label="Make" value={make} onChange={setMake} placeholder="Any" />
-          <InputField label="Model" value={model} onChange={setModel} placeholder="Any" />
-        </div>
-      </FilterSection>
-
       {/* Price */}
       <FilterSection label="Price">
         <div className="flex items-center gap-2">
@@ -112,6 +104,14 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
               className="w-full h-10 pl-6 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
             />
           </div>
+        </div>
+      </FilterSection>
+
+      {/* Make / Model */}
+      <FilterSection label="Vehicle">
+        <div className="grid grid-cols-2 gap-2">
+          <InputField label="Make" value={make} onChange={setMake} placeholder="Any" />
+          <InputField label="Model" value={model} onChange={setModel} placeholder="Any" />
         </div>
       </FilterSection>
 
