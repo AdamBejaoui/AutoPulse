@@ -66,14 +66,17 @@ export function SearchLayout({
                   <SlidersHorizontal size={16} className="text-primary" />
                   <h2 className="text-sm font-semibold text-foreground">Filters</h2>
                 </div>
-                {hasFilters && (
-                  <button
-                    onClick={() => router.push("/search")}
-                    className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
-                  >
-                    Clear all
-                  </button>
-                )}
+                <button
+                  onClick={() => router.push("/search")}
+                  className={cn(
+                    "text-[10px] uppercase tracking-wider font-bold transition-all px-2 py-1 rounded-md",
+                    hasFilters 
+                      ? "text-primary hover:bg-primary/10" 
+                      : "text-muted-foreground/30 pointer-events-none"
+                  )}
+                >
+                  Clear all filters
+                </button>
               </div>
               <div className="p-4">
                 <FilterSidebar initial={sidebarInitial} />
