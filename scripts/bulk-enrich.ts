@@ -24,15 +24,21 @@ async function bulkEnrich() {
     });
 
     console.log(`Found ${targets.length} cars that need details. Starting sync...`);
+    const { matchListingToSubscriptions } = await import('../lib/alertMatcher');
 
     let count = 0;
     for (const car of targets) {
         try {
             const success = await enrichListingDetails(car.id);
             if (success) {
-                console.log(`✅ [${++count}/${targets.length}] Enriched: ${car.rawTitle}`);
+                // Fetch the updated listing to get new make/model/etc.
+                const updated = await prisma.listing.findUnique({ where: { id: car.id } });
+                if (updated) {
+                    console.log(`✅ [${++count}/${targets.length}] Enriched & Checking Alerts: ${updated.year} ${updated.make} ${updated.model}`);
+                    await matchListingToSubscriptions(updated);
+                }
             } else {
-                console.log(`⚠️  [${++count}/${targets.length}] Failed: ${car.rawTitle}`);
+                console.log(`⚠️  [${++count}/${targets.length}] Failed to enrich: ${car.rawTitle}`);
             }
         } catch (e) {
             console.error(`Error with ${car.id}:`, e);
