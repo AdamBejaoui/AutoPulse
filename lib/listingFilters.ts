@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { smartTextWhereFromParams } from "@/lib/listingTextWhere";
+import { smartTextWhereFromParams } from "./listingTextWhere";
 
 /** Drop empty / whitespace-only values from the query record. */
 function cleanFlatQuery(
@@ -182,8 +182,25 @@ export function buildStructuredWhere(
       ]
     }];
   }
+  if (p.trim) {
+    const tr = p.trim;
+    where.AND = [...(where.AND as any[] || []), {
+      OR: [
+        { trim: { contains: tr, mode: "insensitive" } },
+        { rawTitle: { contains: tr, mode: "insensitive" } },
+        { description: { contains: tr, mode: "insensitive" } }
+      ]
+    }];
+  }
   if (p.driveType) {
-    where.driveType = { contains: p.driveType, mode: "insensitive" };
+    const dt = p.driveType;
+    where.AND = [...(where.AND as any[] || []), {
+      OR: [
+        { driveType: { contains: dt, mode: "insensitive" } },
+        { rawTitle: { contains: dt, mode: "insensitive" } },
+        { description: { contains: dt, mode: "insensitive" } }
+      ]
+    }];
   }
   if (p.transmission) {
     const t = p.transmission;
