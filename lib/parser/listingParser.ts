@@ -127,8 +127,18 @@ export function isJunkTitle(title: string, description: string = ""): boolean {
  */
 export function parseListingText(title: string, description: string = ""): ParsedListing {
   const titleText = title.toLowerCase();
-  const descriptionText = (description || "").toLowerCase();
-  const fullText = (titleText + " " + descriptionText).trim().replace(/\s+/g, " ");
+  
+  let cleanDesc = (description || "").toLowerCase();
+  cleanDesc = cleanDesc.split('\n').filter(line => {
+    const lowLine = line.trim();
+    if (lowLine.includes('copyright')) return false;
+    if (lowLine.includes('©')) return false;
+    if (lowLine.includes('meta platforms')) return false;
+    return true;
+  }).join(' ');
+
+  const descriptionText = cleanDesc;
+  const fullText = (titleText + " " + cleanDesc).trim().replace(/\s+/g, " ");
   let parseScore = 100;
 
   // 1. YEAR extraction - Prioritize numbers that look like years (1970-2026)

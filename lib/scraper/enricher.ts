@@ -33,8 +33,8 @@ export async function enrichListingDetails(listingId: string, existingPage?: Pag
     const rawPageTitle = await page.title();
     let scrapedTitle = rawPageTitle.replace(/\s*\|\s*Facebook/i, '').trim();
     
-    // Fallback if title extraction is generic
-    if (!scrapedTitle || scrapedTitle.toLowerCase().includes('marketplace')) {
+    // Fallback if title extraction is generic or blank
+    if (!scrapedTitle || scrapedTitle.toLowerCase().includes('marketplace') || scrapedTitle.toLowerCase() === 'facebook') {
         scrapedTitle = listing.rawTitle || '';
     }
 
