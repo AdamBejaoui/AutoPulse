@@ -5,6 +5,7 @@ import Link from "next/link";
 import { StructuredSearchBar } from "@/components/StructuredSearchBar";
 import { Search, Bell, ShieldCheck, Activity, ArrowRight } from "lucide-react";
 import { unstable_cache } from "next/cache";
+import { ScrapeTimer } from "@/components/ScrapeTimer";
 
 const getCachedListingCount = unstable_cache(
   async () => {
@@ -17,6 +18,15 @@ const getCachedListingCount = unstable_cache(
 
 export default async function HomePage(): Promise<ReactElement> {
   const totalListings = await getCachedListingCount().catch(() => 0);
+  
+  const { prisma } = await import("@/lib/db");
+  const past24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const past1h = new Date(Date.now() - 1 * 60 * 60 * 1000);
+  
+  const [total24h, total1h] = await Promise.all([
+    prisma.listing.count({ where: { isCar: true, isJunk: false, createdAt: { gte: past24h } } }),
+    prisma.listing.count({ where: { isCar: true, isJunk: false, createdAt: { gte: past1h } } })
+  ]).catch(() => [0, 0]);
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -59,6 +69,8 @@ export default async function HomePage(): Promise<ReactElement> {
               <StructuredSearchBar />
             </React.Suspense>
           </div>
+
+          <ScrapeTimer initialStats={{ total24h, total1h }} />
 
           {/* Sublinks */}
           <div className="mt-6 flex items-center justify-center gap-6 flex-wrap">
