@@ -22,6 +22,11 @@ export async function enrichListingDetails(listingId: string, existingPage?: Pag
       page = await browser.newPage();
     }
     
+    if (!listing.listingUrl || listing.listingUrl === "none" || listing.listingUrl.trim() === "") {
+      console.log(`⚠️ Skipping enrichment for ${listing.id}: missing or invalid URL`);
+      return false;
+    }
+    
     await page.goto(listing.listingUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(3000); // Wait for FB's slow loading
 
