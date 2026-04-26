@@ -83,7 +83,7 @@ export function isJunkTitle(title: string, description: string = ""): boolean {
     "motorcycle", "motercycle", "moto", "scooter", "moped", "dirt bike", "pit bike", "ebike", "bicycle", "bycycle", "bike",
     "kawasaki", "yamaha", "harley", "davidson", "ducati", "triumph", "vespa", "grom", "hayabusa", "ninja", "ktm", "aprilia",
     "shadow", "goldwing", "rebel", "sportster", "softail", "dyna", "road king", "street glide", "electra glide", "v-rod", "cvo",
-    "sur-ron", "surron", "talaria", "mototec", "dirtbike", "minibike",
+    "sur-ron", "surron", "talaria", "mototec", "dirtbike", "minibike", "g310", "g 310", "r1200", "r 1200", "s1000rr",
 
     // Off-road & Marine
     "atv", "utv", "quad", "four wheeler", "4 wheeler", "polaris", "can-am", "can am", "rzr", "maverick", "talon",
@@ -94,7 +94,7 @@ export function isJunkTitle(title: string, description: string = ""): boolean {
     // RVs & Trailers
     "rv", "camper", "travel trailer", "fifth wheel", "motorhome", "winnebago", "coachmen", "jayco", "forest river", "keystone",
     "leisure unity", "unity platinum", "entegra", "thor motor", "tiffin", "grand design", "airstream", "coach",
-    "pleasureway", "fleetwood", "coleman",
+    "pleasureway", "fleetwood", "coleman", "arctic wolf", "grey wolf", "wolf pup", "flagstaff", "rockwood", "jay flight", "reflection", "imagine", "solitude", "springdale", "wildwood", "salem",
 
     // Semi-Trucks & Heavy Equipment
     "mack", "peterbilt", "kenworth", "freightliner", "sterling", "western star", "semi truck", "semi-truck", "tractor trailer",
