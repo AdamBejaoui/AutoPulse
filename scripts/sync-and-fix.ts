@@ -109,6 +109,7 @@ async function runSyncCycle() {
         // 5. Process and Save
         let processedCount = 0;
         const newListingIds: string[] = [];
+        const perfectListingIds: string[] = [];
 
         for (const rawItem of items) {
             try {
@@ -151,6 +152,11 @@ async function runSyncCycle() {
                   parsedAt: new Date(),
                 };
 
+                const existing = await prisma.listing.findUnique({
+                  where: { externalId: listingData.externalId },
+                  select: { id: true }
+                });
+
                 // Use update/create to catch new items
                 const listing = await prisma.listing.upsert({
                   where: { externalId: listingData.externalId },
@@ -160,8 +166,14 @@ async function runSyncCycle() {
 
                 if (listing) {
                     processedCount++;
-                    if (listing.make === 'Unknown' || listing.parseScore < 50 || !listing.mileage) {
-                        newListingIds.push(listing.id);
+                    // ONLY process (enrich & email) if this is the FIRST time we've seen this car
+                    if (!existing) {
+                        if (listing.make === 'Unknown' || listing.parseScore < 50 || !listing.mileage) {
+                            newListingIds.push(listing.id);
+                        } else {
+                            // It's already perfect, no enrichment needed
+                            perfectListingIds.push(listing.id);
+                        }
                     }
                 }
             } catch(e) {
@@ -169,7 +181,15 @@ async function runSyncCycle() {
             }
         }
 
-        console.log(`💾 Saved ${processedCount} valid listings to DB. ${newListingIds.length} need enrichment.`);
+        console.log(`💾 Saved ${processedCount} valid listings to DB. ${newListingIds.length} need enrichment. ${perfectListingIds.length} are perfect.`);
+
+        // 5.5 Send emails immediately for PERFECT new listings
+        for (const id of perfectListingIds) {
+            const perfectListing = await prisma.listing.findUnique({ where: { id } });
+            if (perfectListing) {
+                try { await matchListingToSubscriptions(perfectListing); } catch(e){}
+            }
+        }
 
         // 6. Enrich (Fix) Silently and Locally
         if (newListingIds.length > 0) {
@@ -184,6 +204,7 @@ async function runSyncCycle() {
                         try { await matchListingToSubscriptions(updated); } catch(e){}
                     }
                 }
+
                 // Random sleep to stay completely undetected
                 await delay(1500 + Math.random() * 2000);
             }

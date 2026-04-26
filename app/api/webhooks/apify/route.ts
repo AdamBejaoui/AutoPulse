@@ -106,12 +106,8 @@ export async function POST(req: Request) {
 
         if (listing) {
           count++;
-          // Await alert matcher to ensure emails go out before function closes
-          try {
-            await matchListingToSubscriptions(listing);
-          } catch (err) {
-            console.error(`[webhook] Alert error for ${listing.id}:`, err);
-          }
+          // Webhook no longer sends emails. The PM2 `sync-and-fix.ts` worker 
+          // handles all email dispatching to ensure cars are fully enriched first!
         }
       } catch (err) {
         console.error(`[webhook] Item error:`, err);
