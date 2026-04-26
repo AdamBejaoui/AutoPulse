@@ -6,6 +6,7 @@ import { StructuredSearchBar } from "@/components/StructuredSearchBar";
 import { Search, Bell, ShieldCheck, Activity, ArrowRight } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import { ScrapeTimer } from "@/components/ScrapeTimer";
+import { LiveListingCounter } from "@/components/LiveListingCounter";
 
 const getCachedListingCount = unstable_cache(
   async () => {
@@ -42,10 +43,7 @@ export default async function HomePage(): Promise<ReactElement> {
         <div className="mx-auto max-w-4xl text-center">
 
           {/* Eyebrow */}
-          <div className="animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-dot" />
-            {totalListings.toLocaleString()} live listings nationwide
-          </div>
+          <LiveListingCounter initialCount={totalListings} />
 
           {/* Headline */}
           <h1 className="animate-fade-up-delay font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1] mb-5">
