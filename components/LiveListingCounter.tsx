@@ -19,8 +19,8 @@ export function LiveListingCounter({ initialCount }: { initialCount: number }) {
       }
     };
 
-    // Poll for the actual number every 30 seconds
-    const pollInterval = setInterval(fetchLatestCount, 30000);
+    // Poll for the actual number every 10 seconds
+    const pollInterval = setInterval(fetchLatestCount, 10000);
 
     return () => clearInterval(pollInterval);
   }, []);
