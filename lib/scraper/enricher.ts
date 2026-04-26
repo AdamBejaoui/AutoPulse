@@ -1,60 +1,72 @@
-import { chromium, Page } from 'playwright';
 import { PrismaClient } from '@prisma/client';
 import { parseListingText } from '../parser/listingParser';
 
 const prisma = new PrismaClient();
 
-export async function enrichListingDetails(listingId: string, existingPage?: Page) {
+export async function enrichListingDetails(listingId: string) {
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
   if (!listing || !listing.listingUrl) return null;
 
   console.log(`📡 Deep scanning car: ${listing.rawTitle}...`);
   
-  let browser = null;
-  let page = existingPage;
-  
   try {
-    if (!page) {
-      browser = await chromium.launch({ 
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-      });
-      page = await browser.newPage();
-    }
-    
     if (!listing.listingUrl || listing.listingUrl === "none" || listing.listingUrl.trim() === "") {
       console.log(`⚠️ Skipping enrichment for ${listing.id}: missing or invalid URL`);
       return false;
     }
     
-    await page.goto(listing.listingUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(3000); // Wait for FB's slow loading
+    // Use lightweight fetch instead of Playwright to avoid Vercel 500 errors
+    const res = await fetch(listing.listingUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      }
+    });
 
-    const rawPageTitle = await page.title();
+    if (!res.ok) {
+        console.error(`Fetch failed for ${listing.listingUrl}: ${res.status}`);
+        return null;
+    }
+
+    const html = await res.text();
+
+    // Extract title
+    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+    let rawPageTitle = titleMatch ? titleMatch[1] : '';
     let scrapedTitle = rawPageTitle.replace(/\s*\|\s*Facebook/i, '').trim();
     
-    // Fallback if title extraction is generic or blank
     if (!scrapedTitle || scrapedTitle.toLowerCase().includes('marketplace') || scrapedTitle.toLowerCase() === 'facebook') {
         scrapedTitle = listing.rawTitle || '';
     }
 
-    // Extract description and all visible text (for specs like mileage, transmission)
-    const description = await page.evaluate(() => {
-        const bodyText = document.body?.innerText || '';
-        const spans = Array.from(document.querySelectorAll('span'));
-        const descSpan = spans.find(s => s.textContent && s.textContent.length > 200 && !s.textContent.includes(' Marketplace'));
-        const cleanDesc = descSpan ? descSpan.textContent : '';
-        
-        return `${cleanDesc}\n\n--- FULL PAGE SPECS ---\n\n${bodyText}`;
-    });
+    // Extract description meta tag
+    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["'](.*?)["'][^>]*>/i) || 
+                      html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["'](.*?)["'][^>]*>/i);
+    const metaDesc = descMatch ? descMatch[1] : '';
 
-    const parsed = parseListingText(scrapedTitle || listing.rawTitle || '', description || '');
+    // Strip basic HTML tags for full text (to find mileage, features, etc)
+    // We only take the body to avoid CSS/JS
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    const bodyHtml = bodyMatch ? bodyMatch[1] : html;
+    
+    // Remove script/style tags and then strip remaining HTML
+    const cleanBodyText = bodyHtml
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const description = `${metaDesc}\n\n--- FULL PAGE SPECS ---\n\n${cleanBodyText.substring(0, 50000)}`;
+
+    const parsed = parseListingText(scrapedTitle || listing.rawTitle || '', description);
 
     const updated = await prisma.listing.update({
       where: { id: listingId },
       data: {
         rawTitle: scrapedTitle || listing.rawTitle,
-        description: description || listing.description,
+        description: metaDesc || listing.description, // Only save the clean meta desc to avoid bloating DB
         make: parsed.make !== "Unknown" ? parsed.make : listing.make,
         model: parsed.model !== "Unknown" ? parsed.model : listing.model,
         year: parsed.year > 0 ? parsed.year : listing.year,
@@ -86,9 +98,5 @@ export async function enrichListingDetails(listingId: string, existingPage?: Pag
   } catch (err) {
     console.error(`Failed to enrich ${listingId}:`, err);
     return null;
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
   }
 }

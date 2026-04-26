@@ -64,30 +64,61 @@ async function runMegaHarvest() {
   console.log(`\n🎯 Active subscriptions: ${subs.length} (${combos.length} unique combos)`);
 
   // 3. Build targeted URLs
-  const generalCities = [
-    'miami', 'atlanta', 'dallas', 'houston', 'losangeles', 'chicago', 
-    'newyork', 'philadelphia', 'phoenix', 'sanantonio', 'sandiego', 
-    'orlando', 'lasvegas', 'charlotte', 'seattle', 'denver',
-    'washington', 'boston', 'detroit', 'nashville'
+  const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus'];
+  const targetCities = [
+    'philadelphia', 'pittsburgh', // PA
+    'richmond', // VA
+    'charlotte', 'raleigh', // NC
+    'columbia', 'charleston', // SC
+    'atlanta', // GA
+    'miami', 'orlando', 'tampa', // FL
+    'charleston', // WVA
+    'nashville', 'memphis', // TN
+    'birmingham', // AL
+    'columbus', 'cleveland', // OH
+    'indianapolis', // IN
+    'louisville', // KY
+    'detroit', // MI
+    'neworleans', // LA
+    'littlerock', // AR
+    'stlouis', 'kansascity', // MO
+    'desmoines', // IA
+    'minneapolis', // MN
+    'houston', 'dallas', 'sanantonio', // TX
+    'oklahomacity', // OK
+    'wichita', // KS
+    'albuquerque', // NM
+    'denver', // CO
+    'cheyenne', // WY
+    'omaha', // NE
+    'siouxfalls', // SD
+    'fargo', // ND
+    'saltlakecity' // UT
   ];
+
   const startUrls: { url: string }[] = [];
 
-  // General browse for non-subscription cars
-  for (const city of generalCities) {
-    startUrls.push({
-      url: `https://www.facebook.com/marketplace/${city}/vehicles?sort=CREATION_TIME_DESCEND`
-    });
-  }
-
-  // Priority car+city searches from subscriptions (Top 10 hubs for targeted)
-  const priorityCities = ['miami', 'atlanta', 'dallas', 'houston', 'losangeles', 'chicago', 'newyork', 'orlando', 'phoenix', 'lasvegas'];
+  // Priority car+city searches from subscriptions
   for (const combo of combos) {
-    for (const city of priorityCities) {
+    for (const city of targetCities) {
       startUrls.push({
         url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(combo)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`
       });
     }
   }
+
+  // Targeted searches for requested makes
+  for (const make of targetMakes) {
+    for (const city of targetCities) {
+      startUrls.push({
+        url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(make)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`
+      });
+    }
+  }
+
+  // Shuffle URLs to cycle through them over time
+  // This allows us to divide the 160+ URLs over multiple runs (e.g. throughout the day)
+  startUrls.sort(() => Math.random() - 0.5);
 
   const finalUrls = startUrls.slice(0, MAX_URLS_PER_RUN);
 

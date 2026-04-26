@@ -109,9 +109,34 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
 
       {/* Make / Model */}
       <FilterSection label="Vehicle">
-        <div className="grid grid-cols-2 gap-2">
-          <InputField label="Make" value={make} onChange={setMake} placeholder="Any" />
-          <InputField label="Model" value={model} onChange={setModel} placeholder="Any" />
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="block text-[10px] font-medium text-muted-foreground mb-1.5">Quick Makes</label>
+            <div className="flex flex-wrap gap-2">
+              {["Toyota", "Honda", "Mazda", "Lexus"].map(m => {
+                const selected = make.toLowerCase().includes(m.toLowerCase());
+                return (
+                  <Chip 
+                    key={m} 
+                    active={selected} 
+                    onClick={() => {
+                      const current = make.split(",").map(x => x.trim()).filter(Boolean);
+                      const next = selected 
+                        ? current.filter(x => x.toLowerCase() !== m.toLowerCase())
+                        : [...current, m];
+                      setMake(next.join(", "));
+                    }}
+                  >
+                    {m}
+                  </Chip>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            <InputField label="Make(s)" value={make} onChange={setMake} placeholder="Comma separated" />
+            <InputField label="Model" value={model} onChange={setModel} placeholder="Any" />
+          </div>
         </div>
       </FilterSection>
 
