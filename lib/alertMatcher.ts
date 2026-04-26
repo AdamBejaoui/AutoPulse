@@ -10,7 +10,7 @@ export async function findMatchingSubscriptions(listing: Listing): Promise<Subsc
   // --- PERFECT CAR-ONLY FILTER ---
   // Rely on the database-backed 'isCar' and 'isJunk' flags set by the AI parser.
   if (listing.isJunk || !listing.isCar) {
-    console.log(`[alertMatcher] Filtering out non-car or junk: ${listing.rawTitle}`);
+    console.log(`[alertMatcher] Filtering out non-car or junk: ${listing.rawTitle} (isJunk: ${listing.isJunk}, isCar: ${listing.isCar})`);
     return [];
   }
   // ------------------------------------

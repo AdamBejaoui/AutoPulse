@@ -14,49 +14,36 @@ export async function enrichListingDetails(listingId: string) {
       console.log(`⚠️ Skipping enrichment for ${listing.id}: missing or invalid URL`);
       return false;
     }
-    
-    // Use lightweight fetch instead of Playwright to avoid Vercel 500 errors
-    const res = await fetch(listing.listingUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      }
-    });
+    let browser;
+    try {
+        const { chromium } = await import('playwright');
+        browser = await chromium.launch({ headless: true });
+        const context = await browser.newContext({
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        });
+        const page = await context.newPage();
+        
+        await page.goto(listing.listingUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        
+        // Extract title
+        let scrapedTitle = await page.title();
+        scrapedTitle = scrapedTitle.replace(/\s*\|\s*Facebook/i, '').trim();
+        if (!scrapedTitle || scrapedTitle.toLowerCase().includes('marketplace') || scrapedTitle.toLowerCase() === 'facebook') {
+            scrapedTitle = listing.rawTitle || '';
+        }
 
-    if (!res.ok) {
-        console.error(`Fetch failed for ${listing.listingUrl}: ${res.status}`);
-        return null;
-    }
+        // Extract description
+        const metaDesc = await page.evaluate(() => {
+            const el = document.querySelector('meta[name="description"], meta[property="og:description"]');
+            return el ? el.getAttribute('content') || '' : '';
+        });
 
-    const html = await res.text();
-
-    // Extract title
-    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
-    let rawPageTitle = titleMatch ? titleMatch[1] : '';
-    let scrapedTitle = rawPageTitle.replace(/\s*\|\s*Facebook/i, '').trim();
-    
-    if (!scrapedTitle || scrapedTitle.toLowerCase().includes('marketplace') || scrapedTitle.toLowerCase() === 'facebook') {
-        scrapedTitle = listing.rawTitle || '';
-    }
-
-    // Extract description meta tag
-    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["'](.*?)["'][^>]*>/i) || 
-                      html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["'](.*?)["'][^>]*>/i);
-    const metaDesc = descMatch ? descMatch[1] : '';
-
-    // Strip basic HTML tags for full text (to find mileage, features, etc)
-    // We only take the body to avoid CSS/JS
-    const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-    const bodyHtml = bodyMatch ? bodyMatch[1] : html;
-    
-    // Remove script/style tags and then strip remaining HTML
-    const cleanBodyText = bodyHtml
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
-        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+        // Extract body text
+        const cleanBodyText = await page.evaluate(() => {
+            return document.body ? document.body.innerText.substring(0, 50000) : '';
+        });
+        
+        await browser.close();
 
     const description = `${metaDesc}\n\n--- FULL PAGE SPECS ---\n\n${cleanBodyText.substring(0, 50000)}`;
 
@@ -87,16 +74,19 @@ export async function enrichListingDetails(listingId: string) {
         owners: parsed.owners || listing.owners,
         features: parsed.features && parsed.features.length > 0 ? parsed.features : listing.features,
         
-        isCar: !parsed.isJunk && (parsed.make !== "Unknown" || listing.make !== "Unknown"),
-        isJunk: parsed.isJunk,
         parseScore: parsed.parseScore,
         parsedAt: new Date(),
       }
     });
 
     return updated;
-  } catch (err) {
-    console.error(`Failed to enrich ${listingId}:`, err);
-    return null;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
+} catch (err) {
+  console.error(`Failed to enrich ${listingId}:`, err);
+  return null;
+}
 }
