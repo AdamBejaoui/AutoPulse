@@ -81,11 +81,11 @@ async function runSyncCycle() {
 
     console.log(`\n🎯 Selected ${BATCH_SIZE} URLs for this chunk.`);
 
-    // 3. Configure Apify for CHEAP and FAST execution
+    // 3. Configure Apify for Details using Residential Proxies
     const input = {
         urls: finalUrls.map(u => u.url), 
         maxPagesPerUrl: 1, // Only grab the very first page of results to save costs
-        maxItems: 500,     // Hard limit
+        maxItems: 100,     // Hard limit per chunk to protect budget
         proxyConfiguration: { 
             useApifyProxy: true,
             apifyProxyGroups: ['RESIDENTIAL'],
@@ -93,22 +93,21 @@ async function runSyncCycle() {
         },
         onlyPublic: false,
         useFilters: true,
-        scrapeDetails: false // CRITICAL FOR COST: Do NOT navigate into listing pages using Apify compute!
+        scrapeDetails: true // CHANGED: Let Apify grab the full details using its proxies!
     };
 
     // 4. Run Synchronously
-    console.log('📡 Calling Apify Actor (curious_coder/facebook-marketplace)...');
+    console.log('📡 Calling Apify Actor with FULL details (curious_coder/facebook-marketplace)...');
     try {
         // .call waits for completion
         const run = await apifyClient.actor('curious_coder/facebook-marketplace').call(input);
         console.log(`✅ Apify Run Complete. Fetching dataset ${run.defaultDatasetId}...`);
 
         const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
-        console.log(`📦 Received ${items.length} raw listings.`);
+        console.log(`📦 Received ${items.length} fully-detailed listings.`);
 
         // 5. Process and Save
         let processedCount = 0;
-        const newListingIds: string[] = [];
 
         for (const rawItem of items) {
             try {
@@ -154,15 +153,15 @@ async function runSyncCycle() {
                 // Use update/create to catch new items
                 const listing = await prisma.listing.upsert({
                   where: { externalId: listingData.externalId },
-                  update: { ...listingData, postedAt: listingData.postedAt }, // Optional: only update certain fields to prevent overwriting enriched data
+                  update: { ...listingData, postedAt: listingData.postedAt }, 
                   create: listingData,
                 });
 
-                // To save API calls, we only enrich newly inserted items OR those with "Unknown" make
                 if (listing) {
                     processedCount++;
-                    if (listing.make === 'Unknown' || listing.parseScore < 50 || !listing.mileage) {
-                        newListingIds.push(listing.id);
+                    // Check for alerts immediately since we already have full details!
+                    if (listing.make !== 'Unknown' && listing.parseScore > 50) {
+                        try { await matchListingToSubscriptions(listing); } catch(e){}
                     }
                 }
             } catch(e) {
@@ -170,25 +169,7 @@ async function runSyncCycle() {
             }
         }
 
-        console.log(`💾 Saved ${processedCount} valid listings to DB. ${newListingIds.length} need enrichment.`);
-
-        // 6. Enrich (Fix) Silently and Locally
-        if (newListingIds.length > 0) {
-            console.log(`\n🛠️ Starting silent enrichment...`);
-            let fixCount = 0;
-            for (const id of newListingIds) {
-                const success = await enrichListingDetails(id);
-                if (success) {
-                    const updated = await prisma.listing.findUnique({ where: { id } });
-                    if (updated) {
-                        console.log(`✅ [${++fixCount}/${newListingIds.length}] Fixed: ${updated.year} ${updated.make} ${updated.model}`);
-                        try { await matchListingToSubscriptions(updated); } catch(e){}
-                    }
-                }
-                // Random sleep to stay completely undetected
-                await delay(1500 + Math.random() * 2000);
-            }
-        }
+        console.log(`💾 Saved and checked alerts for ${processedCount} detailed listings.`);
 
     } catch (e: any) {
         console.error('❌ Cycle Failed:', e.message);
