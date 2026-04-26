@@ -8,19 +8,10 @@ import { unstable_cache } from "next/cache";
 import { ScrapeTimer } from "@/components/ScrapeTimer";
 import { LiveListingCounter } from "@/components/LiveListingCounter";
 
-const getCachedListingCount = unstable_cache(
-  async () => {
-    const { prisma } = await import("@/lib/db");
-    return prisma.listing.count({ where: { isCar: true, isJunk: false } });
-  },
-  ["listing-count"],
-  { revalidate: 300, tags: ["listing-count"] }
-);
-
 export default async function HomePage(): Promise<ReactElement> {
-  const totalListings = await getCachedListingCount().catch(() => 0);
-  
   const { prisma } = await import("@/lib/db");
+  const totalListings = await prisma.listing.count({ where: { isCar: true, isJunk: false } }).catch(() => 0);
+  
   const past24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const past1h = new Date(Date.now() - 1 * 60 * 60 * 1000);
   
