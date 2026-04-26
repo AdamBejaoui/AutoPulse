@@ -27,21 +27,14 @@ async function bulkEnrich() {
 
     console.log(`Found ${targets.length} cars that need details. Starting sync...`);
     const { matchListingToSubscriptions } = await import('../lib/alertMatcher');
-    const { chromium } = await import('playwright');
-
-    const browser = await chromium.launch({ 
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    });
-    const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-    });
-    const page = await context.newPage();
 
     let count = 0;
+    // Add a small delay between requests to remain undetected and avoid rate limits
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     for (const car of targets) {
         try {
-            const success = await enrichListingDetails(car.id, page);
+            const success = await enrichListingDetails(car.id);
             if (success) {
                 // Fetch the updated listing to get new make/model/etc.
                 const updated = await prisma.listing.findUnique({ where: { id: car.id } });
@@ -52,12 +45,14 @@ async function bulkEnrich() {
             } else {
                 console.log(`⚠️  [${++count}/${targets.length}] Failed to enrich: ${car.rawTitle}`);
             }
+            
+            // Wait 1-3 seconds randomly to remain undetected
+            await delay(1000 + Math.random() * 2000);
         } catch (e) {
             console.error(`Error with ${car.id}:`, e);
         }
     }
 
-    await browser.close();
     console.log('\n✨ Done! Refresh your site to see the full details.');
     await prisma.$disconnect();
 }

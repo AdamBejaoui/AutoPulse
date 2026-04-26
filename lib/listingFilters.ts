@@ -295,7 +295,7 @@ export function buildListingOrderBy(
       return [{ year: "asc" }, qualitySort];
     case "newest":
     default:
-      // Primary: Full Details First, Secondary: Newest Postings
-      return [qualitySort, { postedAt: "desc" }, { createdAt: "desc" }];
+      // Primary: Newest Postings, Secondary: Quality Score
+      return [{ postedAt: "desc" }, qualitySort, { createdAt: "desc" }];
   }
 }
