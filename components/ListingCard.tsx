@@ -17,6 +17,17 @@ function formatUsd(cents: number): string {
   }).format(cents / 100);
 }
 
+function timeAgo(dateInput: string | Date): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const placeholderSvg =
   "data:image/svg+xml," +
   encodeURIComponent(
@@ -140,6 +151,11 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
                 <span className="flex items-center gap-1 truncate max-w-[120px]">
                   <MapPin size={12} className="shrink-0" />
                   {loc}
+                </span>
+              )}
+              {listing.postedAt && (
+                <span className="text-[10px] whitespace-nowrap opacity-75">
+                  {timeAgo(listing.postedAt)}
                 </span>
               )}
             </div>

@@ -9,9 +9,13 @@ const prisma = new PrismaClient();
 async function bulkEnrich() {
     console.log('👷 Starting FREE Bulk Detail Sync...');
     
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
     // Find cars with "Unknown" or missing details
     const targets = await prisma.listing.findMany({
         where: {
+            createdAt: { gte: yesterday },
             OR: [
                 { make: 'Unknown' },
                 { mileage: null },
