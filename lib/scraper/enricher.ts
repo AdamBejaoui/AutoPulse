@@ -21,6 +21,13 @@ export async function enrichListingDetails(listingId: string) {
         const context = await browser.newContext({
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         });
+        
+        // Load stored Facebook cookies to bypass login wall
+        const session = await prisma.scraperSession.findUnique({ where: { id: 'facebook-default' } });
+        if (session && session.cookies) {
+            await context.addCookies(session.cookies as any);
+        }
+        
         const page = await context.newPage();
         
         await page.goto(listing.listingUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
