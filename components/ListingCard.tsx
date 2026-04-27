@@ -5,6 +5,7 @@ import { useState, useEffect, memo } from "react";
 import Image from "next/image";
 import { Gauge, MapPin, Star, ExternalLink, Calendar, CheckCircle2, AlertCircle, Sparkles, User, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { parseListingText } from "@/lib/parser/listingParser";
 
 function formatUsd(cents: number): string {
   if (cents === 0) return "Contact seller";
@@ -89,16 +90,25 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
     window.dispatchEvent(new Event("saved_listings_changed"));
   };
 
+  const parsedFallback = parseListingText(listing.rawTitle || "", listing.description || "");
+
   const specs = [
-    { label: "Condition", value: listing.condition },
-    { label: "Title", value: listing.titleStatus },
-    { label: "Drive Type", value: listing.driveType },
-    { label: "Engine", value: listing.engine },
-    { label: "Fuel", value: listing.fuelType },
-    { label: "Color", value: listing.color },
-    { label: "Doors", value: listing.doors },
-    { label: "Owners", value: listing.owners },
-    { label: "Accidents", value: listing.accidents === true ? "Yes" : listing.accidents === false ? "None reported" : null },
+    { label: "Condition", value: listing.condition || parsedFallback.condition },
+    { label: "Title Status", value: listing.titleStatus || parsedFallback.titleStatus },
+    { label: "Drive Type", value: listing.driveType || parsedFallback.driveType },
+    { label: "Engine", value: listing.engine || parsedFallback.engine },
+    { label: "Fuel", value: listing.fuelType || parsedFallback.fuelType },
+    { label: "Color", value: listing.color || parsedFallback.color },
+    { label: "Doors", value: listing.doors || parsedFallback.doors },
+    { label: "Owners", value: listing.owners || parsedFallback.owners },
+    { 
+      label: "Accidents", 
+      value: listing.accidents !== null 
+        ? (listing.accidents ? "Yes" : "None reported") 
+        : (parsedFallback.accidents !== null 
+            ? (parsedFallback.accidents ? "Yes" : "None reported") 
+            : null) 
+    },
   ].filter(s => s.value != null && s.value !== "");
 
   return (
