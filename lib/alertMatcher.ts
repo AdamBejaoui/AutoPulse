@@ -179,6 +179,9 @@ export async function matchListingToSubscriptions(listing: Listing) {
         });
         
         console.log(`[alertMatcher] Sent alert to ${sub.email} for ${listing.year} ${listing.make} ${listing.model}`);
+        
+        // Add 2-second delay to prevent email spam flags
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (err) {
         console.error(`[alertMatcher] Failed to send email to ${sub.email}:`, err);
       }
