@@ -139,8 +139,8 @@ export async function matchListingToSubscriptions(listing: Listing) {
     // Strict in-memory post-filtering to perfectly honor parameters & drop null gaps
     const matches = candidates.filter(sub => {
       // Mileage constraints
-      if (sub.mileageMin != null && (listing.mileage === null || listing.mileage < sub.mileageMin)) return false;
-      if (sub.mileageMax != null && (listing.mileage === null || listing.mileage > sub.mileageMax)) return false;
+      if (sub.mileageMin != null && listing.mileage !== null && listing.mileage < sub.mileageMin) return false;
+      if (sub.mileageMax != null && listing.mileage !== null && listing.mileage > sub.mileageMax) return false;
       
       // Price constraints (converting boundaries safely)
       if (sub.priceMin != null && listing.price < sub.priceMin) return false;
