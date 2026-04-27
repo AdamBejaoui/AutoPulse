@@ -93,22 +93,9 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
   const parsedFallback = parseListingText(listing.rawTitle || "", listing.description || "");
 
   const specs = [
-    { label: "Condition", value: listing.condition || parsedFallback.condition },
-    { label: "Title Status", value: listing.titleStatus || parsedFallback.titleStatus },
     { label: "Drive Type", value: listing.driveType || parsedFallback.driveType },
     { label: "Engine", value: listing.engine || parsedFallback.engine },
     { label: "Fuel", value: listing.fuelType || parsedFallback.fuelType },
-    { label: "Color", value: listing.color || parsedFallback.color },
-    { label: "Doors", value: listing.doors || parsedFallback.doors },
-    { label: "Owners", value: listing.owners || parsedFallback.owners },
-    { 
-      label: "Accidents", 
-      value: listing.accidents !== null 
-        ? (listing.accidents ? "Yes" : "None reported") 
-        : (parsedFallback.accidents !== null 
-            ? (parsedFallback.accidents ? "Yes" : "None reported") 
-            : null) 
-    },
   ].filter(s => s.value != null && s.value !== "");
 
   return (
@@ -234,36 +221,7 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
           </div>
         )}
 
-        {/* Description */}
-        {listing.description && (
-          <div className="mb-6">
-            <p className={cn(
-              "text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap",
-              !showFullDesc && "line-clamp-3"
-            )}>
-              {listing.description}
-            </p>
-            {listing.description.length > 200 && (
-              <button
-                onClick={() => setShowFullDesc(!showFullDesc)}
-                className="text-xs font-semibold text-primary mt-2 hover:underline"
-              >
-                {showFullDesc ? "Show less" : "Read more"}
-              </button>
-            )}
-          </div>
-        )}
 
-        {/* Features */}
-        {listing.features && listing.features.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-6">
-            {listing.features.map((feature: string, i: number) => (
-              <span key={i} className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold bg-surface-raised text-muted-foreground border border-border/50">
-                {feature}
-              </span>
-            ))}
-          </div>
-        )}
 
         {/* Footer Actions */}
         <div className="mt-auto pt-4 border-t border-border flex items-center justify-between gap-4 flex-wrap">
