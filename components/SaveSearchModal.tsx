@@ -29,6 +29,8 @@ export function SaveSearchModal(): React.ReactElement {
   const [priceMax, setPriceMax] = React.useState("");
   const [mileageMin, setMileageMin] = React.useState("");
   const [mileageMax, setMileageMax] = React.useState("");
+  const [yearMin, setYearMin] = React.useState("");
+  const [yearMax, setYearMax] = React.useState("");
   const [keywords, setKeywords] = React.useState("");
 
   React.useEffect(() => {
@@ -39,6 +41,8 @@ export function SaveSearchModal(): React.ReactElement {
       setPriceMax(filters.priceMax || "");
       setMileageMin(filters.mileageMin || "");
       setMileageMax(filters.mileageMax || "");
+      setYearMin(filters.yearMin || "");
+      setYearMax(filters.yearMax || "");
       setKeywords(filters.keywords || "");
     }
   }, [alertOpen, filters]);
@@ -62,8 +66,8 @@ export function SaveSearchModal(): React.ReactElement {
         email,
         make: make || undefined,
         model: model || undefined,
-        yearMin: filters.yearMin ? Number(filters.yearMin) : undefined,
-        yearMax: filters.yearMax ? Number(filters.yearMax) : undefined,
+        yearMin: yearMin ? Number(yearMin) : undefined,
+        yearMax: yearMax ? Number(yearMax) : undefined,
         priceMin: priceMin ? parseInt(priceMin.replace(/,/g, '').replace(/k/i, '000'), 10) : undefined,
         priceMax: priceMax ? parseInt(priceMax.replace(/,/g, '').replace(/k/i, '000'), 10) : undefined,
         mileageMin: mileageMin ? parseInt(mileageMin.replace(/,/g, '').replace(/k/i, '000'), 10) : undefined,
@@ -100,6 +104,8 @@ export function SaveSearchModal(): React.ReactElement {
     model && `Model: ${model}`,
     priceMin && `Min: $${priceMin}`,
     priceMax && `Max: $${priceMax}`,
+    yearMin && `Min Yr: ${yearMin}`,
+    yearMax && `Max Yr: ${yearMax}`,
     mileageMin && `Min Mi: ${mileageMin}`,
     mileageMax && `Max Mi: ${mileageMax}`,
     keywords && `"${keywords}"`,
@@ -142,6 +148,10 @@ export function SaveSearchModal(): React.ReactElement {
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Min price ($)" value={priceMin} onChange={setPriceMin} placeholder="5,000" type="number" />
                 <Field label="Max price ($)" value={priceMax} onChange={setPriceMax} placeholder="30,000" type="number" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Min Year" value={yearMin} onChange={setYearMin} placeholder="2009" type="number" />
+                <Field label="Max Year" value={yearMax} onChange={setYearMax} placeholder="2024" type="number" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Min mileage" value={mileageMin} onChange={setMileageMin} placeholder="0" />
