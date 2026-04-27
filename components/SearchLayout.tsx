@@ -62,7 +62,7 @@ export function SearchLayout({
 
           {/* Sidebar */}
           <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
-            <div className="rounded-xl bg-surface border border-border overflow-hidden">
+            <div className="rounded-xl bg-surface border border-border overflow-hidden max-h-[calc(100vh-120px)] overflow-y-auto">
               <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
                 <div className="flex items-center gap-2.5">
                   <SlidersHorizontal size={16} className="text-primary" />

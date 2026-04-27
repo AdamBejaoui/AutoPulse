@@ -146,19 +146,7 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
           </div>
         )}
 
-        {/* Star Button (Top Right of Image) */}
-        <button
-          onClick={toggleSave}
-          className={cn(
-            "absolute top-4 right-4 z-20 h-10 w-10 flex items-center justify-center rounded-full backdrop-blur-md border shadow-md transition-all duration-200",
-            isSaved
-              ? "bg-primary/90 border-primary text-white"
-              : "bg-background/80 border-border text-muted-foreground hover:border-primary hover:text-primary"
-          )}
-          title={isSaved ? "Saved" : "Save Listing"}
-        >
-          <Star size={18} className={cn(isSaved && "fill-current")} />
-        </button>
+
 
         {/* Price Tag Overlay */}
         <div className="absolute bottom-4 left-4 z-10">
@@ -169,7 +157,21 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
       </div>
 
       {/* Content Section */}
-      <div className="flex flex-col flex-1 p-6 md:p-8">
+      <div className="flex flex-col flex-1 p-6 md:p-8 relative">
+        
+        {/* Star Button (Top Right of Card) */}
+        <button
+          onClick={toggleSave}
+          className={cn(
+            "absolute top-6 right-6 z-20 h-10 w-10 flex items-center justify-center rounded-full backdrop-blur-md border shadow-md transition-all duration-200",
+            isSaved
+              ? "bg-primary/90 border-primary text-white"
+              : "bg-background/80 border-border text-muted-foreground hover:border-primary hover:text-primary"
+          )}
+          title={isSaved ? "Saved" : "Save Listing"}
+        >
+          <Star size={18} className={cn(isSaved && "fill-current")} />
+        </button>
         
         {/* Header */}
         <div className="flex flex-col mb-4">
