@@ -264,6 +264,38 @@ export async function sendMail(options: {
     throw new Error("No sender email found (EMAIL_FROM or EMAIL_USER).");
   }
 
+  // API Fallback for Brevo: Allows international delivery without custom domain verification
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          sender: { 
+            name: "AutoPulse", 
+            email: fromEmail 
+          },
+          to: [{ email: options.to }],
+          subject: options.subject,
+          htmlContent: options.html,
+        })
+      });
+
+      if (res.ok) {
+        console.log(`[mailer] Email sent securely via Brevo API to ${options.to}`);
+        return;
+      } else {
+        const errText = await res.text();
+        console.log(`⚠️ Brevo API failed (${res.status}): ${errText}. Trying next fallback.`);
+      }
+    } catch (apiErr: any) {
+      console.log(`⚠️ Brevo API connection error: ${apiErr.message}. Trying next fallback.`);
+    }
+  }
+
   // API Fallback: Bypass provider-blocked SMTP ports using standard HTTP endpoints
   if (process.env.RESEND_API_KEY) {
     try {
