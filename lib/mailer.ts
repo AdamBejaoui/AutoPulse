@@ -82,9 +82,9 @@ function filterSummaryPlain(filters: AlertFilters): string {
   return parts.join(" · ") || "Any criteria";
 }
 
-function createTransport() {
+function createTransport(customPort?: number) {
   const host = process.env.EMAIL_HOST;
-  const port = Number(process.env.EMAIL_PORT ?? "587");
+  const port = customPort ?? Number(process.env.EMAIL_PORT ?? "587");
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASSWORD?.replace(/\s+/g, "");
   if (!host || !user || !pass) {
@@ -95,6 +95,8 @@ function createTransport() {
     port,
     secure: port === 465,
     auth: { user, pass },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
   });
 }
 
@@ -261,11 +263,33 @@ export async function sendMail(options: {
   if (!fromEmail) {
     throw new Error("No sender email found (EMAIL_FROM or EMAIL_USER).");
   }
-  const transport = createTransport();
-  await transport.sendMail({
-    from: `AutoPulse <${fromEmail}>`,
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-  });
+
+  const primaryPort = Number(process.env.EMAIL_PORT ?? "587");
+  const fallbackPort = primaryPort === 587 ? 465 : 587;
+
+  try {
+    const transport = createTransport(primaryPort);
+    await transport.sendMail({
+      from: `AutoPulse <${fromEmail}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+  } catch (err: any) {
+    console.log(`⚠️ SMTP Port ${primaryPort} failed: ${err.message}. Trying fallback Port ${fallbackPort}...`);
+    try {
+      const fallbackTransport = createTransport(fallbackPort);
+      await fallbackTransport.sendMail({
+        from: `AutoPulse <${fromEmail}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+      console.log(`✅ Fallback Port ${fallbackPort} succeeded!`);
+    } catch (fallbackErr: any) {
+      console.error(`❌ Both SMTP ports (587 and 465) timed out.`);
+      console.error(`💡 Note: Your server provider (like AWS, DigitalOcean) is highly likely BLOCKING outbound SMTP traffic on ports 25, 465, and 587. Please request them to unblock SMTP ports, or switch to an API mailer (like Resend).`);
+      throw new Error(`SMTP Connection Blocked by Host: ${fallbackErr.message}`);
+    }
+  }
 }
