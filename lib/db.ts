@@ -12,7 +12,10 @@ const globalForPrisma = globalThis as unknown as {
 
 let prismaInstance: PrismaClient;
 
-const connectionString = process.env.DATABASE_URL;
+let connectionString = process.env.DATABASE_URL;
+if (connectionString && !connectionString.includes('connection_limit')) {
+  connectionString += connectionString.includes('?') ? '&connection_limit=1' : '?connection_limit=1';
+}
 
 if (process.env.NODE_ENV === "production") {
   const pool = new Pool({ connectionString });
