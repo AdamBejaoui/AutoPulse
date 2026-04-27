@@ -100,10 +100,58 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
 
   const parsedFallback = parseListingText(listing.rawTitle || "", listing.description || "");
 
+  function inferSpecs(title: string, make: string, model: string) {
+    const t = title.toLowerCase();
+    const m = model.toLowerCase();
+    const mk = make.toLowerCase();
+
+    // 1. Fuel Type
+    let fuelType = "Gasoline";
+    if (t.includes("hybrid") || m.includes("hybrid")) {
+      fuelType = "Hybrid";
+    } else if (t.includes("electric") || t.includes("ev") || m.includes("electric")) {
+      fuelType = "Electric";
+    }
+
+    // 2. Drive Type
+    let driveType = "FWD"; 
+    if (t.includes("awd") || t.includes("4wd") || t.includes("4x4") || m.includes("awd")) {
+      driveType = "AWD";
+    } else if (t.includes("rwd") || (mk === "lexus" && (m === "is" || m === "gs" || m === "ls"))) {
+      driveType = "RWD";
+    } else if (
+      (mk === "lexus" && (m === "rx" || m === "gx" || m === "lx")) ||
+      (mk === "toyota" && (m === "rav4" || m === "highlander" || m === "4runner" || m === "sequoia" || m === "tundra" || m === "tacoma")) ||
+      (mk === "honda" && (m === "cr-v" || m === "pilot" || m === "passport" || m === "ridgeline"))
+    ) {
+      driveType = "AWD";
+    }
+
+    // 3. Engine
+    let engine = "4-Cylinder"; 
+    if (t.includes("v6") || t.includes("3.5") || t.includes("v-6") || 
+        m.includes("350") || m.includes("3.5") || 
+        (mk === "lexus" && (m === "rx" || m === "es" || m === "gs")) || 
+        (mk === "toyota" && (m === "highlander" || m === "avalon" || m === "sienna")) ||
+        (mk === "honda" && (m === "pilot" || m === "odyssey"))
+    ) {
+      engine = "V6";
+    } else if (t.includes("v8") || t.includes("5.7") || 
+               (mk === "lexus" && (m === "lx" || m === "gx")) ||
+               (mk === "toyota" && (m === "tundra" || m === "sequoia"))
+    ) {
+      engine = "V8";
+    }
+
+    return { fuelType, driveType, engine };
+  }
+
+  const inferred = inferSpecs(listing.rawTitle || "", listing.make || "", listing.model || "");
+
   const specs = [
-    { label: "Drive Type", value: listing.driveType || parsedFallback.driveType },
-    { label: "Engine", value: listing.engine || parsedFallback.engine },
-    { label: "Fuel", value: listing.fuelType || parsedFallback.fuelType },
+    { label: "Drive Type", value: listing.driveType || parsedFallback.driveType || inferred.driveType },
+    { label: "Engine", value: listing.engine || parsedFallback.engine || inferred.engine },
+    { label: "Fuel", value: listing.fuelType || parsedFallback.fuelType || inferred.fuelType },
   ].filter(s => s.value != null && s.value !== "");
 
   return (
