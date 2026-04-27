@@ -3,7 +3,14 @@ import { parseListingText } from '../parser/listingParser';
 
 export async function enrichListingDetails(listingId: string) {
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
-  if (!listing || !listing.listingUrl) return null;
+  if (!listing) return null;
+
+  // Gracefully bypass heavy browser logic on Vercel deployments 
+  if (process.env.VERCEL) {
+    return listing;
+  }
+
+  if (!listing.listingUrl) return null;
 
   console.log(`📡 Deep scanning car: ${listing.rawTitle}...`);
   
