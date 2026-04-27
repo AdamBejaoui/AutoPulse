@@ -17,17 +17,11 @@ if (connectionString && !connectionString.includes('connection_limit')) {
   connectionString += connectionString.includes('?') ? '&connection_limit=1' : '?connection_limit=1';
 }
 
-if (process.env.NODE_ENV === "production") {
+if (!globalForPrisma.prisma) {
   const pool = new Pool({ connectionString });
   const adapter = new PrismaNeon(pool);
-  prismaInstance = new PrismaClient({ adapter, log: ["error", "warn"] });
-} else {
-  if (!globalForPrisma.prisma) {
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaNeon(pool);
-    globalForPrisma.prisma = new PrismaClient({ adapter, log: ["error", "warn"] });
-  }
-  prismaInstance = globalForPrisma.prisma;
+  globalForPrisma.prisma = new PrismaClient({ adapter, log: ["error", "warn"] });
 }
+prismaInstance = globalForPrisma.prisma;
 
 export const prisma = prismaInstance;
