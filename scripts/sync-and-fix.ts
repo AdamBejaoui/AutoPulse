@@ -54,7 +54,7 @@ async function runSyncCycle() {
     // 3. Configure Apify for CHEAP and FAST execution
     const input = {
         urls: finalUrls.map(u => u.url), 
-        maxPagesPerUrl: 1, // Only grab the very first page of results to save costs
+        maxPagesPerUrl: 3, // Increased to fetch more listing pages
         maxItems: 500,     // Hard limit
         proxyConfiguration: { 
             useApifyProxy: true,
@@ -63,7 +63,7 @@ async function runSyncCycle() {
         },
         onlyPublic: false,
         useFilters: true,
-        scrapeDetails: false // CRITICAL FOR COST: Do NOT navigate into listing pages using Apify compute!
+        scrapeDetails: true // CHANGED: Enable deep extraction of specs!
     };
 
     // 4. Run Synchronously
