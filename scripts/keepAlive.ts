@@ -1,6 +1,7 @@
 import http from 'http';
 import cron from 'node-cron';
 import { runLocalScraper } from '../lib/scraper/localScraper';
+import { enrichExisting } from './enrich-existing-apify';
 
 const PORT = process.env.PORT || 7860;
 
@@ -23,5 +24,11 @@ server.listen(PORT, () => {
   // This will rotate through cities and ingest fresh data for $0 Apify credits
   cron.schedule('*/30 * * * *', () => {
     runLocalScraper().catch(console.error);
+  });
+
+  // 3. Schedule existing listing enrichment every hour
+  cron.schedule('0 * * * *', () => {
+    console.log('[worker] Starting scheduled enrichment of existing listings...');
+    enrichExisting().catch(console.error);
   });
 });

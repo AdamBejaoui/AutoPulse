@@ -1,43 +1,53 @@
-import { NextResponse } from 'next/server';
-import { parseListingText, isJunkTitle } from '@/lib/parser/listingParser';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
-export const dynamic = 'force-dynamic';
+import { ApifyClient } from 'apify-client';
+import { PrismaClient } from '@prisma/client';
+import { parseListingText, isJunkTitle } from '../lib/parser/listingParser';
+import { matchListingToSubscriptions } from '../lib/alertMatcher';
 
-export async function GET() {
-  return NextResponse.json({ status: "Apify Webhook Endpoint Active" });
-}
+const apifyClient = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
+const prisma = new PrismaClient();
 
-export async function POST(req: Request) {
+const runId = process.argv[2] || 'z4XEhbycwZtcSmlIH';
+
+async function processRun() {
+  console.log('═══════════════════════════════════════');
+  console.log(`   PROCESSING APIFY RUN: ${runId}`);
+  console.log('═══════════════════════════════════════');
+
   try {
-    const body = await req.json();
-    const { resource } = body;
-    const datasetId = resource?.defaultDatasetId;
+    const run = await apifyClient.run(runId).get();
+    if (!run) {
+      console.log(`❌ Run ${runId} not found.`);
+      return;
+    }
 
-    if (!datasetId) return NextResponse.json({ error: "No datasetId" }, { status: 400 });
+    if (run.status !== 'SUCCEEDED') {
+      console.log(`⚠️ Run is in status: ${run.status}. Cannot process yet.`);
+      return;
+    }
 
-    const apiToken = process.env.APIFY_API_TOKEN;
-    const response = await fetch(`https://api.apify.com/v2/datasets/${datasetId}/items?token=${apiToken}`);
-    if (!response.ok) return NextResponse.json({ error: "Fetch failed" }, { status: 500 });
+    const dataset = await apifyClient.run(runId).dataset().listItems();
+    console.log(`📊 Found ${dataset.items.length} items in dataset.`);
 
-    const items = await response.json();
-    const { prisma } = await import("@/lib/db");
-    const { matchListingToSubscriptions } = await import("@/lib/alertMatcher");
+    let fixedCount = 0;
 
-    let count = 0;
-    for (const item of items) {
+    for (const item of dataset.items) {
       try {
         const description = item.description || item.redacted_description?.text || '';
         const title = item.marketplace_listing_title || item.custom_title || item.title || '';
         
         // 1. Junk Filter
         if (isJunkTitle(title, description)) {
-          console.log(`[webhook] Skipping junk title: ${title}`);
+          console.log(`⏭️ Skipping junk title: ${title}`);
           continue;
         }
 
         const parsed = parseListingText(title, description);
         if (parsed.isJunk) {
-          console.log(`[webhook] Skipping confirmed junk listing (parsed): ${title}`);
+          console.log(`⏭️ Skipping confirmed junk listing (parsed): ${title}`);
           continue;
         }
 
@@ -60,7 +70,14 @@ export async function POST(req: Request) {
           ...(item.additional_photos?.map((p: any) => p.uri) || [])
         ].filter(Boolean);
 
-        // 5. Merge Parser Results with Scraper Metadata
+        // 5. Apply Structured Fallbacks
+        const mileage = parsed.mileage || item.vehicle_odometer_data?.value || null;
+        const titleStatus = parsed.titleStatus || item.vehicle_title_status || null;
+        const transmission = parsed.transmission || item.vehicle_transmission_type || null;
+        const color = parsed.color || item.vehicle_exterior_color || item.vehicle_interior_color || null;
+        const trim = parsed.trim || item.vehicle_trim_display_name || null;
+        const vin = parsed.vin || item.vehicle_identification_number || null;
+
         const listingData = {
           externalId: externalId,
           source: 'facebook',
@@ -73,55 +90,58 @@ export async function POST(req: Request) {
           state: item.location_text?.text?.split(',')[1]?.trim() || item.state || null,
           postedAt: item.creation_time ? new Date(item.creation_time * 1000) : new Date(),
           
-          // Use parser for core attributes
           make: parsed.make,
           model: parsed.model,
           year: parsed.year,
-          mileage: parsed.mileage || item.vehicle_odometer_data?.value || null,
-          trim: parsed.trim || item.vehicle_trim_display_name || null,
+          mileage: mileage,
+          trim: trim,
           bodyStyle: parsed.bodyStyle,
           driveType: parsed.driveType,
           engine: parsed.engine,
-          transmission: parsed.transmission || item.vehicle_transmission_type || null,
+          transmission: transmission,
           fuelType: parsed.fuelType,
-          color: parsed.color || item.vehicle_exterior_color || item.vehicle_interior_color || null,
+          color: color,
           doors: parsed.doors,
-          titleStatus: parsed.titleStatus || item.vehicle_title_status || null,
+          titleStatus: titleStatus,
           condition: parsed.condition,
           accidents: parsed.accidents,
           owners: parsed.owners,
           features: parsed.features,
-          vin: parsed.vin || item.vehicle_identification_number || null,
+          vin: vin,
           isJunk: parsed.isJunk,
           isCar: !parsed.isJunk && parsed.make !== "Unknown",
           parseScore: parsed.parseScore,
           parsedAt: new Date(),
         };
 
+        // 6. Upsert into DB
         const listing = await prisma.listing.upsert({
-          where: { externalId: listingData.externalId },
+          where: { externalId: externalId },
           update: listingData,
           create: listingData,
         });
 
         if (listing) {
-          count++;
-          // Trigger email match on successful enrichment
           try {
             await matchListingToSubscriptions(listing);
           } catch (matchError) {
-            console.error(`[webhook] Failed to match subscriptions:`, matchError);
+            console.error(`❌ Failed to match subscription for ${externalId}:`, matchError);
           }
         }
-      } catch (err) {
-        console.error(`[webhook] Item error:`, err);
+
+        console.log(`🔧 Fixed: ${title} — Mileage: ${mileage} mi, Title: ${titleStatus}, Trans: ${transmission}`);
+        fixedCount++;
+      } catch (itemError: any) {
+        console.error(`❌ Error processing item ${item.id}:`, itemError.message);
       }
     }
 
-    return NextResponse.json({ success: true, processed: count });
+    console.log(`\n✅ Finished! Successfully fixed ${fixedCount} listings.`);
   } catch (error: any) {
-    console.error(`[webhook] Critical error:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('❌ Failed to process run:', error.message);
   }
+
+  await prisma.$disconnect();
 }
 
+processRun().catch(console.error);

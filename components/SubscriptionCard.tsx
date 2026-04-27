@@ -19,6 +19,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { EditAlertModal } from "./EditAlertModal";
 
 function formatUsdFromCents(cents: number | null): string {
   if (cents == null) return "—";
@@ -35,6 +36,7 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
   const [newEmail, setNewEmail] = useState(s.email);
   const [isUpdating, setIsUpdating] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -116,6 +118,14 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
         {/* Right: delete + expand */}
         <div className="flex items-center gap-1 shrink-0">
           <button
+            onClick={(e) => { e.stopPropagation(); setIsEditModalOpen(true); }}
+            disabled={isDeleting || isUpdating}
+            className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            title="Edit alert filters"
+          >
+            <Pencil size={15} />
+          </button>
+          <button
             onClick={handleDelete}
             disabled={isDeleting || isUpdating}
             className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -174,6 +184,11 @@ export function SubscriptionCard({ subscription: s }: { subscription: any }) {
           </div>
         </div>
       )}
+      <EditAlertModal
+        subscription={s}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+      />
     </div>
   );
 }

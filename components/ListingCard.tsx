@@ -54,7 +54,9 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
 
   const loc = [listing.city, listing.state].filter(Boolean).join(", ");
   const mileage = listing.mileage != null
-    ? `${(listing.mileage / 1000).toFixed(0)}k mi`
+    ? (listing.mileage >= 1000 
+        ? `${(listing.mileage / 1000).toFixed(0)}k mi` 
+        : `${listing.mileage} mi`)
     : null;
 
   const dealRating = listing.analysis?.rating;
