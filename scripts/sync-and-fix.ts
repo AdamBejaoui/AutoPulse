@@ -182,6 +182,9 @@ async function runSyncCycle() {
 
     } catch (e: any) {
         console.error('❌ Cycle Failed:', e.message);
+    } finally {
+        console.log('🔌 Releasing database connection slots...');
+        await prisma.$disconnect().catch(() => {});
     }
 
     console.log('\n💤 Cycle complete. Sleeping for 2 minutes before next batch...');
@@ -192,7 +195,13 @@ async function runSyncCycle() {
 async function startServerSync() {
     console.log('🚀 Starting Endless Server Sync Worker');
     while (true) {
-        await runSyncCycle();
+        try {
+            await runSyncCycle();
+        } catch (e: any) {
+            console.error('💥 Critical error in startServerSync:', e.message);
+            console.log('⏳ Waiting 30 seconds to allow connection slots to clear...');
+            await delay(30000);
+        }
     }
 }
 
