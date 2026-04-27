@@ -134,7 +134,25 @@ export async function findMatchingSubscriptions(listing: Listing): Promise<Subsc
  */
 export async function matchListingToSubscriptions(listing: Listing) {
   try {
-    const matches = await findMatchingSubscriptions(listing);
+    const candidates = await findMatchingSubscriptions(listing);
+    
+    // Strict in-memory post-filtering to perfectly honor parameters & drop null gaps
+    const matches = candidates.filter(sub => {
+      // Mileage constraints
+      if (sub.mileageMin != null && (listing.mileage === null || listing.mileage < sub.mileageMin)) return false;
+      if (sub.mileageMax != null && (listing.mileage === null || listing.mileage > sub.mileageMax)) return false;
+      
+      // Price constraints (converting boundaries safely)
+      if (sub.priceMin != null && listing.price < sub.priceMin) return false;
+      if (sub.priceMax != null && listing.price > sub.priceMax) return false;
+
+      // Production Year constraints
+      if (sub.yearMin != null && listing.year < sub.yearMin) return false;
+      if (sub.yearMax != null && listing.year > sub.yearMax) return false;
+      
+      return true;
+    });
+
     if (matches.length === 0) return;
 
     const mailListing: MailListing = {
