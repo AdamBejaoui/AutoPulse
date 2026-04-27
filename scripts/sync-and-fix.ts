@@ -190,8 +190,8 @@ async function runSyncCycle() {
         await prisma.$disconnect().catch(() => {});
     }
 
-    console.log('\n💤 Cycle complete. Sleeping for 2 minutes before next batch...');
-    await delay(120 * 1000); // Wait 2 minutes between Apify runs
+    console.log('\n💤 Cycle complete. Sleeping for 15 minutes before next batch...');
+    await delay(15 * 60 * 1000); // Wait 15 minutes between Apify runs
 }
 
 // Endless Loop
