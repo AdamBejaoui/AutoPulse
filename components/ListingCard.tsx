@@ -1,12 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import Image from "next/image";
-import { Gauge, MapPin, ArrowRightLeft, Check } from "lucide-react";
+import { Gauge, MapPin, Star, ExternalLink, Calendar, CheckCircle2, AlertCircle, Sparkles, User, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ListingDetailModal } from "./ListingDetailModal";
-import { useComparison } from "@/context/ComparisonContext";
 
 function formatUsd(cents: number): string {
   if (cents === 0) return "Contact seller";
@@ -40,6 +38,9 @@ const placeholderSvg =
 export const ListingCard = memo(function ListingCard({ listing }: { listing: any }): React.ReactElement {
   const [imgOk, setImgOk] = useState(true);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showFullDesc, setShowFullDesc] = useState(false);
+
   const src = (listing.imageUrls && listing.imageUrls.length > 0) && imgOk ? listing.imageUrls[0] : placeholderSvg;
 
   const hasMake = listing.make && listing.make !== "Unknown";
@@ -61,156 +62,228 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
 
   const dealRating = listing.analysis?.rating;
 
+  // Check if saved on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("saved_listings");
+    if (saved) {
+      const ids = JSON.parse(saved);
+      setIsSaved(ids.includes(listing.id));
+    }
+  }, [listing.id]);
+
+  const toggleSave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const saved = localStorage.getItem("saved_listings");
+    let ids = saved ? JSON.parse(saved) : [];
+    
+    if (isSaved) {
+      ids = ids.filter((id: string) => id !== listing.id);
+      setIsSaved(false);
+    } else {
+      ids.push(listing.id);
+      setIsSaved(true);
+    }
+    localStorage.setItem("saved_listings", JSON.stringify(ids));
+    // Dispatch event for other components to listen
+    window.dispatchEvent(new Event("saved_listings_changed"));
+  };
+
+  const specs = [
+    { label: "Condition", value: listing.condition },
+    { label: "Title", value: listing.titleStatus },
+    { label: "Drive Type", value: listing.driveType },
+    { label: "Engine", value: listing.engine },
+    { label: "Fuel", value: listing.fuelType },
+    { label: "Color", value: listing.color },
+    { label: "Doors", value: listing.doors },
+    { label: "Owners", value: listing.owners },
+    { label: "Accidents", value: listing.accidents === true ? "Yes" : listing.accidents === false ? "None reported" : null },
+  ].filter(s => s.value != null && s.value !== "");
+
   return (
-    <ListingDetailModal listing={listing}>
-      <article className="group relative flex flex-col overflow-hidden rounded-xl bg-surface border border-border transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover hover:border-primary/20 cursor-pointer active:scale-[0.99] h-full">
-
-        {/* Image */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-raised shrink-0">
-          {/* Skeleton shimmer until loaded */}
-          {!imgLoaded && (
-            <div className="absolute inset-0 skeleton" />
+    <article className="group relative flex flex-col md:flex-row overflow-hidden rounded-2xl bg-surface border border-border transition-all duration-300 hover:shadow-card-hover hover:border-primary/20 w-full bg-mesh">
+      
+      {/* Image Section */}
+      <div className="relative md:w-2/5 aspect-[16/10] md:aspect-auto overflow-hidden bg-surface-raised shrink-0">
+        {!imgLoaded && (
+          <div className="absolute inset-0 skeleton" />
+        )}
+        <Image
+          src={src}
+          alt={displayTitle}
+          fill
+          className={cn(
+            "object-cover transition-all duration-500 group-hover:scale-[1.02]",
+            imgLoaded ? "opacity-100" : "opacity-0"
           )}
-          <Image
-            src={src}
-            alt={displayTitle}
-            fill
-            className={cn(
-              "object-cover transition-all duration-500 group-hover:scale-[1.04]",
-              imgLoaded ? "opacity-100" : "opacity-0"
-            )}
-            onLoad={() => setImgLoaded(true)}
-            onError={() => { setImgOk(false); setImgLoaded(true); }}
-             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
+          onLoad={() => setImgLoaded(true)}
+          onError={() => { setImgOk(false); setImgLoaded(true); }}
+          sizes="(max-width: 768px) 100vw, 40vw"
+        />
 
-          {/* Sold overlay */}
-          {listing.isSold && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[4px] transition-all duration-300">
-              <span className="px-5 py-2 rounded-xl bg-red-600 text-white text-[11px] font-black uppercase tracking-[0.25em] shadow-2xl border border-white/20 scale-110">
-                Vehicle Sold
-              </span>
-            </div>
-          )}
-
-          {/* Deal badge */}
-          {dealRating && dealRating !== "unknown" && !listing.isSold && (
-            <div className="absolute top-3 left-3 z-10">
-              <span className={cn(
-                "inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold",
-                dealRating === "great"
-                  ? "bg-emerald-500/90 text-white"
-                  : "bg-surface/90 border border-border text-muted-foreground"
-              )}>
-                {dealRating === "great" ? "🔥 Great deal" : "✓ Good"}
-              </span>
-            </div>
-          )}
-
-          {/* Price badge */}
-          <div className="absolute bottom-3 left-3 z-10">
-            <span className="inline-block bg-background/90 backdrop-blur-sm border border-border px-3 py-1 rounded-lg text-sm font-bold text-foreground">
-              {formatUsd(listing.price)}
+        {/* Sold overlay */}
+        {listing.isSold && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/50 backdrop-blur-[4px]">
+            <span className="px-5 py-2 rounded-xl bg-red-600 text-white text-[11px] font-black uppercase tracking-[0.25em] shadow-2xl border border-white/20 scale-110">
+              Vehicle Sold
             </span>
           </div>
+        )}
 
-          {/* Comparison toggle on hover (desktop) */}
-          <div className="absolute bottom-3 right-3 z-10 hidden sm:block opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-            <ComparisonToggle listing={listing} />
+        {/* Deal badge */}
+        {dealRating && dealRating !== "unknown" && !listing.isSold && (
+          <div className="absolute top-4 left-4 z-10">
+            <span className={cn(
+              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-md",
+              dealRating === "great"
+                ? "bg-emerald-500/90 text-white"
+                : "bg-surface/90 border border-border text-muted-foreground"
+            )}>
+              {dealRating === "great" ? <Sparkles size={12} className="fill-current" /> : null}
+              {dealRating === "great" ? "Great Deal" : "Good Deal"}
+            </span>
           </div>
+        )}
+
+        {/* Star Button (Top Right of Image) */}
+        <button
+          onClick={toggleSave}
+          className={cn(
+            "absolute top-4 right-4 z-20 h-10 w-10 flex items-center justify-center rounded-full backdrop-blur-md border shadow-md transition-all duration-200",
+            isSaved
+              ? "bg-primary/90 border-primary text-white"
+              : "bg-background/80 border-border text-muted-foreground hover:border-primary hover:text-primary"
+          )}
+          title={isSaved ? "Saved" : "Save Listing"}
+        >
+          <Star size={18} className={cn(isSaved && "fill-current")} />
+        </button>
+
+        {/* Price Tag Overlay */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <span className="inline-block bg-background/90 backdrop-blur-md border border-border px-4 py-1.5 rounded-xl text-lg font-black text-foreground shadow-lg">
+            {formatUsd(listing.price)}
+          </span>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="flex flex-col flex-1 p-6 md:p-8">
+        
+        {/* Header */}
+        <div className="flex flex-col mb-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1.5 flex-wrap">
+            {listing.postedAt && (
+              <span className="flex items-center gap-1">
+                <Calendar size={12} />
+                {timeAgo(listing.postedAt)}
+              </span>
+            )}
+            {loc && (
+              <span className="flex items-center gap-1">
+                <MapPin size={12} />
+                {loc}
+              </span>
+            )}
+            {mileage && (
+              <span className="flex items-center gap-1">
+                <Gauge size={12} />
+                {mileage}
+              </span>
+            )}
+            {listing.sellerName && (
+              <span className="flex items-center gap-1">
+                <User size={12} />
+                {listing.sellerName}
+              </span>
+            )}
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight group-hover:text-primary transition-colors flex-1">
+            {displayTitle}
+            {listing.trim && <span className="text-primary font-medium text-base ml-2">({listing.trim})</span>}
+          </h2>
         </div>
 
-        {/* Content */}
-        <div className="flex flex-col flex-1 p-4">
-          {/* Title */}
-          <h2 className="text-sm sm:text-base font-semibold text-foreground leading-tight mb-2 line-clamp-1 group-hover:text-primary transition-colors">
-            {displayTitle}
-          </h2>
+        {/* Specs Grid */}
+        {specs.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 mb-6 p-4 rounded-xl bg-surface-raised/50 border border-border/50">
+            {specs.map((spec, i) => (
+              <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0 sm:[&:nth-last-child(-n+3)]:border-0">
+                <span className="text-muted-foreground">{spec.label}</span>
+                <span className={cn(
+                  "font-semibold text-foreground",
+                  spec.label === "Accidents" && spec.value === "Yes" && "text-destructive"
+                )}>
+                  {spec.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
+        {/* Description */}
+        {listing.description && (
+          <div className="mb-6">
+            <p className={cn(
+              "text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap",
+              !showFullDesc && "line-clamp-3"
+            )}>
+              {listing.description}
+            </p>
+            {listing.description.length > 200 && (
+              <button
+                onClick={() => setShowFullDesc(!showFullDesc)}
+                className="text-xs font-semibold text-primary mt-2 hover:underline"
+              >
+                {showFullDesc ? "Show less" : "Read more"}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Features */}
+        {listing.features && listing.features.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-6">
+            {listing.features.map((feature: string, i: number) => (
+              <span key={i} className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold bg-surface-raised text-muted-foreground border border-border/50">
+                {feature}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="mt-auto pt-4 border-t border-border flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
             {listing.transmission && (
               <Tag>{listing.transmission}</Tag>
             )}
             {listing.bodyStyle && (
               <Tag>{listing.bodyStyle}</Tag>
             )}
-            {listing.trim && (
-              <Tag highlight>{listing.trim}</Tag>
-            )}
           </div>
 
-          {/* Footer: mileage + location */}
-          <div className="mt-auto flex items-center justify-between pt-3 border-t border-border">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {mileage && (
-                <span className="flex items-center gap-1">
-                  <Gauge size={12} />
-                  {mileage}
-                </span>
-              )}
-              {loc && (
-                <span className="flex items-center gap-1 truncate max-w-[120px]">
-                  <MapPin size={12} className="shrink-0" />
-                  {loc}
-                </span>
-              )}
-              {listing.postedAt && (
-                <span className="text-[10px] whitespace-nowrap opacity-75">
-                  {timeAgo(listing.postedAt)}
-                </span>
-              )}
-            </div>
-            {/* Mobile comparison */}
-            <div className="sm:hidden">
-              <ComparisonToggle listing={listing} compact />
-            </div>
-          </div>
+          <a
+            href={listing.listingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all"
+          >
+            <ExternalLink size={14} />
+            View on Facebook
+          </a>
         </div>
-      </article>
-    </ListingDetailModal>
+
+      </div>
+    </article>
   );
 });
 
-function Tag({ children, highlight }: { children: React.ReactNode; highlight?: boolean }) {
+function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className={cn(
-      "inline-block px-2 py-0.5 rounded-full text-[10px] font-medium",
-      highlight
-        ? "bg-primary/10 text-primary"
-        : "bg-surface-raised text-muted-foreground"
-    )}>
+    <span className="inline-block px-3 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary">
       {children}
     </span>
-  );
-}
-
-function ComparisonToggle({ listing, compact }: { listing: any; compact?: boolean }) {
-  const { addToComparison, removeFromComparison, isInComparison, comparisonList } = useComparison();
-  const active = isInComparison(listing.id);
-  const isFull = comparisonList.length >= 4 && !active;
-
-  const toggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (active) removeFromComparison(listing.id);
-    else if (!isFull) addToComparison(listing);
-  };
-
-  return (
-    <button
-      onClick={toggle}
-      disabled={isFull}
-      title={active ? "Remove from comparison" : "Add to comparison"}
-      className={cn(
-        "flex items-center justify-center rounded-full border transition-all duration-200",
-        compact ? "h-7 w-7" : "h-8 w-8",
-        active
-          ? "bg-primary border-primary text-white shadow-blue"
-          : "bg-background/80 backdrop-blur-sm border-border text-muted-foreground hover:border-primary hover:text-primary",
-        isFull && "opacity-40 cursor-not-allowed"
-      )}
-    >
-      {active ? <Check size={compact ? 12 : 14} /> : <ArrowRightLeft size={compact ? 12 : 14} />}
-    </button>
   );
 }

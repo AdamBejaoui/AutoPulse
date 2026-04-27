@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Menu, X, Bell, Search, Zap } from "lucide-react";
+import { Moon, Sun, Menu, X, Bell, Search, Zap, Star } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ export function Navbar(): React.ReactElement {
   const navItems = [
     { label: "Find Cars", href: "/search", icon: Search },
     { label: "Alerts", href: "/alerts", icon: Bell },
+    { label: "Saved", href: "/saved", icon: Star },
   ];
 
   return (

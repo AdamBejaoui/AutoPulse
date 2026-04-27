@@ -6,8 +6,7 @@ import {
   toSearchParams,
   buildListingOrderBy,
 } from "@/lib/listingFilters";
-import { ListingGrid } from "@/components/ListingGrid";
-import { Pagination } from "@/components/Pagination";
+import { InfiniteListingGrid } from "@/components/InfiniteListingGrid";
 import { SearchLayout } from "@/components/SearchLayout";
 import { getMarketAnalysis } from "@/lib/intelligence";
 
@@ -48,6 +47,17 @@ export default async function SearchPage({
         description: true,
         listingUrl: true,
         condition: true,
+        driveType: true,
+        fuelType: true,
+        color: true,
+        doors: true,
+        titleStatus: true,
+        accidents: true,
+        owners: true,
+        features: true,
+        sellerName: true,
+        bodyStyle: true,
+        isSold: true,
       },
     }),
     prisma.listing.count({ where }),
@@ -98,11 +108,10 @@ export default async function SearchPage({
       }
     >
       <SearchLayout total={total} sidebarInitial={sidebarInitial}>
-        <ListingGrid listings={listingsWithAnalysis} />
-        <Pagination
-          page={parsed.page}
-          totalPages={totalPages}
-          queryWithoutPage={queryWithoutPage}
+        <InfiniteListingGrid 
+          initialListings={listingsWithAnalysis} 
+          initialTotal={total} 
+          queryWithoutPage={queryWithoutPage} 
         />
       </SearchLayout>
     </Suspense>

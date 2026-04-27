@@ -50,6 +50,8 @@ const optionalInt = z.preprocess((val: unknown) => {
 }, z.number().int().optional());
 
 const paramsSchema = z.object({
+  /** Comma-separated list of IDs for saved listings. */
+  ids: z.string().optional(),
   /** Free-text: words are AND’ed; each word matches make, model, or description. */
   keywords: z.string().optional(),
   make: z.string().optional(),
@@ -115,6 +117,7 @@ export function parseListingParams(
 
 export function toSearchParams(p: ParsedListingParams): URLSearchParams {
   const u = new URLSearchParams();
+  if (p.ids) u.set("ids", p.ids);
   if (p.keywords) u.set("keywords", p.keywords);
   if (p.make) u.set("make", p.make);
   if (p.model) u.set("model", p.model);
@@ -148,7 +151,13 @@ export function buildStructuredWhere(
     isCar: true,
   };
 
-  
+  if (p.ids) {
+    const idArray = p.ids.split(",").map((id) => id.trim()).filter(Boolean);
+    if (idArray.length > 0) {
+      where.id = { in: idArray };
+    }
+  }
+
   // Basic numeric
   if (p.yearMin != null || p.yearMax != null) {
     where.year = {};
