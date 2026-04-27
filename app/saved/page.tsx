@@ -17,6 +17,8 @@ export default function SavedPage() {
     const loadSaved = async () => {
       const saved = localStorage.getItem("saved_listings");
       if (!saved) {
+        setListings([]);
+        setSavedIds([]);
         setLoading(false);
         return;
       }
@@ -25,6 +27,7 @@ export default function SavedPage() {
       setSavedIds(ids);
       
       if (ids.length === 0) {
+        setListings([]);
         setLoading(false);
         return;
       }
@@ -45,7 +48,10 @@ export default function SavedPage() {
 
     // Listen for changes from other tabs/actions
     const handleStorageChange = () => {
-      loadSaved();
+      const saved = localStorage.getItem("saved_listings");
+      const ids = saved ? JSON.parse(saved) : [];
+      setSavedIds(ids);
+      setListings((prev) => prev.filter((item) => ids.includes(item.id)));
     };
     window.addEventListener("saved_listings_changed", handleStorageChange);
     return () => window.removeEventListener("saved_listings_changed", handleStorageChange);
