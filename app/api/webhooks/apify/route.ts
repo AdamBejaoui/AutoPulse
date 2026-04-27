@@ -61,6 +61,12 @@ export async function POST(req: Request) {
         ].filter(Boolean);
 
         // 5. Merge Parser Results with Scraper Metadata
+        let milesText = item.custom_sub_titles_with_rendering_flags?.find((s: any) => s.subtitle?.toLowerCase().includes('miles'))?.subtitle;
+        let milesInt = milesText ? parseInt(milesText.replace(/[^\d]/g, '')) : null;
+        if (milesText && milesText.toLowerCase().includes('k') && milesInt && milesInt < 1000) {
+            milesInt = milesInt * 1000;
+        }
+
         const listingData = {
           externalId: externalId,
           source: 'facebook',
@@ -69,15 +75,15 @@ export async function POST(req: Request) {
           listingUrl: listingUrl,
           price: priceCents,
           imageUrls: Array.from(new Set(imageUrls)),
-          city: item.location_text?.text?.split(',')[0]?.trim() || item.city || null,
-          state: item.location_text?.text?.split(',')[1]?.trim() || item.state || null,
-          postedAt: item.creation_time ? new Date(item.creation_time * 1000) : new Date(),
+          city: item.location_text?.text?.split(',')[0]?.trim() || item.city || item.location?.reverse_geocode?.city || null,
+          state: item.location_text?.text?.split(',')[1]?.trim() || item.state || item.location?.reverse_geocode?.state || null,
+          postedAt: item.creation_time ? new Date(item.creation_time * 1000) : null,
           
           // Use parser for core attributes
           make: parsed.make,
           model: parsed.model,
           year: parsed.year,
-          mileage: parsed.mileage || item.vehicle_odometer_data?.value || null,
+          mileage: parsed.mileage || milesInt || item.vehicle_odometer_data?.value || null,
           trim: parsed.trim || item.vehicle_trim_display_name || null,
           bodyStyle: parsed.bodyStyle,
           driveType: parsed.driveType,
