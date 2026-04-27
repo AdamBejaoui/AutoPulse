@@ -83,6 +83,9 @@ async function runSyncCycle() {
 
         for (const rawItem of items) {
             try {
+                // Throttle slightly to prevent hammering the database pooled connections
+                await delay(100);
+
                 const item = rawItem as any;
                 const description = item.description || item.redacted_description?.text || '';
                 const title = item.marketplace_listing_title || item.custom_title || item.title || '';
