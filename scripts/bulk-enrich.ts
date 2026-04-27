@@ -7,25 +7,21 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const prisma = new PrismaClient();
 
 async function bulkEnrich() {
-    console.log('👷 Starting FREE Bulk Detail Sync...');
+    console.log('👷 Starting Bulk Detail Sync...');
     
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    // Find cars with "Unknown" or missing details
+    // Find cars with "Unknown" or missing details or zero price
     const targets = await prisma.listing.findMany({
         where: {
-            createdAt: { gte: yesterday },
             OR: [
                 { make: 'Unknown' },
                 { mileage: null },
-                { description: { contains: 'pending' } },
+                { price: 0 },
                 { rawTitle: '' },
                 { rawTitle: 'Vehicle' }
             ],
             isJunk: false
         },
-        take: 500, // Processing a large batch to fix everything
+        take: 200, // Processing a reasonable batch
         orderBy: { createdAt: 'desc' }
     });
 

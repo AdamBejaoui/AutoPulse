@@ -16,15 +16,23 @@ function formatUsd(cents: number): string {
   }).format(cents / 100);
 }
 
-function timeAgo(dateInput: string | Date): string {
-  if (!dateInput) return "";
-  const date = new Date(dateInput);
-  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+function timeAgo(postedAt: string | Date, createdAt?: string | Date): string {
+  if (!postedAt) return "";
+  const pDate = new Date(postedAt);
+  
+  if (createdAt) {
+    const cDate = new Date(createdAt);
+    if (Math.abs(pDate.getTime() - cDate.getTime()) < 60000) {
+      return "Recently listed";
+    }
+  }
+
+  const diff = Math.floor((Date.now() - pDate.getTime()) / 1000);
   if (diff < 60) return "Just now";
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return pDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 const placeholderSvg =
@@ -176,7 +184,7 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
             {listing.postedAt && (
               <span className="flex items-center gap-1">
                 <Calendar size={12} />
-                {timeAgo(listing.postedAt)}
+                {timeAgo(listing.postedAt, listing.createdAt)}
               </span>
             )}
             {loc && (
