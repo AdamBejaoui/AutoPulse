@@ -264,6 +264,39 @@ export async function sendMail(options: {
     throw new Error("No sender email found (EMAIL_FROM or EMAIL_USER).");
   }
 
+  // API Fallback: Bypass provider-blocked SMTP ports using standard HTTP endpoints
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const fromFormatted = fromEmail.includes('@') && !fromEmail.includes('<') 
+        ? `AutoPulse <${fromEmail}>` 
+        : fromEmail;
+
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from: fromFormatted,
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+        })
+      });
+
+      if (res.ok) {
+        console.log(`[mailer] Email sent securely via Resend API to ${options.to}`);
+        return;
+      } else {
+        const errText = await res.text();
+        console.log(`⚠️ Resend API failed (${res.status}): ${errText}. Falling back to SMTP.`);
+      }
+    } catch (apiErr: any) {
+      console.log(`⚠️ Resend API connection error: ${apiErr.message}. Falling back to SMTP.`);
+    }
+  }
+
   const primaryPort = Number(process.env.EMAIL_PORT ?? "587");
   const fallbackPort = primaryPort === 587 ? 465 : 587;
 
