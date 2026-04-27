@@ -14,36 +14,7 @@ const prisma = new PrismaClient();
 const BATCH_SIZE = 5; // URLs per run
 
 const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus'];
-const targetCities = [
-    'philadelphia', 'pittsburgh', // PA
-    'richmond', // VA
-    'charlotte', 'raleigh', // NC
-    'columbia', 'charleston', // SC
-    'atlanta', // GA
-    'miami', 'orlando', 'tampa', // FL
-    'charleston', // WVA
-    'nashville', 'memphis', // TN
-    'birmingham', // AL
-    'columbus', 'cleveland', // OH
-    'indianapolis', // IN
-    'louisville', // KY
-    'detroit', // MI
-    'neworleans', // LA
-    'littlerock', // AR
-    'stlouis', 'kansascity', // MO
-    'desmoines', // IA
-    'minneapolis', // MN
-    'houston', 'dallas', 'sanantonio', // TX
-    'oklahomacity', // OK
-    'wichita', // KS
-    'albuquerque', // NM
-    'denver', // CO
-    'cheyenne', // WY
-    'omaha', // NE
-    'siouxfalls', // SD
-    'fargo', // ND
-    'saltlakecity' // UT
-];
+const targetCities = ["houston","philadelphia","san-antonio","dallas","austin","jacksonville","fort-worth","columbus","charlotte","indianapolis","denver","el-paso","nashville","detroit","oklahoma-city","memphis","louisville","albuquerque","kansas-city","atlanta","omaha","colorado-springs","raleigh","miami","virginia-beach","minneapolis","tulsa","arlington","new-orleans","wichita","cleveland","tampa","aurora","corpus-christi","lexington","st-louis","saint-paul","pittsburgh","cincinnati","lincoln","orlando","durham","laredo","fort-wayne","charleston","birmingham","baton-rouge","fayetteville","shreveport","des-moines","richmond","little-rock","tallahassee","knoxville","salt-lake-city","huntsville","sioux-falls","grand-rapids","mobile","fargo","casper","cheyenne","savannah","augusta","montgomery","greenville-sc","columbia-sc","springfield-mo","allentown","grand-junction","fort-collins","rapid-city","cedar-rapids","quad-cities","evansville","south-bend","bowling-green","chattanooga","clarksville","asheville","wilmington","greensboro","winston-salem","myrtle-beach","macon","pensacola","gainesville","fort-myers","sarasota","daytona-beach","greeley","boulder","pueblo","ocala","panama-city","st-augustine","palm-bay","melbourne","port-st-lucie","fort-pierce","lakeland","winter-haven","bradenton","naples","fort-walton-beach","athens-ga","valdosta","albany-ga","muncie","terre-haute","lafayette-in","anderson-in","ames","iowa-city","waterloo-ia","dubuque","lawrence-ks","manhattan-ks","topeka","salina-ks","hutchinson","owensboro","paducah","lake-charles","lafayette-la","houma","monroe-la","alexandria-la","ann-arbor","lansing","flint","kalamazoo","saginaw","muskegon","traverse-city","duluth","rochester-mn","st-cloud","mankato","columbia-mo","st-joseph","joplin","grand-island","kearney","las-cruces","santa-fe","roswell","farmington-nm","wilmington-nc","jacksonville-nc","gastonia","high-point","grand-forks","minot","akron","dayton","toledo","youngstown","canton-oh","norman","broken-arrow","edmond","lawton","erie","reading-pa","scranton","lancaster-pa","harrisburg","spartanburg","rock-hill","rapid-city-sd","murfreesboro","jackson-tn","johnson-city","plano","lubbock","irving","garland","amarillo","brownsville","pasadena-tx","mesquite-tx","mcallen","killeen","denton","midland-tx","odessa-tx","abilene","beaumont","waco","tyler","college-station","longview-tx","san-angelo","ogden","provo","st-george","logan","charleston-wv","huntington-wv","morgantown","rock-springs","gillette","laramie"];
 
 // Helper to delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
