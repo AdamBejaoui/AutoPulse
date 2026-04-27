@@ -3,13 +3,12 @@ import * as path from 'path';
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 import { ApifyClient } from 'apify-client';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/db';
 import { parseListingText, isJunkTitle } from '../lib/parser/listingParser';
 import { enrichListingDetails } from '../lib/scraper/enricher';
 import { matchListingToSubscriptions } from '../lib/alertMatcher';
 
 const apifyClient = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
-const prisma = new PrismaClient();
 
 const BATCH_SIZE = 5; // URLs per run
 

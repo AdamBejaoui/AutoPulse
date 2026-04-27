@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db';
 import { parseListingText } from '../parser/listingParser';
-
-const prisma = new PrismaClient();
 
 export async function enrichListingDetails(listingId: string) {
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
