@@ -134,7 +134,9 @@ export async function findMatchingSubscriptions(listing: Listing): Promise<Subsc
  */
 export async function matchListingToSubscriptions(listing: Listing) {
   try {
+    const { prisma } = await import("./db");
     const candidates = await findMatchingSubscriptions(listing);
+
     
     // Strict in-memory post-filtering to perfectly honor parameters & drop null gaps
     const matches = candidates.filter(sub => {
@@ -174,6 +176,21 @@ export async function matchListingToSubscriptions(listing: Listing) {
 
     for (const sub of matches) {
       try {
+        // Deduplication check using NotificationLog
+        const alreadySent = await prisma.notificationLog.findUnique({
+          where: {
+            subscriptionId_listingId: {
+              subscriptionId: sub.id,
+              listingId: listing.id
+            }
+          }
+        });
+
+        if (alreadySent) {
+          console.log(`[alertMatcher] Email already sent to ${sub.email} for listing ${listing.id}. Skipping.`);
+          continue;
+        }
+
         const { subject, html } = newListingsEmail({
           email: sub.email,
           listings: [mailListing],
@@ -195,8 +212,17 @@ export async function matchListingToSubscriptions(listing: Listing) {
           subject,
           html
         });
+
+        // Record the notification
+        await prisma.notificationLog.create({
+          data: {
+            subscriptionId: sub.id,
+            listingId: listing.id
+          }
+        });
         
         console.log(`[alertMatcher] Sent alert to ${sub.email} for ${listing.year} ${listing.make} ${listing.model}`);
+
         
         // Add 2-second delay to prevent email spam flags
         await new Promise(resolve => setTimeout(resolve, 2000));
