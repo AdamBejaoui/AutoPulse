@@ -54,8 +54,8 @@ async function runApifyBulkEnrich() {
         let count = 0;
         for (const item of items) {
             const externalId = (item.id || item.listingUrl?.match(/item\/(\d+)/)?.[1] || item.url?.match(/item\/(\d+)/)?.[1] || Math.random().toString()).toString();
-            const title = item.title || item.marketplace_listing_title || 'Vehicle';
-            const description = item.description || '';
+            const title = String(item.title || item.marketplace_listing_title || 'Vehicle');
+            const description = String(item.description || '');
             const parsed = parseListingText(title, description);
 
             let milesText = item.custom_sub_titles_with_rendering_flags?.find((s: any) => s.subtitle?.toLowerCase().includes('miles'))?.subtitle;
