@@ -237,6 +237,15 @@ function CloudSyncSection() {
     const loaded = await loadFromCloud(email);
     if (loaded) {
       setFilters(loaded);
+      
+      // Update URL to trigger a full state refresh
+      const params = new URLSearchParams();
+      Object.entries(loaded).forEach(([k, v]) => {
+        if (v) params.set(k, String(v));
+      });
+      const q = params.toString();
+      window.location.href = q ? `/search?${q}` : "/search";
+      
       setMsg("Restored! 🔄");
     } else {
       setMsg("No filters found.");

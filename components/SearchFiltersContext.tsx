@@ -128,8 +128,9 @@ export function SearchFiltersProvider({
               Object.entries(loaded).forEach(([k, v]) => {
                 if (v) params.set(k, String(v));
               });
-              if (params.toString()) {
-                window.history.replaceState(null, "", `/search?${params.toString()}`);
+              const q = params.toString();
+              if (q) {
+                window.location.href = `/search?${q}`;
               }
             }
           }
