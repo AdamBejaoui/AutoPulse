@@ -201,8 +201,8 @@ async function runSyncCycle() {
     }
 
     console.log(`\n💤 Cycle complete. Covered ${finalUrls.length} URLs. Queue progress: ${urlIndex}/${startUrls.length}`);
-    console.log('Sleeping for 2 minutes before next batch...');
-    await delay(2 * 60 * 1000); // Wait only 2 minutes between Apify runs for near real-time alerts
+    console.log('Sleeping for 5 minutes before next batch...');
+    await delay(5 * 60 * 1000); // Increased to 5 minutes to save Apify credits & DB connections
 }
 
 // Endless Loop

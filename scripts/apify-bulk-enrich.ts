@@ -1,5 +1,4 @@
 import { ApifyClient } from 'apify-client';
-import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { parseListingText } from '../lib/parser/listingParser';
@@ -7,7 +6,7 @@ import { parseListingText } from '../lib/parser/listingParser';
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const apifyClient = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
-const prisma = new PrismaClient();
+import { prisma } from '../lib/db';
 
 async function runApifyBulkEnrich() {
     console.log('🚀 Starting Apify-backed Bulk Enrichment...');
