@@ -34,6 +34,25 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   const [titleStatus, setTitleStatus] = useState(initial.titleStatus || "");
   const [bodyStyle, setBodyStyle] = useState(initial.bodyStyle || "");
 
+  // SYNC local state with props (e.g. when URL changes from outside)
+  useEffect(() => {
+    setKeywords(initial.keywords || "");
+    setMake(initial.make || "");
+    setModel(initial.model || "");
+    setYearMin(initial.yearMin || "");
+    setYearMax(initial.yearMax || "");
+    setPriceMin(initial.priceMin || "");
+    setPriceMax(initial.priceMax || "");
+    setMileageMin(initial.mileageMin || "");
+    setMileageMax(initial.mileageMax || "");
+    setCity(initial.city || "");
+    setTransmission(initial.transmission || "");
+    setFuelType(initial.fuelType || "");
+    setDriveType(initial.driveType || "");
+    setTitleStatus(initial.titleStatus || "");
+    setBodyStyle(initial.bodyStyle || "");
+  }, [initial]);
+
   const apply = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     const setOrDelete = (k: string, v: any) => { 
@@ -56,10 +75,18 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
     setOrDelete("titleStatus", titleStatus);
     setOrDelete("bodyStyle", bodyStyle);
     params.delete("page");
+    const currentFilters = {
+      keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle,
+      maxOwners: initial.maxOwners || "",
+      noAccidents: initial.noAccidents || "",
+      trim: initial.trim || "",
+    };
+    setFilters(currentFilters);
+
     const q = params.toString();
     router.push(q ? `/search?${q}` : "/search", { scroll: false });
     if (onApply) onApply();
-  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, router, searchParams, onApply]);
+  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, router, searchParams, onApply, setFilters, initial.maxOwners, initial.noAccidents, initial.trim]);
 
   useEffect(() => {
     if (firstRender.current) { firstRender.current = false; return; }

@@ -48,11 +48,7 @@ export function SearchFiltersSync(): null {
 
   // Sync FROM Context to LocalStorage
   React.useEffect(() => {
-    // Only save if there's actually something to save
-    const hasValues = Object.values(filters).some(v => v !== "");
-    if (hasValues) {
-      localStorage.setItem("autopulse_last_filters", JSON.stringify(filters));
-    }
+    localStorage.setItem("autopulse_last_filters", JSON.stringify(filters));
   }, [filters]);
 
   return null;
