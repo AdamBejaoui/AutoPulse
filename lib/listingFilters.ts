@@ -125,6 +125,7 @@ export function toSearchParams(p: ParsedListingParams): URLSearchParams {
   if (p.yearMax != null) u.set("yearMax", String(p.yearMax));
   if (p.priceMin != null) u.set("priceMin", String(p.priceMin));
   if (p.priceMax != null) u.set("priceMax", String(p.priceMax));
+  if (p.mileageMin != null) u.set("mileageMin", String(p.mileageMin));
   if (p.mileageMax != null) u.set("mileageMax", String(p.mileageMax));
   if (p.city) u.set("city", p.city);
   if (p.trim) u.set("trim", p.trim);

@@ -35,7 +35,10 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
 
   const apply = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
-    const setOrDelete = (k: string, v: string) => { if (v) params.set(k, v); else params.delete(k); };
+    const setOrDelete = (k: string, v: any) => { 
+      if (v !== "" && v != null) params.set(k, String(v)); 
+      else params.delete(k); 
+    };
     setOrDelete("keywords", keywords);
     setOrDelete("make", make);
     setOrDelete("model", model);
@@ -211,7 +214,10 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       {/* Cloud Sync */}
       <div className="mt-4 pt-6 border-t border-border">
         <CloudSyncSection currentValues={{
-          keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle
+          keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle,
+          // Adding these just in case they are added to sidebar later
+          maxOwners: initial.maxOwners || "",
+          noAccidents: initial.noAccidents || "",
         }} />
       </div>
     </div>
