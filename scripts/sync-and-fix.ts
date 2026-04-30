@@ -205,7 +205,7 @@ async function runSyncCycle() {
                     createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
                     isJunk: false,
                     isCar: true,
-                    notifications: { none: {} } // This is a powerful Prisma filter!
+                    notificationLogs: { none: {} } // Corrected field name
                 },
                 take: 50
             });
