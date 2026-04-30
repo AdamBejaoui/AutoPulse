@@ -15,6 +15,7 @@ type Props = {
 export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setFilters } = require("@/components/SearchFiltersContext").useSearchFilters();
   const firstRender = useRef(true);
 
   const [keywords, setKeywords] = useState(initial.keywords || "");
@@ -205,7 +206,11 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
 
       {/* Reset */}
       <button
-        onClick={() => router.push("/search")}
+        onClick={() => {
+          setFilters(require("@/components/SearchFiltersContext").emptyFilters);
+          localStorage.removeItem("autopulse_last_filters");
+          router.push("/search");
+        }}
         className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center py-1"
       >
         Clear all filters
