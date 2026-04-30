@@ -85,6 +85,7 @@ export default async function SearchPage({
     yearMax: parsed.yearMax != null ? String(parsed.yearMax) : "",
     priceMin: parsed.priceMin != null ? String(parsed.priceMin) : "",
     priceMax: parsed.priceMax != null ? String(parsed.priceMax) : "",
+    mileageMin: parsed.mileageMin != null ? String(parsed.mileageMin) : "",
     mileageMax: parsed.mileageMax != null ? String(parsed.mileageMax) : "",
     city: parsed.city ?? "",
     trim: parsed.trim ?? "",

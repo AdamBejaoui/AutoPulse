@@ -216,7 +216,9 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
           // Clear global state
           setFilters(require("@/components/SearchFiltersContext").emptyFilters);
           localStorage.removeItem("autopulse_last_filters");
-          router.push("/search");
+          
+          // Force full reload to ensure everything is wiped
+          window.location.href = "/search";
         }}
         className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center py-1"
       >
