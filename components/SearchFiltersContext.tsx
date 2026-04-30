@@ -50,11 +50,13 @@ const emptyFilters: SearchFilterValues = {
 type SearchFiltersContextValue = {
   filters: SearchFilterValues;
   setFilters: (f: SearchFilterValues) => void;
+  savedListingIds: string[];
+  toggleSaved: (id: string) => void;
   syncEmail: string;
   setSyncEmail: (e: string) => void;
   isSyncing: boolean;
-  saveToCloud: (email: string, filters: SearchFilterValues) => Promise<void>;
-  loadFromCloud: (email: string) => Promise<SearchFilterValues | null>;
+  saveToCloud: (email: string, filters: SearchFilterValues, savedIds?: string[]) => Promise<void>;
+  loadFromCloud: (email: string) => Promise<{ filters: SearchFilterValues; savedIds: string[] } | null>;
   alertOpen: boolean;
   setAlertOpen: (open: boolean) => void;
 };
@@ -69,18 +71,35 @@ export function SearchFiltersProvider({
   children: React.ReactNode;
 }): React.ReactElement {
   const [filters, setFilters] = React.useState<SearchFilterValues>(emptyFilters);
+  const [savedListingIds, setSavedListingIds] = React.useState<string[]>([]);
   const [alertOpen, setAlertOpen] = React.useState(false);
   const [syncEmail, setSyncEmail] = React.useState("");
   const [isSyncing, setIsSyncing] = React.useState(false);
 
+  // Toggle saved logic
+  const toggleSaved = (id: string) => {
+    setSavedListingIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      localStorage.setItem("saved_listings", JSON.stringify(next));
+      // Auto-sync if we have an email
+      if (syncEmail) {
+        saveToCloud(syncEmail, filters, next);
+      }
+      return next;
+    });
+  };
+
   // Persistence logic
-  const saveToCloud = async (email: string, f: SearchFilterValues) => {
+  const saveToCloud = async (email: string, f: SearchFilterValues, savedIds?: string[]) => {
     if (!email) return;
     setIsSyncing(true);
     try {
+      const body: any = { email, filters: f };
+      if (savedIds) body.savedListingIds = savedIds;
+
       await fetch("/api/preferences", {
         method: "POST",
-        body: JSON.stringify({ email, filters: f }),
+        body: JSON.stringify(body),
       });
       setSyncEmail(email);
       localStorage.setItem("autopulse_sync_email", email);
@@ -91,16 +110,23 @@ export function SearchFiltersProvider({
     }
   };
 
-  const loadFromCloud = async (email: string): Promise<SearchFilterValues | null> => {
+  const loadFromCloud = async (email: string): Promise<{ filters: SearchFilterValues; savedIds: string[] } | null> => {
     if (!email) return null;
     setIsSyncing(true);
     try {
       const res = await fetch(`/api/preferences?email=${encodeURIComponent(email)}`);
       const data = await res.json();
-      if (data.filters) {
+      if (data.filters || data.savedListingIds) {
         setSyncEmail(email);
         localStorage.setItem("autopulse_sync_email", email);
-        return data.filters;
+        if (data.savedListingIds) {
+          setSavedListingIds(data.savedListingIds);
+          localStorage.setItem("saved_listings", JSON.stringify(data.savedListingIds));
+        }
+        return { 
+          filters: data.filters || emptyFilters, 
+          savedIds: data.savedListingIds || [] 
+        };
       }
     } catch (e) {
       console.error("Cloud load failed", e);
@@ -110,37 +136,43 @@ export function SearchFiltersProvider({
     return null;
   };
 
-  // Load email from localStorage on mount and sync if needed
+  // Load from localStorage on mount
   React.useEffect(() => {
+    const localSaved = localStorage.getItem("saved_listings");
+    if (localSaved) {
+      try {
+        setSavedListingIds(JSON.parse(localSaved));
+      } catch (e) {}
+    }
+
     const savedEmail = localStorage.getItem("autopulse_sync_email") || "eastcoastlogisticllc@gmail.com";
     setSyncEmail(savedEmail);
     
     // If we're on a search-related page with no params, try to restore
     const hasParams = window.location.search.length > 0;
-    if (!hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
-      loadFromCloud(savedEmail).then(loaded => {
-        if (loaded) {
-          setFilters(loaded);
-          // Optionally redirect to apply them to URL if on search page
-          if (window.location.pathname === "/search") {
-            const params = new URLSearchParams();
-            Object.entries(loaded).forEach(([k, v]) => {
-              if (v) params.set(k, String(v));
-            });
-            const q = params.toString();
-            if (q) {
-              window.location.href = `/search?${q}`;
-            }
+    loadFromCloud(savedEmail).then(loaded => {
+      if (loaded && !hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
+        setFilters(loaded.filters);
+        if (window.location.pathname === "/search") {
+          const params = new URLSearchParams();
+          Object.entries(loaded.filters).forEach(([k, v]) => {
+            if (v) params.set(k, String(v));
+          });
+          const q = params.toString();
+          if (q) {
+            window.location.href = `/search?${q}`;
           }
         }
-      });
-    }
+      }
+    });
   }, []);
 
   const value = React.useMemo(
     () => ({
       filters,
       setFilters,
+      savedListingIds,
+      toggleSaved,
       syncEmail,
       setSyncEmail,
       isSyncing,
@@ -149,7 +181,7 @@ export function SearchFiltersProvider({
       alertOpen,
       setAlertOpen,
     }),
-    [filters, alertOpen, syncEmail, isSyncing],
+    [filters, savedListingIds, alertOpen, syncEmail, isSyncing],
   );
 
   return (

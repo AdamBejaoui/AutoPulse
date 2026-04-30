@@ -126,10 +126,11 @@ model ScraperSession {
 }
 
 model UserPreference {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  filters   Json
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  email           String   @unique
+  filters         Json
+  savedListingIds String[] @default([])
+  updatedAt       DateTime @updatedAt
 
   @@index([email])
 }

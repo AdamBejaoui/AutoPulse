@@ -45,9 +45,10 @@ const placeholderSvg =
   );
 
 export const ListingCard = memo(function ListingCard({ listing }: { listing: any }): React.ReactElement {
+  const { savedListingIds, toggleSaved } = require("@/components/SearchFiltersContext").useSearchFilters();
+  const isSaved = savedListingIds.includes(listing.id);
   const [imgOk, setImgOk] = useState(true);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
 
   const src = (listing.imageUrls && listing.imageUrls.length > 0) && imgOk ? listing.imageUrls[0] : placeholderSvg;
@@ -71,31 +72,10 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
 
   const dealRating = listing.analysis?.rating;
 
-  // Check if saved on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("saved_listings");
-    if (saved) {
-      const ids = JSON.parse(saved);
-      setIsSaved(ids.includes(listing.id));
-    }
-  }, [listing.id]);
-
-  const toggleSave = (e: React.MouseEvent) => {
+  const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const saved = localStorage.getItem("saved_listings");
-    let ids = saved ? JSON.parse(saved) : [];
-    
-    if (isSaved) {
-      ids = ids.filter((id: string) => id !== listing.id);
-      setIsSaved(false);
-    } else {
-      ids.push(listing.id);
-      setIsSaved(true);
-    }
-    localStorage.setItem("saved_listings", JSON.stringify(ids));
-    // Dispatch event for other components to listen
-    window.dispatchEvent(new Event("saved_listings_changed"));
+    toggleSaved(listing.id);
   };
 
   const parsedFallback = parseListingText(listing.rawTitle || "", listing.description || "");
@@ -214,7 +194,7 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
         
         {/* Star Button (Top Right of Card) */}
         <button
-          onClick={toggleSave}
+          onClick={handleToggle}
           className={cn(
             "absolute top-6 right-6 z-20 h-10 w-10 flex items-center justify-center rounded-full backdrop-blur-md border shadow-md transition-all duration-200",
             isSaved

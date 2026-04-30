@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   email: z.string().email(),
-  filters: z.record(z.any()),
+  filters: z.record(z.any()).optional(),
+  savedListingIds: z.array(z.string()).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -18,16 +19,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { email: rawEmail, filters } = parsed.data;
+    const { email: rawEmail, filters, savedListingIds } = parsed.data;
     const email = rawEmail.toLowerCase();
+
+    const data: any = { updatedAt: new Date() };
+    if (filters) data.filters = filters;
+    if (savedListingIds) data.savedListingIds = savedListingIds;
 
     const pref = await prisma.userPreference.upsert({
       where: { email },
-      update: { filters, updatedAt: new Date() },
-      create: { email, filters },
+      update: data,
+      create: { 
+        email, 
+        filters: filters || {}, 
+        savedListingIds: savedListingIds || [] 
+      },
     });
 
-    return NextResponse.json({ success: true, filters: pref.filters });
+    return NextResponse.json({ 
+      success: true, 
+      filters: pref.filters, 
+      savedListingIds: pref.savedListingIds 
+    });
   } catch (e) {
     console.error("[api/preferences] POST error:", e);
     return NextResponse.json({ error: "Failed to save preferences" }, { status: 500 });
@@ -49,10 +62,13 @@ export async function GET(req: NextRequest) {
     });
 
     if (!pref) {
-      return NextResponse.json({ filters: null });
+      return NextResponse.json({ filters: null, savedListingIds: [] });
     }
 
-    return NextResponse.json({ filters: pref.filters });
+    return NextResponse.json({ 
+      filters: pref.filters, 
+      savedListingIds: pref.savedListingIds 
+    });
   } catch (e) {
     console.error("[api/preferences] GET error:", e);
     return NextResponse.json({ error: "Failed to fetch preferences" }, { status: 500 });
