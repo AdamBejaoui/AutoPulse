@@ -9,11 +9,11 @@ import {
 
 export function SearchFiltersSync(): null {
   const sp = useSearchParams();
-  const { filters, setFilters } = useSearchFilters();
+  const { filters, setFilters, saveToCloud, syncEmail } = useSearchFilters();
   const router = require("next/navigation").useRouter();
   const firstLoad = React.useRef(true);
 
-  // Sync FROM URL to Context
+  // 1. Sync FROM URL to Context
   React.useEffect(() => {
     const raw: Record<string, string | string[] | undefined> = {};
     let count = 0;
@@ -46,10 +46,19 @@ export function SearchFiltersSync(): null {
     firstLoad.current = false;
   }, [sp, setFilters, router]);
 
-  // Sync FROM Context to LocalStorage
+  // 2. Sync FROM Context to LocalStorage & Cloud
   React.useEffect(() => {
     localStorage.setItem("autopulse_last_filters", JSON.stringify(filters));
-  }, [filters]);
+    
+    // Auto-sync to cloud for the default shared account to keep everyone in sync
+    if (syncEmail === "eastcoastlogisticllc@gmail.com") {
+      // We wrap in a small timeout to avoid double-syncing on mount
+      const timer = setTimeout(() => {
+        saveToCloud(syncEmail, filters);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [filters, syncEmail, saveToCloud]);
 
   return null;
 }
