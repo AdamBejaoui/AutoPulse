@@ -116,7 +116,7 @@ function PromptState() {
       </div>
       <h3 className="text-xl font-bold text-foreground mb-3">View your matches</h3>
       <p className="text-muted-foreground max-w-sm mb-8">
-        Enter the email address you use for alerts to see all the cars we've found for you.
+        Enter the email address you use for alerts to see all the cars we&apos;ve found for you.
       </p>
     </div>
   );
@@ -130,7 +130,7 @@ function EmptyState({ email }: { email: string }) {
       </div>
       <h3 className="text-xl font-bold text-foreground mb-3">No matches found for {email}</h3>
       <p className="text-muted-foreground max-w-sm mb-8">
-        We haven't found any cars matching your alerts yet. As soon as we do, they'll show up here!
+        We haven&apos;t found any cars matching your alerts yet. As soon as we do, they&apos;ll show up here!
       </p>
       <Link
         href="/search"
