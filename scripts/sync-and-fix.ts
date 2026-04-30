@@ -10,7 +10,8 @@ import { matchListingToSubscriptions } from '../lib/alertMatcher';
 
 const apifyClient = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
 
-const BATCH_SIZE = 5; // URLs per run
+const BATCH_SIZE = 15; // Increased for more ground coverage
+let urlIndex = 0; // Persistent index for sequential processing
 
 const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus'];
 const targetCities = ["houston","philadelphia","san-antonio","dallas","austin","jacksonville","fort-worth","columbus","charlotte","indianapolis","denver","el-paso","nashville","detroit","oklahoma-city","memphis","louisville","albuquerque","kansas-city","atlanta","omaha","colorado-springs","raleigh","miami","virginia-beach","minneapolis","tulsa","arlington","new-orleans","wichita","cleveland","tampa","aurora","corpus-christi","lexington","st-louis","saint-paul","pittsburgh","cincinnati","lincoln","orlando","durham","laredo","fort-wayne","charleston","birmingham","baton-rouge","fayetteville","shreveport","des-moines","richmond","little-rock","tallahassee","knoxville","salt-lake-city","huntsville","sioux-falls","grand-rapids","mobile","fargo","casper","cheyenne","savannah","augusta","montgomery","greenville-sc","columbia-sc","springfield-mo","allentown","grand-junction","fort-collins","rapid-city","cedar-rapids","quad-cities","evansville","south-bend","bowling-green","chattanooga","clarksville","asheville","wilmington","greensboro","winston-salem","myrtle-beach","macon","pensacola","gainesville","fort-myers","sarasota","daytona-beach","greeley","boulder","pueblo","ocala","panama-city","st-augustine","palm-bay","melbourne","port-st-lucie","fort-pierce","lakeland","winter-haven","bradenton","naples","fort-walton-beach","athens-ga","valdosta","albany-ga","muncie","terre-haute","lafayette-in","anderson-in","ames","iowa-city","waterloo-ia","dubuque","lawrence-ks","manhattan-ks","topeka","salina-ks","hutchinson","owensboro","paducah","lake-charles","lafayette-la","houma","monroe-la","alexandria-la","ann-arbor","lansing","flint","kalamazoo","saginaw","muskegon","traverse-city","duluth","rochester-mn","st-cloud","mankato","columbia-mo","st-joseph","joplin","grand-island","kearney","las-cruces","santa-fe","roswell","farmington-nm","wilmington-nc","jacksonville-nc","gastonia","high-point","grand-forks","minot","akron","dayton","toledo","youngstown","canton-oh","norman","broken-arrow","edmond","lawton","erie","reading-pa","scranton","lancaster-pa","harrisburg","spartanburg","rock-hill","rapid-city-sd","murfreesboro","jackson-tn","johnson-city","plano","lubbock","irving","garland","amarillo","brownsville","pasadena-tx","mesquite-tx","mcallen","killeen","denton","midland-tx","odessa-tx","abilene","beaumont","waco","tyler","college-station","longview-tx","san-angelo","ogden","provo","st-george","logan","charleston-wv","huntington-wv","morgantown","rock-springs","gillette","laramie"];
@@ -45,9 +46,11 @@ async function runSyncCycle() {
         }
     }
 
-    // 2. Shuffle and pick a batch
-    startUrls.sort(() => Math.random() - 0.5);
-    const finalUrls = startUrls.slice(0, BATCH_SIZE);
+    // 2. Sequential processing to ensure no city is skipped for too long
+    // Instead of random, we slice based on a persistent index
+    const finalUrls = startUrls.slice(urlIndex, urlIndex + BATCH_SIZE);
+    urlIndex += BATCH_SIZE;
+    if (urlIndex >= startUrls.length) urlIndex = 0; // Reset once we've covered everything
 
     console.log(`\n🎯 Selected ${BATCH_SIZE} URLs for this chunk.`);
 
@@ -197,8 +200,9 @@ async function runSyncCycle() {
         await prisma.$disconnect().catch(() => {});
     }
 
-    console.log('\n💤 Cycle complete. Sleeping for 15 minutes before next batch...');
-    await delay(15 * 60 * 1000); // Wait 15 minutes between Apify runs
+    console.log(`\n💤 Cycle complete. Covered ${finalUrls.length} URLs. Queue progress: ${urlIndex}/${startUrls.length}`);
+    console.log('Sleeping for 2 minutes before next batch...');
+    await delay(2 * 60 * 1000); // Wait only 2 minutes between Apify runs for near real-time alerts
 }
 
 // Endless Loop
