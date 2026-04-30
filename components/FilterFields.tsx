@@ -243,6 +243,9 @@ function CloudSyncSection({ currentValues }: { currentValues: any }) {
   const [email, setEmail] = React.useState(syncEmail || "");
   const [msg, setMsg] = React.useState("");
 
+  // If using the default shared account, hide the sync UI so it feels integrated
+  if (syncEmail === "eastcoastlogisticllc@gmail.com") return null;
+
   React.useEffect(() => {
     if (syncEmail) setEmail(syncEmail);
   }, [syncEmail]);

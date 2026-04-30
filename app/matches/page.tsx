@@ -56,23 +56,25 @@ export default function MatchesPage() {
             </p>
           </div>
 
-          <form onSubmit={handleManualSearch} className="flex items-center gap-2">
-            <div className="relative">
-              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={emailInput}
-                onChange={e => setEmailInput(e.target.value)}
-                placeholder="Enter your email..."
-                className="h-10 pl-9 pr-4 text-sm bg-surface border border-border rounded-xl focus:border-primary/50 focus:outline-none w-64"
-              />
-            </div>
-            <button
-              type="submit"
-              className="h-10 px-4 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 transition-all"
-            >
-              Check
-            </button>
-          </form>
+          {syncEmail !== "eastcoastlogisticllc@gmail.com" && (
+            <form onSubmit={handleManualSearch} className="flex items-center gap-2">
+              <div className="relative">
+                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={emailInput}
+                  onChange={e => setEmailInput(e.target.value)}
+                  placeholder="Enter your email..."
+                  className="h-10 pl-9 pr-4 text-sm bg-surface border border-border rounded-xl focus:border-primary/50 focus:outline-none w-64"
+                />
+              </div>
+              <button
+                type="submit"
+                className="h-10 px-4 rounded-xl bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 transition-all"
+              >
+                Check
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Content */}
