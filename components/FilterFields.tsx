@@ -207,6 +207,13 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       {/* Reset */}
       <button
         onClick={() => {
+          // Clear local state
+          setKeywords(""); setMake(""); setModel(""); setYearMin(""); setYearMax("");
+          setPriceMin(""); setPriceMax(""); setMileageMin(""); setMileageMax("");
+          setCity(""); setTransmission(""); setFuelType(""); setDriveType("");
+          setTitleStatus(""); setBodyStyle("");
+          
+          // Clear global state
           setFilters(require("@/components/SearchFiltersContext").emptyFilters);
           localStorage.removeItem("autopulse_last_filters");
           router.push("/search");
