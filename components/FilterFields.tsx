@@ -210,14 +210,16 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
 
       {/* Cloud Sync */}
       <div className="mt-4 pt-6 border-t border-border">
-        <CloudSyncSection />
+        <CloudSyncSection currentValues={{
+          keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle
+        }} />
       </div>
     </div>
   );
 }
 
-function CloudSyncSection() {
-  const { syncEmail, saveToCloud, loadFromCloud, filters, isSyncing, setFilters } = require("@/components/SearchFiltersContext").useSearchFilters();
+function CloudSyncSection({ currentValues }: { currentValues: any }) {
+  const { syncEmail, saveToCloud, loadFromCloud, isSyncing, setFilters } = require("@/components/SearchFiltersContext").useSearchFilters();
   const [email, setEmail] = React.useState(syncEmail || "");
   const [msg, setMsg] = React.useState("");
 
@@ -227,7 +229,7 @@ function CloudSyncSection() {
 
   const handleSave = async () => {
     if (!email.includes("@")) { setMsg("Invalid email"); return; }
-    await saveToCloud(email, filters);
+    await saveToCloud(email, currentValues);
     setMsg("Filters synced! ✅");
     setTimeout(() => setMsg(""), 3000);
   };

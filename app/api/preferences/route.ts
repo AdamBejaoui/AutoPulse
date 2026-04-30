@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { email, filters } = parsed.data;
+    const { email: rawEmail, filters } = parsed.data;
+    const email = rawEmail.toLowerCase();
 
     const pref = await prisma.userPreference.upsert({
       where: { email },
@@ -36,11 +37,12 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { prisma } = await import("@/lib/db");
-    const email = req.nextUrl.searchParams.get("email");
+    const rawEmail = req.nextUrl.searchParams.get("email");
 
-    if (!email) {
+    if (!rawEmail) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
     }
+    const email = rawEmail.toLowerCase();
 
     const pref = await prisma.userPreference.findUnique({
       where: { email },
