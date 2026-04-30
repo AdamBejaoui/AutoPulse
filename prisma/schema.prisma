@@ -71,6 +71,7 @@ model Listing {
   @@index([isJunk])
   @@index([isCar])
   @@index([isSold])
+  notificationLogs NotificationLog[]
 }
 
 model Subscription {
@@ -102,13 +103,16 @@ model Subscription {
   keywords         String[]
 
   @@index([email])
+  notificationLogs NotificationLog[]
 }
 
 model NotificationLog {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   subscriptionId String
   listingId      String
-  sentAt         DateTime @default(now())
+  sentAt         DateTime     @default(now())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  listing        Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@unique([subscriptionId, listingId])
   @@index([subscriptionId])
