@@ -10,10 +10,18 @@ import { MARKETPLACE_CITIES } from "@/lib/cities";
 
 export function StructuredSearchBar() {
   const router = useRouter();
+  const { filters } = require("@/components/SearchFiltersContext").useSearchFilters();
 
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
-  const [city, setCity] = useState("");
+  const [make, setMake] = useState(filters.make || "");
+  const [model, setModel] = useState(filters.model || "");
+  const [city, setCity] = useState(filters.city || "");
+
+  // Sync state if context changes (e.g. loaded from cloud)
+  useEffect(() => {
+    if (filters.make) setMake(filters.make);
+    if (filters.model) setModel(filters.model);
+    if (filters.city) setCity(filters.city);
+  }, [filters]);
 
   // Separate states for the search inputs in the dropdowns
   const [makeQuery, setMakeQuery] = useState("");

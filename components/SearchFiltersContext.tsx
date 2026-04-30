@@ -110,10 +110,32 @@ export function SearchFiltersProvider({
     return null;
   };
 
-  // Load email from localStorage on mount
+  // Load email from localStorage on mount and sync if needed
   React.useEffect(() => {
-    const saved = localStorage.getItem("autopulse_sync_email");
-    if (saved) setSyncEmail(saved);
+    const savedEmail = localStorage.getItem("autopulse_sync_email");
+    if (savedEmail) {
+      setSyncEmail(savedEmail);
+      
+      // If we're on a search-related page with no params, try to restore
+      const hasParams = window.location.search.length > 0;
+      if (!hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
+        loadFromCloud(savedEmail).then(loaded => {
+          if (loaded) {
+            setFilters(loaded);
+            // Optionally redirect to apply them to URL if on search page
+            if (window.location.pathname === "/search") {
+              const params = new URLSearchParams();
+              Object.entries(loaded).forEach(([k, v]) => {
+                if (v) params.set(k, String(v));
+              });
+              if (params.toString()) {
+                window.history.replaceState(null, "", `/search?${params.toString()}`);
+              }
+            }
+          }
+        });
+      }
+    }
   }, []);
 
   const value = React.useMemo(
