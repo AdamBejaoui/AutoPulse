@@ -28,6 +28,7 @@ export function Navbar(): React.ReactElement {
   const navItems = [
     { label: "Find Cars", href: "/search", icon: Search },
     { label: "Alerts", href: "/alerts", icon: Bell },
+    { label: "Matches", href: "/matches", icon: Zap },
     { label: "Saved", href: "/saved", icon: Star },
   ];
 
