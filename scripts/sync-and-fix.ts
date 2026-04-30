@@ -192,10 +192,34 @@ async function runSyncCycle() {
                 await delay(1500 + Math.random() * 2000);
             }
         }
-
     } catch (e: any) {
         console.error('❌ Cycle Failed:', e.message);
     } finally {
+        // 7. BACKLOG CATCH-UP
+        // If we were down, some listings might be in DB but not emailed.
+        // Find listings from last 2 hours with NO notification logs.
+        console.log('\n🔍 Checking for missed matches (Backlog Catch-up)...');
+        try {
+            const recentUnnotified = await prisma.listing.findMany({
+                where: {
+                    createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+                    isJunk: false,
+                    isCar: true,
+                    notifications: { none: {} } // This is a powerful Prisma filter!
+                },
+                take: 50
+            });
+            if (recentUnnotified.length > 0) {
+                console.log(`✉️ Found ${recentUnnotified.length} recent cars needing matching. Processing...`);
+                for (const l of recentUnnotified) {
+                    await matchListingToSubscriptions(l);
+                    await delay(500); // Small throttle
+                }
+            }
+        } catch (e) {
+            console.error('❌ Backlog catch-up failed:', e);
+        }
+
         console.log('🔌 Releasing database connection slots...');
         await prisma.$disconnect().catch(() => {});
     }
