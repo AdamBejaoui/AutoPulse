@@ -205,9 +205,10 @@ async function runSyncCycle() {
                     createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
                     isJunk: false,
                     isCar: true,
-                    notificationLogs: { none: {} } // Corrected field name
+                    notificationLogs: { none: {} }
                 },
-                take: 50
+                orderBy: { createdAt: 'desc' },
+                take: 1000
             });
             if (recentUnnotified.length > 0) {
                 console.log(`✉️ Found ${recentUnnotified.length} recent cars needing matching. Processing...`);
