@@ -30,24 +30,7 @@ export function InfiniteListingGrid({
     setHasMore(initialListings.length < initialTotal);
   }, [initialListings, initialTotal]);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      async (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          await loadMore();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasMore, loading, page, queryWithoutPage]);
-
-  async function loadMore() {
+  const loadMore = React.useCallback(async () => {
     setLoading(true);
     const nextPage = page + 1;
     const url = `/api/listings?page=${nextPage}&${queryWithoutPage}`;
@@ -65,7 +48,24 @@ export function InfiniteListingGrid({
     } finally {
       setLoading(false);
     }
-  }
+  }, [items.length, page, queryWithoutPage]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          await loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadMore]);
 
   if (items.length === 0) {
     return (

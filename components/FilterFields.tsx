@@ -61,7 +61,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
     if (firstRender.current) { firstRender.current = false; return; }
     const timer = setTimeout(() => apply(), 600);
     return () => clearTimeout(timer);
-  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle]);
+  }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, apply]);
 
   return (
     <div className="flex flex-col gap-6">
