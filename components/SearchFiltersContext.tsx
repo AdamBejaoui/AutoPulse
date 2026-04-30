@@ -50,6 +50,11 @@ const emptyFilters: SearchFilterValues = {
 type SearchFiltersContextValue = {
   filters: SearchFilterValues;
   setFilters: (f: SearchFilterValues) => void;
+  syncEmail: string;
+  setSyncEmail: (e: string) => void;
+  isSyncing: boolean;
+  saveToCloud: (email: string, filters: SearchFilterValues) => Promise<void>;
+  loadFromCloud: (email: string) => Promise<SearchFilterValues | null>;
   alertOpen: boolean;
   setAlertOpen: (open: boolean) => void;
 };
@@ -65,15 +70,65 @@ export function SearchFiltersProvider({
 }): React.ReactElement {
   const [filters, setFilters] = React.useState<SearchFilterValues>(emptyFilters);
   const [alertOpen, setAlertOpen] = React.useState(false);
+  const [syncEmail, setSyncEmail] = React.useState("");
+  const [isSyncing, setIsSyncing] = React.useState(false);
+
+  // Persistence logic
+  const saveToCloud = async (email: string, f: SearchFilterValues) => {
+    if (!email) return;
+    setIsSyncing(true);
+    try {
+      await fetch("/api/preferences", {
+        method: "POST",
+        body: JSON.stringify({ email, filters: f }),
+      });
+      setSyncEmail(email);
+      localStorage.setItem("autopulse_sync_email", email);
+    } catch (e) {
+      console.error("Cloud save failed", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const loadFromCloud = async (email: string): Promise<SearchFilterValues | null> => {
+    if (!email) return null;
+    setIsSyncing(true);
+    try {
+      const res = await fetch(`/api/preferences?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.filters) {
+        setSyncEmail(email);
+        localStorage.setItem("autopulse_sync_email", email);
+        return data.filters;
+      }
+    } catch (e) {
+      console.error("Cloud load failed", e);
+    } finally {
+      setIsSyncing(false);
+    }
+    return null;
+  };
+
+  // Load email from localStorage on mount
+  React.useEffect(() => {
+    const saved = localStorage.getItem("autopulse_sync_email");
+    if (saved) setSyncEmail(saved);
+  }, []);
 
   const value = React.useMemo(
     () => ({
       filters,
       setFilters,
+      syncEmail,
+      setSyncEmail,
+      isSyncing,
+      saveToCloud,
+      loadFromCloud,
       alertOpen,
       setAlertOpen,
     }),
-    [filters, alertOpen],
+    [filters, alertOpen, syncEmail, isSyncing],
   );
 
   return (

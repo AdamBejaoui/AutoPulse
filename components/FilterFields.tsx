@@ -135,7 +135,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
           </div>
           <div className="grid grid-cols-2 gap-2 mt-1">
             <InputField label="Make(s)" value={make} onChange={setMake} placeholder="Comma separated" />
-            <InputField label="Model" value={model} onChange={setModel} placeholder="Any" />
+            <InputField label="Model(s)" value={model} onChange={setModel} placeholder="Comma separated" />
           </div>
         </div>
       </FilterSection>
@@ -207,6 +207,78 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       >
         Clear all filters
       </button>
+
+      {/* Cloud Sync */}
+      <div className="mt-4 pt-6 border-t border-border">
+        <CloudSyncSection />
+      </div>
+    </div>
+  );
+}
+
+function CloudSyncSection() {
+  const { syncEmail, saveToCloud, loadFromCloud, filters, isSyncing, setFilters } = require("@/components/SearchFiltersContext").useSearchFilters();
+  const [email, setEmail] = React.useState(syncEmail || "");
+  const [msg, setMsg] = React.useState("");
+
+  React.useEffect(() => {
+    if (syncEmail) setEmail(syncEmail);
+  }, [syncEmail]);
+
+  const handleSave = async () => {
+    if (!email.includes("@")) { setMsg("Invalid email"); return; }
+    await saveToCloud(email, filters);
+    setMsg("Filters synced! ✅");
+    setTimeout(() => setMsg(""), 3000);
+  };
+
+  const handleLoad = async () => {
+    if (!email.includes("@")) { setMsg("Invalid email"); return; }
+    const loaded = await loadFromCloud(email);
+    if (loaded) {
+      setFilters(loaded);
+      setMsg("Restored! 🔄");
+    } else {
+      setMsg("No filters found.");
+    }
+    setTimeout(() => setMsg(""), 3000);
+  };
+
+  return (
+    <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
+      <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+        </span>
+        Cloud Sync
+      </h3>
+      <p className="text-[10px] text-muted-foreground mb-3 leading-tight">
+        Enter your email to sync filters across devices.
+      </p>
+      <input
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="your@email.com"
+        className="w-full h-8 px-3 text-xs bg-background border border-border rounded-lg mb-2 focus:border-primary/50 focus:outline-none"
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={handleSave}
+          disabled={isSyncing}
+          className="flex-1 h-8 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
+        >
+          {isSyncing ? "..." : "Save"}
+        </button>
+        <button
+          onClick={handleLoad}
+          disabled={isSyncing}
+          className="flex-1 h-8 bg-surface border border-border text-foreground text-[10px] font-bold rounded-lg hover:bg-surface-raised transition-all disabled:opacity-50"
+        >
+          {isSyncing ? "..." : "Restore"}
+        </button>
+      </div>
+      {msg && <p className="text-[10px] text-primary mt-2 font-medium text-center">{msg}</p>}
     </div>
   );
 }

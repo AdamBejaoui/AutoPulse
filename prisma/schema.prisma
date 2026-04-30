@@ -120,3 +120,12 @@ model ScraperSession {
   cookies   Json
   updatedAt DateTime @updatedAt
 }
+
+model UserPreference {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  filters   Json
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}

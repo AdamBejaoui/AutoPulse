@@ -79,8 +79,18 @@ export function StructuredSearchBar() {
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
     const params = new URLSearchParams();
-    if (make) params.set("make", make);
-    if (model) params.set("model", model);
+    
+    if (make) {
+      // Split by comma in case user typed multiple, then join to clean up
+      const makeVal = make.split(",").map(m => m.trim()).filter(Boolean).join(",");
+      if (makeVal) params.set("make", makeVal);
+    }
+    
+    if (model) {
+      const modelVal = model.split(",").map(m => m.trim()).filter(Boolean).join(",");
+      if (modelVal) params.set("model", modelVal);
+    }
+
     if (city) {
       const found = MARKETPLACE_CITIES.find(
         c => c.label.toLowerCase() === city.toLowerCase() || c.slug.toLowerCase() === city.toLowerCase()

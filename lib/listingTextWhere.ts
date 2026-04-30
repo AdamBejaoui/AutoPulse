@@ -95,7 +95,14 @@ export function smartTextWhereFromParams(
     }
   }
   if (p.model && p.model.trim().length >= MIN_TOKEN_LEN) {
-    and.push(vehicleTokenWhere(p.model.trim()));
+    const models = p.model.split(",").map(m => m.trim()).filter(m => m.length >= MIN_TOKEN_LEN);
+    if (models.length > 0) {
+      if (models.length === 1) {
+        and.push(vehicleTokenWhere(models[0]));
+      } else {
+        and.push({ OR: models.map(m => vehicleTokenWhere(m)) });
+      }
+    }
   }
   if (p.city && p.city.trim().length >= MIN_TOKEN_LEN) {
     and.push(cityTokenWhere(p.city.trim()));
