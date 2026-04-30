@@ -112,30 +112,28 @@ export function SearchFiltersProvider({
 
   // Load email from localStorage on mount and sync if needed
   React.useEffect(() => {
-    const savedEmail = localStorage.getItem("autopulse_sync_email");
-    if (savedEmail) {
-      setSyncEmail(savedEmail);
-      
-      // If we're on a search-related page with no params, try to restore
-      const hasParams = window.location.search.length > 0;
-      if (!hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
-        loadFromCloud(savedEmail).then(loaded => {
-          if (loaded) {
-            setFilters(loaded);
-            // Optionally redirect to apply them to URL if on search page
-            if (window.location.pathname === "/search") {
-              const params = new URLSearchParams();
-              Object.entries(loaded).forEach(([k, v]) => {
-                if (v) params.set(k, String(v));
-              });
-              const q = params.toString();
-              if (q) {
-                window.location.href = `/search?${q}`;
-              }
+    const savedEmail = localStorage.getItem("autopulse_sync_email") || "eastcoastlogisticllc@gmail.com";
+    setSyncEmail(savedEmail);
+    
+    // If we're on a search-related page with no params, try to restore
+    const hasParams = window.location.search.length > 0;
+    if (!hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
+      loadFromCloud(savedEmail).then(loaded => {
+        if (loaded) {
+          setFilters(loaded);
+          // Optionally redirect to apply them to URL if on search page
+          if (window.location.pathname === "/search") {
+            const params = new URLSearchParams();
+            Object.entries(loaded).forEach(([k, v]) => {
+              if (v) params.set(k, String(v));
+            });
+            const q = params.toString();
+            if (q) {
+              window.location.href = `/search?${q}`;
             }
           }
-        });
-      }
+        }
+      });
     }
   }, []);
 

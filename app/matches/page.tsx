@@ -10,7 +10,7 @@ export default function MatchesPage() {
   const { syncEmail } = useSearchFilters();
   const [matches, setMatches] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [emailInput, setEmailInput] = React.useState(syncEmail || "");
+  const [emailInput, setEmailInput] = React.useState(syncEmail || "eastcoastlogisticllc@gmail.com");
 
   const fetchMatches = React.useCallback(async (email: string) => {
     setLoading(true);
@@ -28,12 +28,9 @@ export default function MatchesPage() {
   }, []);
 
   React.useEffect(() => {
-    if (syncEmail) {
-      setEmailInput(syncEmail);
-      fetchMatches(syncEmail);
-    } else {
-      setLoading(false);
-    }
+    const emailToUse = syncEmail || "eastcoastlogisticllc@gmail.com";
+    setEmailInput(emailToUse);
+    fetchMatches(emailToUse);
   }, [syncEmail, fetchMatches]);
 
   const handleManualSearch = (e: React.FormEvent) => {
