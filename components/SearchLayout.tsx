@@ -69,7 +69,12 @@ export function SearchLayout({
                   <h2 className="text-sm font-semibold text-foreground">Filters</h2>
                 </div>
                 <button
-                  onClick={() => router.push("/search")}
+                  onClick={() => {
+                    const { setFilters, emptyFilters } = require("@/components/SearchFiltersContext").useSearchFilters();
+                    setFilters(emptyFilters);
+                    localStorage.removeItem("autopulse_last_filters");
+                    window.location.href = "/search";
+                  }}
                   className={cn(
                     "text-[10px] uppercase tracking-wider font-bold transition-all px-2 py-0.5 rounded-md border border-primary/20 bg-primary/5 hover:bg-primary/10",
                     hasFilters ? "text-primary opacity-100" : "text-muted-foreground/30 opacity-0 pointer-events-none"

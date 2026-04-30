@@ -24,24 +24,27 @@ export function SearchFiltersSync(): null {
 
     if (count > 0) {
       setFilters(filtersFromSearchParams(raw));
-    } else {
-      // URL is empty. Should we apply what's in context/localStorage?
+    } else if (firstLoad.current) {
+      // ONLY on initial mount/page load: if URL is empty, try to restore from localStorage
       const saved = localStorage.getItem("autopulse_last_filters");
-      const filtersToApply = firstLoad.current && saved ? JSON.parse(saved) : filters;
-      
-      const hasValues = Object.values(filtersToApply).some(v => v !== "");
-      if (hasValues) {
-        const params = new URLSearchParams();
-        Object.entries(filtersToApply).forEach(([k, v]) => {
-          if (v) params.set(k, String(v));
-        });
-        if (params.toString()) {
-          router.replace(`/search?${params.toString()}`, { scroll: false });
-        }
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const hasValues = Object.values(parsed).some(v => v !== "");
+          if (hasValues) {
+            const params = new URLSearchParams();
+            Object.entries(parsed).forEach(([k, v]) => {
+              if (v) params.set(k, String(v));
+            });
+            if (params.toString()) {
+              router.replace(`/search?${params.toString()}`, { scroll: false });
+            }
+          }
+        } catch (e) {}
       }
     }
     firstLoad.current = false;
-  }, [sp, setFilters, router, filters]);
+  }, [sp, setFilters, router]);
 
   // Sync FROM Context to LocalStorage
   React.useEffect(() => {
