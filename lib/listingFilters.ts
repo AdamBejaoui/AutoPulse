@@ -19,7 +19,7 @@ function cleanFlatQuery(
 /** Dollars/Units in the URL; handles "10k" or decimals. */
 const optionalPriceDollars = z.preprocess((val: unknown) => {
   if (val === undefined || val === null) return undefined;
-  let s = String(val).trim().toLowerCase();
+  let s = String(val).trim().toLowerCase().replace(/,/g, '');
   if (s === "") return undefined;
   
   // Handle "10k" or "15.5k"
@@ -35,7 +35,7 @@ const optionalPriceDollars = z.preprocess((val: unknown) => {
 
 const optionalInt = z.preprocess((val: unknown) => {
   if (val === undefined || val === null) return undefined;
-  let s = String(val).trim().toLowerCase();
+  let s = String(val).trim().toLowerCase().replace(/,/g, '');
   if (s === "") return undefined;
 
   // Handle "100k"
@@ -110,7 +110,13 @@ export function parseListingParams(
   const flat = cleanFlatQuery(raw);
   const parsed = paramsSchema.safeParse(flat);
   if (!parsed.success) {
-    return { page: 1, limit: 20 } as ParsedListingParams;
+    console.warn("[parseListingParams] Validation failed, some filters might be ignored:", parsed.error.format());
+    // Fallback: try to return whatever DID parse correctly or just the defaults
+    return { 
+      page: 1, 
+      limit: 20, 
+      ...((parsed as any).data || {}) 
+    } as ParsedListingParams;
   }
   return parsed.data;
 }
