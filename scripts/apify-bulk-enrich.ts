@@ -19,7 +19,7 @@ async function runApifyBulkEnrich() {
             ],
             isJunk: false
         },
-        take: 20,
+        take: 100,
         orderBy: { createdAt: 'desc' }
     });
 
