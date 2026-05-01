@@ -10,7 +10,7 @@ import { matchListingToSubscriptions } from '../lib/alertMatcher';
 
 const apifyClient = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
 
-const BATCH_SIZE = 15; // Increased for more ground coverage
+const BATCH_SIZE = 12; // Focused on quality over quantity
 let urlIndex = 0; // Persistent index for sequential processing
 
 const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus'];
@@ -57,8 +57,8 @@ async function runSyncCycle() {
     // 3. Configure Apify for CHEAP and FAST execution
     const input = {
         urls: finalUrls.map(u => u.url), 
-        maxPagesPerUrl: 3, // Increased to fetch more listing pages
-        maxItems: 500,     // Hard limit
+        maxPagesPerUrl: 1, // ONLY Page 1 for maximum freshness
+        maxItems: 200,     // Reduced to keep it fast
         proxyConfiguration: { 
             useApifyProxy: true,
             apifyProxyGroups: ['RESIDENTIAL'],
@@ -196,18 +196,19 @@ async function runSyncCycle() {
         console.error('❌ Cycle Failed:', e.message);
     } finally {
         // 7. BACKLOG CATCH-UP
-        // If we were down, some listings might be in DB but not emailed.
-        // Find listings from last 2 hours with NO notification logs.
+        // Only look for cars from the last 1 hour that have NO notification logs at all.
+        // This catches system hiccups without re-processing everything.
         console.log('\n🔍 Checking for missed matches (Backlog Catch-up)...');
         try {
             const recentUnnotified = await prisma.listing.findMany({
                 where: {
-                    createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+                    createdAt: { gte: new Date(Date.now() - 1 * 60 * 60 * 1000) },
                     isJunk: false,
                     isCar: true,
+                    notificationLogs: { none: {} } // ONLY cars that were never matched
                 },
                 orderBy: { createdAt: 'desc' },
-                take: 1000
+                take: 100
             });
             if (recentUnnotified.length > 0) {
                 console.log(`✉️ Found ${recentUnnotified.length} recent cars needing matching. Processing...`);
