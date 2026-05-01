@@ -10,7 +10,7 @@ import { matchListingToSubscriptions } from '../lib/alertMatcher';
 
 const apifyClient = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
 
-const BATCH_SIZE = 12; // Focused on quality over quantity
+const BATCH_SIZE = 30; // Increased to cover 1,428 URLs faster
 let urlIndex = 0; // Persistent index for sequential processing
 
 const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus'];
@@ -226,8 +226,8 @@ async function runSyncCycle() {
     }
 
     console.log(`\n💤 Cycle complete. Covered ${finalUrls.length} URLs. Queue progress: ${urlIndex}/${startUrls.length}`);
-    console.log('Sleeping for 5 minutes before next batch...');
-    await delay(5 * 60 * 1000); // Increased to 5 minutes to save Apify credits & DB connections
+    console.log('Sleeping for 3 minutes before next batch...');
+    await delay(3 * 60 * 1000); // Reduced to 3 minutes to cover cities faster
 }
 
 // Endless Loop
