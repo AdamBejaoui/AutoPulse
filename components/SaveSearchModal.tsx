@@ -16,11 +16,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { Bell, ChevronLeft, Loader2 } from "lucide-react";
 
 export function SaveSearchModal(): React.ReactElement {
-  const { filters, alertOpen, setAlertOpen } = useSearchFilters();
+  const { filters, alertOpen, setAlertOpen, syncEmail, setSyncEmail } = useSearchFilters();
   const { toast } = useToast();
 
   const [step, setStep] = React.useState(1);
-  const [email, setEmail] = React.useState("eastcoastlogisticllc@gmail.com");
+  const [email, setEmail] = React.useState(syncEmail || "eastcoastlogisticllc@gmail.com");
   const [loading, setLoading] = React.useState(false);
 
   const [make, setMake] = React.useState("");
@@ -49,9 +49,10 @@ export function SaveSearchModal(): React.ReactElement {
 
   // Load sync email if present, otherwise fallback to default
   React.useEffect(() => {
-    const saved = localStorage.getItem("autopulse_sync_email") || "eastcoastlogisticllc@gmail.com";
-    setEmail(saved);
-  }, []);
+    if (syncEmail) {
+      setEmail(syncEmail);
+    }
+  }, [syncEmail]);
 
   async function onSave(e: React.FormEvent): Promise<void> {
     if (e) e.preventDefault();
@@ -83,6 +84,8 @@ export function SaveSearchModal(): React.ReactElement {
       }
 
       toast({ variant: "success", title: "Alert activated!", description: `Success! We're monitoring your search now.` });
+      setSyncEmail(email);
+      localStorage.setItem("autopulse_sync_email", email);
       setAlertOpen(false);
     } catch {
       toast({ variant: "destructive", title: "Error", description: "Network error. Please try again." });
@@ -125,6 +128,14 @@ export function SaveSearchModal(): React.ReactElement {
 
         <div className="px-6 pb-6 pt-2">
           <form onSubmit={onSave} className="space-y-4 animate-in fade-in duration-200">
+            <Field
+              label="Email address"
+              value={email}
+              onChange={setEmail}
+              placeholder="you@example.com"
+              type="email"
+              required
+            />
             <div className="grid grid-cols-2 gap-3">
               <Field label="Make" value={make} onChange={setMake} placeholder="e.g. BMW" />
               <Field label="Model" value={model} onChange={setModel} placeholder="e.g. M3" />
