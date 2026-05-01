@@ -202,10 +202,9 @@ async function runSyncCycle() {
         try {
             const recentUnnotified = await prisma.listing.findMany({
                 where: {
-                    createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+                    createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
                     isJunk: false,
                     isCar: true,
-                    notificationLogs: { none: {} }
                 },
                 orderBy: { createdAt: 'desc' },
                 take: 1000
