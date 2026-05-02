@@ -64,7 +64,7 @@ async function runMegaHarvest() {
   console.log(`\n🎯 Active subscriptions: ${subs.length} (${combos.length} unique combos)`);
 
   // 3. Build targeted URLs
-  const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus'];
+  const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus', 'Hyundai', 'Kia'];
   const targetCities = [
     'philadelphia', 'pittsburgh', // PA
     'richmond', // VA

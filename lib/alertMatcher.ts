@@ -152,6 +152,44 @@ export async function matchListingToSubscriptions(listing: Listing) {
       if (sub.yearMin != null && listing.year < sub.yearMin) return false;
       if (sub.yearMax != null && listing.year > sub.yearMax) return false;
       
+      // Trim constraint (comma-separated support)
+      if (sub.trim) {
+        if (!listing.trim) return false;
+        const allowedTrims = sub.trim.split(',').map(t => t.trim().toLowerCase());
+        const listingTrim = listing.trim.toLowerCase();
+        if (!allowedTrims.some(t => listingTrim.includes(t))) return false;
+      }
+
+      // Color constraint (comma-separated support)
+      if (sub.color) {
+        if (!listing.color) return false;
+        const allowedColors = sub.color.split(',').map(c => c.trim().toLowerCase());
+        const listingColor = listing.color.toLowerCase();
+        if (!allowedColors.some(c => listingColor.includes(c))) return false;
+      }
+
+      // Required Features constraint
+      if (sub.requiredFeatures && sub.requiredFeatures.length > 0) {
+        // We check if the listing's features or description mention the required features
+        const haystack = `${listing.features?.join(' ')} ${listing.description || ''} ${listing.rawTitle || ''}`.toLowerCase();
+        const missingFeature = sub.requiredFeatures.some(feat => !haystack.includes(feat.toLowerCase()));
+        if (missingFeature) return false;
+      }
+
+      // Keywords constraint (supports "!keyword" for negation)
+      if (sub.keywords && sub.keywords.length > 0) {
+        const haystack = `${listing.description || ''} ${listing.rawTitle || ''} ${listing.color || ''}`.toLowerCase();
+        for (const kw of sub.keywords) {
+          if (kw.startsWith('!')) {
+            const forbidden = kw.substring(1).toLowerCase();
+            if (haystack.includes(forbidden)) return false; // Strictly no forbidden keyword
+          } else {
+            const required = kw.toLowerCase();
+            if (!haystack.includes(required)) return false; // Must have keyword
+          }
+        }
+      }
+
       return true;
     });
 
