@@ -37,6 +37,7 @@ async function main() {
       model: "CX-5",
       yearMin: 2013,
       trim: "Grand Touring",
+      priceMax: 7000,
       color: "white,gold,silver",
       keywords: ["!red"],
       requiredFeatures: ["sunroof", "keyless entry"],
