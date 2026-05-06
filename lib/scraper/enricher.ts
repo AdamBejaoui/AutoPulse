@@ -55,17 +55,27 @@ export async function enrichListingDetails(listingId: string) {
             return document.body ? document.body.innerText.substring(0, 50000) : '';
         });
         
+        // Extract creation time from hidden JSON
+        const creationTime = await page.evaluate(() => {
+            const scripts = Array.from(document.querySelectorAll('script'));
+            for (const script of scripts) {
+                if (script.textContent && script.textContent.includes('creation_time":')) {
+                    const match = script.textContent.match(/"creation_time":(\d+)/);
+                    if (match) return parseInt(match[1], 10);
+                }
+            }
+            return null;
+        });
+        
         await browser.close();
 
     const description = `${metaDesc}\n\n--- FULL PAGE SPECS ---\n\n${cleanBodyText.substring(0, 50000)}`;
 
     const parsed = parseListingText(scrapedTitle || listing.rawTitle || '', description);
 
-    const updated = await prisma.listing.update({
-      where: { id: listingId },
-      data: {
+    const updateData: any = {
         rawTitle: scrapedTitle || listing.rawTitle,
-        description: metaDesc || listing.description, // Only save the clean meta desc to avoid bloating DB
+        description: metaDesc || listing.description,
         make: parsed.make !== "Unknown" ? parsed.make : listing.make,
         model: parsed.model !== "Unknown" ? parsed.model : listing.model,
         year: parsed.year > 0 ? parsed.year : listing.year,
@@ -73,7 +83,6 @@ export async function enrichListingDetails(listingId: string) {
         transmission: parsed.transmission || listing.transmission,
         trim: parsed.trim || listing.trim,
         
-        // Save the expanded specs
         bodyStyle: parsed.bodyStyle || listing.bodyStyle,
         driveType: parsed.driveType || listing.driveType,
         engine: parsed.engine || listing.engine,
@@ -88,7 +97,15 @@ export async function enrichListingDetails(listingId: string) {
         
         parseScore: parsed.parseScore,
         parsedAt: new Date(),
-      }
+    };
+
+    if (creationTime && creationTime > 0) {
+        updateData.postedAt = new Date(creationTime * 1000);
+    }
+
+    const updated = await prisma.listing.update({
+      where: { id: listingId },
+      data: updateData
     });
 
     return updated;
