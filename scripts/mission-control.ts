@@ -12,9 +12,9 @@ async function missionControl() {
             execSync('npx ts-node scripts/run-brightdata.ts', { stdio: 'inherit' });
 
             console.log(`\n[${new Date().toLocaleTimeString()}] 🛠️ Phase 2: Starting background detail repair...`);
-            // Run the free enrichment for 45 minutes to clear the queue
-            for (let i = 0; i < 6; i++) {
-                console.log(`   Sync batch ${i+1}/6...`);
+            // Run the free enrichment to clear the queue before resting
+            for (let i = 0; i < 2; i++) {
+                console.log(`   Sync batch ${i+1}/2...`);
                 execSync('npx ts-node scripts/bulk-enrich.ts', { stdio: 'inherit' });
                 
                 // Every other batch, let's also check for sold cars (keep inventory clean)
@@ -26,8 +26,8 @@ async function missionControl() {
                 await new Promise(r => setTimeout(r, 60000)); 
             }
 
-            console.log('\n😴 Resting for 60 minutes to conserve Bright Data budget ($25/week mode)...');
-            await new Promise(r => setTimeout(r, 3600000)); // 60 mins pause
+            console.log('\n🔥 Running at MAXIMUM SPEED! Resting for only 10 minutes before the next sweep...');
+            await new Promise(r => setTimeout(r, 600000)); // 10 mins pause
         } catch (err) {
             console.error('⚠️ Mission Control encountered an error, restarting in 5 mins...', err);
             await new Promise(r => setTimeout(r, 300000));
