@@ -181,6 +181,7 @@ export function SearchFiltersProvider({
       alertOpen,
       setAlertOpen,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [filters, savedListingIds, alertOpen, syncEmail, isSyncing],
   );
 

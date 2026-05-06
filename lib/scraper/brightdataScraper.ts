@@ -85,7 +85,7 @@ export async function runBrightdataScraper() {
   generalUrls.sort(() => Math.random() - 0.5);
 
   // Combine them, putting priority URLs first
-  const startUrls = [...priorityUrls, ...generalUrls];
+  startUrls.push(...priorityUrls, ...generalUrls);
   const finalUrls = startUrls.slice(0, MAX_URLS_PER_RUN);
 
   console.log(`\n📋 PLAN:`);
