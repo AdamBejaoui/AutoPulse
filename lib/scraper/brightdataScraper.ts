@@ -92,15 +92,6 @@ export async function runBrightdataScraper() {
   console.log(`   URLs to scrape  : ${finalUrls.length}`);
   console.log(`   Max Pages/URL   : ${MAX_PAGES_PER_URL}`);
 
-  // 3. Connect to Brightdata
-  console.log('\n📡 Connecting to Brightdata Scraping Browser...');
-  const browser = await chromium.connectOverCDP(process.env.BRIGHTDATA_WS_ENDPOINT);
-  
-  const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-    viewport: { width: 1280, height: 800 }
-  });
-
   // 4. Scrape URLs
   let totalCommitted = 0;
 
@@ -108,15 +99,20 @@ export async function runBrightdataScraper() {
     const { url, city } = finalUrls[i];
     console.log(`\n[${i + 1}/${finalUrls.length}] 🚗 Scraping: ${url}`);
     
+    let browser;
+    let context;
     let page;
     try {
+      console.log('   📡 Connecting to fresh Brightdata session...');
+      browser = await chromium.connectOverCDP(process.env.BRIGHTDATA_WS_ENDPOINT!);
+      context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        viewport: { width: 1280, height: 800 }
+      });
       page = await context.newPage();
     } catch (err: any) {
-      if (err.message.includes('closed') || err.message.includes('disconnected')) {
-        console.error(`\n🚨 Bright Data session disconnected unexpectedly. Ending Brightdata Phase early to preserve data.`);
-        break; // Break out of the URL loop completely
-      }
-      console.error(`\n🚨 Failed to open new page: ${err.message}`);
+      console.error(`\n🚨 Failed to establish Bright Data connection: ${err.message}`);
+      if (browser) await browser.close().catch(() => {});
       continue;
     }
 
@@ -260,10 +256,10 @@ export async function runBrightdataScraper() {
       console.error(`   Error scraping ${url}:`, err.message);
     } finally {
       if (page) await page.close().catch(() => {});
+      if (browser) await browser.close().catch(() => {});
     }
   }
 
-  await browser.close();
   await prisma.$disconnect();
   console.log(`--- BRIGHTDATA SCRAPE COMPLETE (Total Committed: ${totalCommitted}) ---`);
 }
