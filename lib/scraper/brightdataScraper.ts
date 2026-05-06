@@ -1,90 +1,166 @@
 import { chromium, Page } from 'playwright';
-import { MARKETPLACE_CITIES } from '../cities';
 import { parseListingText, isJunkTitle } from '../parser/listingParser';
 
+// ─── SAFETY CONFIG ────────────────────────────────────────────────────────────
+const MAX_URLS_PER_RUN = 24;
+const MAX_PAGES_PER_URL = 4;
+// ──────────────────────────────────────────────────────────────────────────────
+
 export async function runBrightdataScraper() {
-  console.log('--- STARTING BRIGHTDATA SCRAPE (MISSION CONTROL) ---');
+  console.log('--- STARTING BRIGHTDATA SCRAPE (MEGA HARVEST MODE) ---');
   
   if (!process.env.BRIGHTDATA_WS_ENDPOINT) {
     throw new Error('BRIGHTDATA_WS_ENDPOINT is not set in .env');
   }
 
+  const { prisma } = await import('../db');
+  const { matchListingToSubscriptions } = await import('../alertMatcher');
+
+  // 1. Fetch active subscriptions for priority targeting
+  const subs = await prisma.subscription.findMany({
+    select: { make: true, model: true, city: true },
+    where: { OR: [{ make: { not: null } }, { model: { not: null } }] }
+  });
+
+  const combos = Array.from(new Set(subs.map(s => `${s.make || ''} ${s.model || ''}`.trim()))).filter(Boolean);
+  console.log(`\n🎯 Active subscriptions: ${subs.length} (${combos.length} unique combos)`);
+
+  // 2. Build targeted URLs
+  const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus', 'Hyundai', 'Kia'];
+  const targetCities = [
+    'philadelphia', 'pittsburgh', // PA
+    'richmond', // VA
+    'charlotte', 'raleigh', // NC
+    'columbia', 'charleston', // SC
+    'atlanta', // GA
+    'miami', 'orlando', 'tampa', // FL
+    'charleston', // WVA
+    'nashville', 'memphis', // TN
+    'birmingham', // AL
+    'columbus', 'cleveland', // OH
+    'indianapolis', // IN
+    'louisville', // KY
+    'detroit', // MI
+    'neworleans', // LA
+    'littlerock', // AR
+    'stlouis', 'kansascity', // MO
+    'desmoines', // IA
+    'minneapolis', // MN
+    'houston', 'dallas', 'sanantonio', // TX
+    'oklahomacity', // OK
+    'wichita', // KS
+    'albuquerque', // NM
+    'denver', // CO
+    'cheyenne', // WY
+    'omaha', // NE
+    'siouxfalls', // SD
+    'fargo', // ND
+    'saltlakecity' // UT
+  ];
+
+  const startUrls: { url: string, city: string }[] = [];
+
+  // Priority car+city searches from subscriptions
+  for (const combo of combos) {
+    for (const city of targetCities) {
+      startUrls.push({
+        url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(combo)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`,
+        city: city
+      });
+    }
+  }
+
+  // Targeted searches for requested makes
+  for (const make of targetMakes) {
+    for (const city of targetCities) {
+      startUrls.push({
+        url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(make)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`,
+        city: city
+      });
+    }
+  }
+
+  // Shuffle URLs to cycle through them over time
+  startUrls.sort(() => Math.random() - 0.5);
+  const finalUrls = startUrls.slice(0, MAX_URLS_PER_RUN);
+
+  console.log(`\n📋 PLAN:`);
+  console.log(`   URLs to scrape  : ${finalUrls.length}`);
+  console.log(`   Max Pages/URL   : ${MAX_PAGES_PER_URL}`);
+
+  // 3. Connect to Brightdata
+  console.log('\n📡 Connecting to Brightdata Scraping Browser...');
   const browser = await chromium.connectOverCDP(process.env.BRIGHTDATA_WS_ENDPOINT);
   
-  // Note: BrightData's Scraping Browser manages its own contexts and IP rotations.
-  // We can just use newPage() directly or create a context. We'll create a context.
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
     viewport: { width: 1280, height: 800 }
   });
 
-  const { prisma } = await import('../db');
-  const { matchListingToSubscriptions } = await import('../alertMatcher');
+  // 4. Scrape URLs
+  let totalCommitted = 0;
 
-  // We rotate through 5 random cities per run to stay under the radar
-  const citiesToScrape = [...MARKETPLACE_CITIES]
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 8);
-
-  for (const city of citiesToScrape) {
+  for (let i = 0; i < finalUrls.length; i++) {
+    const { url, city } = finalUrls[i];
+    console.log(`\n[${i + 1}/${finalUrls.length}] 🚗 Scraping: ${url}`);
+    
     const page = await context.newPage();
     try {
-      console.log(`[brightdata-scraper] Targeting: ${city.label} (${city.slug})`);
-      
-      const url = `https://www.facebook.com/marketplace/${city.slug}/vehicles?exact=false`;
       await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-      
-      // Allow dynamic content to stabilize
-      await page.waitForTimeout(5000);
-      
-      // Auto-scroll a bit to trigger more loading
-      await page.evaluate(() => window.scrollBy(0, 1000));
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(3000); // Allow dynamic content
 
-      // Extract listing cards
-      // selectors for FB Marketplace search cards (approximate, based on typical structure)
-      const cards = await page.evaluate(() => {
-        const items: any[] = [];
-        // Look for common link patterns in Marketplace grid
-        const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"]'));
-        
-        links.forEach(link => {
-          const href = link.getAttribute('href') || '';
-          const match = href.match(/item\/(\d+)/);
-          if (!match) return;
+      const allCards = new Map(); // Use map to deduplicate by externalId
+
+      // Paginate / Scroll up to MAX_PAGES_PER_URL times
+      for (let pageNum = 0; pageNum < MAX_PAGES_PER_URL; pageNum++) {
+        // Extract listing cards
+        const cards = await page.evaluate(() => {
+          const items: any[] = [];
+          const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"]'));
           
-          const externalId = match[1];
-          const container = link.closest('div[style*="max-width"]') || link.parentElement;
-          if (!container) return;
+          links.forEach(link => {
+            const href = link.getAttribute('href') || '';
+            const match = href.match(/item\/(\d+)/);
+            if (!match) return;
+            
+            const externalId = match[1];
+            const container = link.closest('div[style*="max-width"]') || link.parentElement;
+            if (!container) return;
 
-          const titleEl = container.querySelector('span[style*="webkit-line-clamp"]');
-          const priceEl = Array.from(container.querySelectorAll('span')).find(s => s.textContent?.includes('$'));
-          const imgEl = container.querySelector('img');
+            const titleEl = container.querySelector('span[style*="webkit-line-clamp"]');
+            const priceEl = Array.from(container.querySelectorAll('span')).find(s => s.textContent?.includes('$'));
+            const imgEl = container.querySelector('img');
 
-          if (titleEl && priceEl) {
-            items.push({
-              externalId,
-              title: titleEl.textContent?.trim(),
-              priceText: priceEl.textContent?.trim(),
-              imageUrl: imgEl?.getAttribute('src'),
-              url: 'https://www.facebook.com' + href.split('?')[0]
-            });
-          }
+            if (titleEl && priceEl) {
+              items.push({
+                externalId,
+                title: titleEl.textContent?.trim(),
+                priceText: priceEl.textContent?.trim(),
+                imageUrl: imgEl?.getAttribute('src'),
+                url: 'https://www.facebook.com' + href.split('?')[0]
+              });
+            }
+          });
+          return items;
         });
-        return items;
-      });
 
-      console.log(`[brightdata-scraper] Identified ${cards.length} potential leads in ${city.slug}.`);
+        cards.forEach(c => allCards.set(c.externalId, c));
 
-      let cityCount = 0;
-      for (const card of cards) {
-        // Basic Price Parse
+        if (pageNum < MAX_PAGES_PER_URL - 1) {
+           await page.evaluate(() => window.scrollBy(0, 2000));
+           await page.waitForTimeout(2500);
+        }
+      }
+
+      console.log(`   Found ${allCards.size} unique listings on this URL.`);
+
+      let urlCount = 0;
+      for (const card of allCards.values()) {
         const priceNum = parseInt(card.priceText.replace(/[^0-9]/g, ''), 10);
-        if (isNaN(priceNum) || priceNum < 500) continue; // Skip outliers
-        
+        if (isNaN(priceNum) || priceNum < 500) continue; 
         if (isJunkTitle(card.title)) continue;
 
-        const parsed = parseListingText(card.title, ""); // No description in search view
+        const parsed = parseListingText(card.title, ""); 
 
         const listingData = {
           externalId: card.externalId,
@@ -94,8 +170,8 @@ export async function runBrightdataScraper() {
           listingUrl: card.url,
           price: priceNum * 100,
           imageUrls: card.imageUrl ? [card.imageUrl] : [],
-          city: city.label.split(',')[0],
-          state: city.label.split(',')[1]?.trim() || null,
+          city: city, // Extracted from URL iteration
+          state: null, // Since we don't have full city label readily, null is fine for now
           postedAt: new Date(),
           
           make: parsed.make,
@@ -126,7 +202,6 @@ export async function runBrightdataScraper() {
           const listing = await prisma.listing.upsert({
             where: { externalId: listingData.externalId },
             update: {
-                // Only update basic info to avoid overwriting enriched data if it exists
                 price: listingData.price,
                 rawTitle: listingData.rawTitle,
                 imageUrls: listingData.imageUrls.length > 0 ? listingData.imageUrls : undefined
@@ -135,23 +210,22 @@ export async function runBrightdataScraper() {
           });
 
           if (listing) {
-            cityCount++;
-            // Alert matcher for new leads
+            urlCount++;
             matchListingToSubscriptions(listing).catch(() => {});
           }
-        } catch (dbErr) {
-            // Likely unique constraint or connection blip
-        }
+        } catch (dbErr) { }
       }
-      console.log(`[brightdata-scraper] Committed ${cityCount} unique cars for ${city.slug}`);
+      totalCommitted += urlCount;
+      console.log(`   Committed ${urlCount} cars.`);
       
     } catch (err: any) {
-      console.error(`[brightdata-scraper] Error in ${city.slug}:`, err.message);
+      console.error(`   Error scraping ${url}:`, err.message);
     } finally {
       await page.close();
     }
   }
 
   await browser.close();
-  console.log('--- BRIGHTDATA SCRAPE CYCLE COMPLETE ---');
+  await prisma.$disconnect();
+  console.log(`--- BRIGHTDATA SCRAPE COMPLETE (Total Committed: ${totalCommitted}) ---`);
 }
