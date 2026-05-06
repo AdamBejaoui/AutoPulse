@@ -311,7 +311,7 @@ export function buildListingOrderBy(
       return [{ year: "asc" }, qualitySort];
     case "newest":
     default:
-      // Primary: Facebook Posting Time, Secondary: Quality Score, Tertiary: DB Creation Time
-      return [{ postedAt: "desc" }, qualitySort, { createdAt: "desc" }];
+      // Primary: DB Creation Time, Secondary: Quality Score, Tertiary: Facebook Posting Time
+      return [{ createdAt: "desc" }, qualitySort, { postedAt: "desc" }];
   }
 }
