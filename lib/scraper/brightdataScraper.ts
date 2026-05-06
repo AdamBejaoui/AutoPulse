@@ -3,7 +3,7 @@ import { parseListingText, isJunkTitle } from '../parser/listingParser';
 
 // ─── SAFETY CONFIG ────────────────────────────────────────────────────────────
 const MAX_URLS_PER_RUN = 24;
-const MAX_PAGES_PER_URL = 4;
+const MAX_PAGES_PER_URL = 2;
 // ──────────────────────────────────────────────────────────────────────────────
 
 export async function runBrightdataScraper() {
@@ -99,6 +99,16 @@ export async function runBrightdataScraper() {
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
     viewport: { width: 1280, height: 800 }
+  });
+
+  // Block heavy resources to save Bright Data bandwidth costs ($25 budget mode)
+  await context.route('**/*', (route) => {
+    const type = route.request().resourceType();
+    if (['image', 'media', 'font', 'stylesheet'].includes(type)) {
+      route.abort();
+    } else {
+      route.continue();
+    }
   });
 
   // 4. Scrape URLs

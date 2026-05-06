@@ -26,8 +26,8 @@ async function missionControl() {
                 await new Promise(r => setTimeout(r, 60000)); 
             }
 
-            console.log('\n😴 Resting for 15 minutes before next major harvest...');
-            await new Promise(r => setTimeout(r, 900000)); // 15 mins pause
+            console.log('\n😴 Resting for 60 minutes to conserve Bright Data budget ($25/week mode)...');
+            await new Promise(r => setTimeout(r, 3600000)); // 60 mins pause
         } catch (err) {
             console.error('⚠️ Mission Control encountered an error, restarting in 5 mins...', err);
             await new Promise(r => setTimeout(r, 300000));
