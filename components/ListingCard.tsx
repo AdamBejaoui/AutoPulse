@@ -260,7 +260,10 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
         {/* Description Preview */}
         {listing.description && (
           <div className="mb-6 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-            {listing.description.replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim()}
+            {listing.description
+              .split(/--- FULL PAGE SPECS ---|--- SPECS ---/i)[0]
+              .replace(/AutoPulse (local capture|v8 captured):\s*/i, "")
+              .trim()}
           </div>
         )}
 
