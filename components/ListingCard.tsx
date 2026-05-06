@@ -47,7 +47,11 @@ const placeholderSvg =
 export const ListingCard = memo(function ListingCard({ listing }: { listing: any }): React.ReactElement {
   const { savedListingIds, toggleSaved } = require("@/components/SearchFiltersContext").useSearchFilters();
   const isSaved = savedListingIds.includes(listing.id);
+  const [imgOk, setImgOk] = useState(true);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
+
+  const src = (listing.imageUrls && listing.imageUrls.length > 0) && imgOk ? listing.imageUrls[0] : placeholderSvg;
 
   const hasMake = listing.make && listing.make !== "Unknown";
   const hasModel = listing.model && listing.model !== "Unknown";
@@ -134,14 +138,21 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
     <article className="group relative flex flex-col md:flex-row overflow-hidden rounded-2xl bg-surface border border-border transition-all duration-300 hover:shadow-card-hover hover:border-primary/20 w-full bg-mesh">
       
       {/* Image Section */}
-      <div className="relative md:w-2/5 aspect-[16/10] overflow-hidden bg-surface-raised shrink-0">
+      <div className="relative md:w-2/5 aspect-[16/10] md:aspect-auto overflow-hidden bg-surface-raised shrink-0">
+        {!imgLoaded && (
+          <div className="absolute inset-0 skeleton" />
+        )}
         <Image
-          src={(listing.imageUrls && listing.imageUrls.length > 0) ? listing.imageUrls[0] : placeholderSvg}
+          src={src}
           alt={displayTitle}
           fill
-          className="object-cover transition-all duration-500 group-hover:scale-[1.02]"
+          className={cn(
+            "object-cover transition-all duration-500 group-hover:scale-[1.02]",
+            imgLoaded ? "opacity-100" : "opacity-0"
+          )}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => { setImgOk(false); setImgLoaded(true); }}
           sizes="(max-width: 768px) 100vw, 40vw"
-          quality={60}
         />
 
         {/* Sold overlay */}

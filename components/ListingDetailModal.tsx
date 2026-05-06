@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import {
   X,
   Gauge,
@@ -156,12 +155,10 @@ export function ListingDetailModal({
 
         {/* LEFT: Image + CTA */}
         <div className="w-full sm:w-[42%] h-[240px] sm:h-full relative shrink-0 bg-surface overflow-hidden">
-          <Image
+          <img
             src={(listing.imageUrls?.length > 0) ? listing.imageUrls[0] : ""}
             alt={title}
-            fill
-            quality={75}
-            className="object-cover transition-transform duration-700 hover:scale-[1.04]"
+            className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.04]"
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-transparent" />
