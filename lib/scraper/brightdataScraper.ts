@@ -2,8 +2,8 @@ import { chromium, Page } from 'playwright';
 import { parseListingText, isJunkTitle } from '../parser/listingParser';
 
 // ─── SAFETY CONFIG ────────────────────────────────────────────────────────────
-const MAX_URLS_PER_RUN = 24;
-const MAX_PAGES_PER_URL = 2;
+const MAX_URLS_PER_RUN = parseInt(process.env.MAX_URLS_PER_RUN || '24', 10);
+const MAX_PAGES_PER_URL = parseInt(process.env.MAX_PAGES_PER_URL || '2', 10);
 // ──────────────────────────────────────────────────────────────────────────────
 
 export async function runBrightdataScraper() {
