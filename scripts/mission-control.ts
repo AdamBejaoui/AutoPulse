@@ -26,8 +26,20 @@ async function missionControl() {
                 await new Promise(r => setTimeout(r, 60000)); 
             }
 
-            console.log('\n😴 Resting for 60 minutes to conserve Bright Data budget ($25/week mode)...');
-            await new Promise(r => setTimeout(r, 3600000)); // 60 mins pause
+            // Dynamic schedule to balance speed and budget:
+            // Assuming server is UTC. Let's run fast (20 mins) during US daytime, slow (60 mins) at night.
+            const hour = new Date().getUTCHours();
+            const isUsDaytime = (hour >= 12 && hour <= 24) || (hour >= 0 && hour <= 2); // roughly 8 AM to 10 PM EST
+
+            let pauseMs = 3600000; // 60 mins default (Night mode)
+            if (isUsDaytime) {
+                console.log('\n☀️ DAYTIME MODE: Running fast! Resting for 20 minutes before the next sweep...');
+                pauseMs = 1200000; // 20 mins
+            } else {
+                console.log('\n🌙 NIGHTTIME MODE: Saving budget. Resting for 60 minutes before the next sweep...');
+            }
+            
+            await new Promise(r => setTimeout(r, pauseMs));
         } catch (err) {
             console.error('⚠️ Mission Control encountered an error, restarting in 5 mins...', err);
             await new Promise(r => setTimeout(r, 300000));
