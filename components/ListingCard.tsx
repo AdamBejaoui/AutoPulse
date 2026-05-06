@@ -153,6 +153,7 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
           onLoad={() => setImgLoaded(true)}
           onError={() => { setImgOk(false); setImgLoaded(true); }}
           sizes="(max-width: 768px) 100vw, 40vw"
+          unoptimized={true}
         />
 
         {/* Sold overlay */}
