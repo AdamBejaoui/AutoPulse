@@ -242,7 +242,7 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
 
         {/* Specs Grid */}
         {specs.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 mb-6 p-4 rounded-xl bg-surface-raised/50 border border-border/50">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 mb-4 p-4 rounded-xl bg-surface-raised/50 border border-border/50">
             {specs.map((spec, i) => (
               <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0 sm:[&:nth-last-child(-n+3)]:border-0">
                 <span className="text-muted-foreground">{spec.label}</span>
@@ -257,7 +257,12 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
           </div>
         )}
 
-
+        {/* Description Preview */}
+        {listing.description && (
+          <div className="mb-6 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+            {listing.description.replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim()}
+          </div>
+        )}
 
         {/* Footer Actions */}
         <div className="mt-auto pt-4 border-t border-border flex items-center justify-between gap-4 flex-wrap">
