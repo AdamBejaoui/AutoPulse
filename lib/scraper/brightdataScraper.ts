@@ -110,7 +110,24 @@ export async function runBrightdataScraper() {
     
     const page = await context.newPage();
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      let navSuccess = false;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+          navSuccess = true;
+          break; // Navigation succeeded
+        } catch (navErr: any) {
+          console.warn(`   [Attempt ${attempt}/3] Navigation failed: ${navErr.message}`);
+          if (attempt < 3) {
+            await page.waitForTimeout(10000); // Wait 10s before retrying to let Brightdata allocate a new peer
+          } else {
+            throw navErr; // Re-throw on final failure
+          }
+        }
+      }
+      
+      if (!navSuccess) throw new Error("Failed to navigate after 3 attempts");
+
       await page.waitForTimeout(5000); // Increased initial wait slightly to let React render
 
       const allCards = new Map(); // Use map to deduplicate by externalId
