@@ -101,16 +101,6 @@ export async function runBrightdataScraper() {
     viewport: { width: 1280, height: 800 }
   });
 
-  // Block heavy resources to save Bright Data bandwidth costs ($25 budget mode)
-  await context.route('**/*', (route) => {
-    const type = route.request().resourceType();
-    if (['image', 'media', 'font', 'stylesheet'].includes(type)) {
-      route.abort();
-    } else {
-      route.continue();
-    }
-  });
-
   // 4. Scrape URLs
   let totalCommitted = 0;
 
