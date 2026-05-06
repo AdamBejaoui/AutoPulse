@@ -156,7 +156,10 @@ export async function runBrightdataScraper() {
 
       let urlCount = 0;
       for (const card of allCards.values()) {
-        const priceNum = parseInt(card.priceText.replace(/[^0-9]/g, ''), 10);
+        const priceMatch = card.priceText.match(/\$?([0-9,]+)/);
+        if (!priceMatch) continue;
+        const priceNum = parseInt(priceMatch[1].replace(/,/g, ''), 10);
+        
         if (isNaN(priceNum) || priceNum < 500) continue; 
         if (isJunkTitle(card.title)) continue;
 
