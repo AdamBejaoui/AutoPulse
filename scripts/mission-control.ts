@@ -7,9 +7,9 @@ async function missionControl() {
     
     while (true) {
         try {
-            console.log(`\n[${new Date().toLocaleTimeString()}] 📡 Phase 1: Checking for NEW cars on Apify...`);
+            console.log(`\n[${new Date().toLocaleTimeString()}] 📡 Phase 1: Checking for NEW cars on Brightdata...`);
             // Run the scraper (this takes ~5-10 mins)
-            execSync('npx ts-node scripts/mega-harvest-v2.ts', { stdio: 'inherit' });
+            execSync('npx ts-node scripts/run-brightdata.ts', { stdio: 'inherit' });
 
             console.log(`\n[${new Date().toLocaleTimeString()}] 🛠️ Phase 2: Starting background detail repair...`);
             // Run the free enrichment for 45 minutes to clear the queue
