@@ -26,8 +26,8 @@ async function missionControl() {
                 await new Promise(r => setTimeout(r, 60000)); 
             }
 
-            console.log('\n🔥 Running at MAXIMUM SPEED! Resting for only 10 minutes before the next sweep...');
-            await new Promise(r => setTimeout(r, 600000)); // 10 mins pause
+            console.log('\n🔥 Running at MAXIMUM SPEED! Resting for only 15 minutes before the next sweep...');
+            await new Promise(r => setTimeout(r, 900000)); // 15 mins pause
         } catch (err) {
             console.error('⚠️ Mission Control encountered an error, restarting in 5 mins...', err);
             await new Promise(r => setTimeout(r, 300000));
