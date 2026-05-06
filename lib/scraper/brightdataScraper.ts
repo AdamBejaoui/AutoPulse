@@ -28,34 +28,62 @@ export async function runBrightdataScraper() {
   // 2. Build targeted URLs
   const targetMakes = ['Toyota', 'Honda', 'Mazda', 'Lexus', 'Hyundai', 'Kia'];
   const targetCities = [
-    'philadelphia', 'pittsburgh', // PA
-    'richmond', // VA
-    'charlotte', 'raleigh', // NC
-    'columbia', 'charleston', // SC
-    'atlanta', // GA
-    'miami', 'orlando', 'tampa', // FL
-    'charleston', // WVA
-    'nashville', 'memphis', // TN
-    'birmingham', // AL
-    'columbus', 'cleveland', // OH
-    'indianapolis', // IN
-    'louisville', // KY
-    'detroit', // MI
-    'neworleans', // LA
-    'littlerock', // AR
-    'stlouis', 'kansascity', // MO
-    'desmoines', // IA
-    'minneapolis', // MN
-    'houston', 'dallas', 'sanantonio', // TX
-    'oklahomacity', // OK
-    'wichita', // KS
-    'albuquerque', // NM
-    'denver', // CO
-    'cheyenne', // WY
-    'omaha', // NE
-    'siouxfalls', // SD
-    'fargo', // ND
-    'saltlakecity' // UT
+    // PA
+    'philadelphia', 'pittsburgh', 'allentown', 'erie',
+    // VA
+    'richmond', 'virginiabeach', 'norfolk', 'roanoke',
+    // NC
+    'charlotte', 'raleigh', 'greensboro', 'durham',
+    // SC
+    'columbia', 'charleston', 'greenville', 'myrtlebeach',
+    // GA
+    'atlanta', 'augusta', 'savannah', 'macon',
+    // FL
+    'miami', 'orlando', 'tampa', 'jacksonville', 'fortmyers',
+    // WV
+    'charleston', 'huntington', 'morgantown',
+    // TN
+    'nashville', 'memphis', 'knoxville', 'chattanooga',
+    // AL
+    'birmingham', 'montgomery', 'mobile', 'huntsville',
+    // OH
+    'columbus', 'cleveland', 'cincinnati', 'toledo',
+    // IN
+    'indianapolis', 'fortwayne', 'evansville',
+    // KY
+    'louisville', 'lexington', 'bowlinggreen',
+    // MI
+    'detroit', 'grandrapids', 'lansing', 'annarbor',
+    // LA
+    'neworleans', 'batonrouge', 'shreveport', 'lafayette',
+    // AR
+    'littlerock', 'fayetteville', 'fortsmith',
+    // MO
+    'stlouis', 'kansascity', 'springfield', 'columbia',
+    // IA
+    'desmoines', 'cedarrapids', 'davenport',
+    // MN
+    'minneapolis', 'stpaul', 'rochester', 'duluth',
+    // TX
+    'houston', 'dallas', 'sanantonio', 'austin', 'elpaso', 'fortworth',
+    // OK
+    'oklahomacity', 'tulsa', 'norman',
+    // KS
+    'wichita', 'overlandpark', 'topeka',
+    // NM
+    'albuquerque', 'lascruces', 'santafe',
+    // CO
+    'denver', 'coloradosprings', 'aurora', 'fortcollins',
+    // WY
+    'cheyenne', 'casper', 'laramie',
+    // NE
+    'omaha', 'lincoln', 'grandisland',
+    // SD
+    'siouxfalls', 'rapidcity', 'aberdeen',
+    // ND
+    'fargo', 'bismarck', 'grandforks',
+    // UT
+    'saltlakecity', 'provo', 'ogden', 'stgeorge'
   ];
 
   const startUrls: { url: string, city: string }[] = [];
