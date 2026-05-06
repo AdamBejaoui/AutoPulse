@@ -108,7 +108,18 @@ export async function runBrightdataScraper() {
     const { url, city } = finalUrls[i];
     console.log(`\n[${i + 1}/${finalUrls.length}] 🚗 Scraping: ${url}`);
     
-    const page = await context.newPage();
+    let page;
+    try {
+      page = await context.newPage();
+    } catch (err: any) {
+      if (err.message.includes('closed') || err.message.includes('disconnected')) {
+        console.error(`\n🚨 Bright Data session disconnected unexpectedly. Ending Brightdata Phase early to preserve data.`);
+        break; // Break out of the URL loop completely
+      }
+      console.error(`\n🚨 Failed to open new page: ${err.message}`);
+      continue;
+    }
+
     try {
       let navSuccess = false;
       for (let attempt = 1; attempt <= 3; attempt++) {
@@ -248,7 +259,7 @@ export async function runBrightdataScraper() {
     } catch (err: any) {
       console.error(`   Error scraping ${url}:`, err.message);
     } finally {
-      await page.close();
+      if (page) await page.close().catch(() => {});
     }
   }
 
