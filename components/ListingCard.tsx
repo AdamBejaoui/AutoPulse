@@ -135,12 +135,13 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
       
       {/* Image Section */}
       <div className="relative md:w-2/5 aspect-[16/10] overflow-hidden bg-surface-raised shrink-0">
-        <img
+        <Image
           src={(listing.imageUrls && listing.imageUrls.length > 0) ? listing.imageUrls[0] : placeholderSvg}
           alt={displayTitle}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
+          fill
+          className="object-cover transition-all duration-500 group-hover:scale-[1.02]"
+          sizes="(max-width: 768px) 100vw, 40vw"
+          quality={60}
         />
 
         {/* Sold overlay */}
