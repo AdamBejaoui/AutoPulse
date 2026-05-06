@@ -17,7 +17,8 @@ async function bulkEnrich() {
                 { mileage: null },
                 { price: 0 },
                 { rawTitle: '' },
-                { rawTitle: 'Vehicle' }
+                { rawTitle: 'Vehicle' },
+                { description: 'Details pending deep scan...' }
             ],
             isJunk: false
         },
