@@ -158,6 +158,7 @@ export function ListingDetailModal({
           <img
             src={(listing.imageUrls?.length > 0) ? listing.imageUrls[0] : ""}
             alt={title}
+            referrerPolicy="no-referrer"
             className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.04]"
           />
           {/* Gradient overlay */}

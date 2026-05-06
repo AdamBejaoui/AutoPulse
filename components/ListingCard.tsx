@@ -142,6 +142,7 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
           src={src}
           alt={displayTitle}
           loading="lazy"
+          referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
           onError={() => { setImgOk(false); }}
         />
