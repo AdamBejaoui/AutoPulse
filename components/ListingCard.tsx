@@ -142,18 +142,16 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
         {!imgLoaded && (
           <div className="absolute inset-0 skeleton" />
         )}
-        <Image
+        <img
           src={src}
           alt={displayTitle}
-          fill
+          loading="lazy"
           className={cn(
-            "object-cover transition-all duration-500 group-hover:scale-[1.02]",
+            "absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]",
             imgLoaded ? "opacity-100" : "opacity-0"
           )}
           onLoad={() => setImgLoaded(true)}
           onError={() => { setImgOk(false); setImgLoaded(true); }}
-          sizes="(max-width: 768px) 100vw, 40vw"
-          unoptimized={true}
         />
 
         {/* Sold overlay */}
