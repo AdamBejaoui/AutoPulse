@@ -212,6 +212,8 @@ export async function matchListingToSubscriptions(listing: Listing) {
       condition: listing.condition || undefined
     };
 
+    const sentEmails = new Set<string>();
+
     for (const sub of matches) {
       try {
         // Deduplication check using NotificationLog
@@ -225,47 +227,49 @@ export async function matchListingToSubscriptions(listing: Listing) {
         });
 
         if (alreadySent) {
-          console.log(`[alertMatcher] Email already sent to ${sub.email} for listing ${listing.id}. Skipping.`);
           continue;
         }
 
-        const { subject, html } = newListingsEmail({
-          email: sub.email,
-          listings: [mailListing],
-          filters: {
-            make: sub.make || undefined,
-            model: sub.model || undefined,
-            yearMin: sub.yearMin || undefined,
-            yearMax: sub.yearMax || undefined,
-            priceMin: sub.priceMin || undefined,
-            priceMax: sub.priceMax || undefined,
-            mileageMin: sub.mileageMin || undefined,
-            mileageMax: sub.mileageMax || undefined,
-            city: sub.city || undefined,
-          }
-        });
+        if (!sentEmails.has(sub.email)) {
+          const { subject, html } = newListingsEmail({
+            email: sub.email,
+            listings: [mailListing],
+            filters: {
+              make: sub.make || undefined,
+              model: sub.model || undefined,
+              yearMin: sub.yearMin || undefined,
+              yearMax: sub.yearMax || undefined,
+              priceMin: sub.priceMin || undefined,
+              priceMax: sub.priceMax || undefined,
+              mileageMin: sub.mileageMin || undefined,
+              mileageMax: sub.mileageMax || undefined,
+              city: sub.city || undefined,
+            }
+          });
 
-        await sendMail({
-          to: sub.email,
-          subject,
-          html
-        });
+          await sendMail({
+            to: sub.email,
+            subject,
+            html
+          });
+          
+          sentEmails.add(sub.email);
+          console.log(`[alertMatcher] Sent alert to ${sub.email} for ${listing.year} ${listing.make} ${listing.model}`);
+          
+          // Add 2-second delay to prevent email spam flags
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
 
-        // Record the notification
+        // Record the notification so this specific subscription doesn't trigger again
         await prisma.notificationLog.create({
           data: {
             subscriptionId: sub.id,
             listingId: listing.id
           }
         });
-        
-        console.log(`[alertMatcher] Sent alert to ${sub.email} for ${listing.year} ${listing.make} ${listing.model}`);
 
-        
-        // Add 2-second delay to prevent email spam flags
-        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (err) {
-        console.error(`[alertMatcher] Failed to send email to ${sub.email}:`, err);
+        console.error(`[alertMatcher] Failed to process subscription ${sub.id} for ${sub.email}:`, err);
       }
     }
   } catch (err) {
