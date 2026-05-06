@@ -156,11 +156,14 @@ export async function runBrightdataScraper() {
 
       let urlCount = 0;
       for (const card of allCards.values()) {
-        const priceMatch = card.priceText.match(/\$?([0-9,]+)/);
+        // Safe regex to extract price. If it's something like $2,5002005 (concatenated text),
+        // we'll try to match the comma pattern first.
+        const priceMatch = card.priceText.match(/\$([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)/);
         if (!priceMatch) continue;
         const priceNum = parseInt(priceMatch[1].replace(/,/g, ''), 10);
         
-        if (isNaN(priceNum) || priceNum < 500) continue; 
+        // Filter out unreasonable prices and prevent Postgres 32-bit Int overflow (> ~21 million)
+        if (isNaN(priceNum) || priceNum < 500 || priceNum > 150000) continue; 
         if (isJunkTitle(card.title)) continue;
 
         const parsed = parseListingText(card.title, ""); 
