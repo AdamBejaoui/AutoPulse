@@ -60,28 +60,32 @@ export async function runBrightdataScraper() {
 
   const startUrls: { url: string, city: string }[] = [];
 
-  // Priority car+city searches from subscriptions
+  // Priority car+city searches from subscriptions (shuffle to cycle through cities fairly)
+  const priorityUrls: { url: string, city: string }[] = [];
   for (const combo of combos) {
     for (const city of targetCities) {
-      startUrls.push({
+      priorityUrls.push({
         url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(combo)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`,
         city: city
       });
     }
   }
+  priorityUrls.sort(() => Math.random() - 0.5);
 
-  // Targeted searches for requested makes
+  // General searches for requested makes
+  const generalUrls: { url: string, city: string }[] = [];
   for (const make of targetMakes) {
     for (const city of targetCities) {
-      startUrls.push({
+      generalUrls.push({
         url: `https://www.facebook.com/marketplace/${city}/search?query=${encodeURIComponent(make)}&category_id=vehicles&sort=CREATION_TIME_DESCEND`,
         city: city
       });
     }
   }
+  generalUrls.sort(() => Math.random() - 0.5);
 
-  // Shuffle URLs to cycle through them over time
-  startUrls.sort(() => Math.random() - 0.5);
+  // Combine them, putting priority URLs first
+  const startUrls = [...priorityUrls, ...generalUrls];
   const finalUrls = startUrls.slice(0, MAX_URLS_PER_RUN);
 
   console.log(`\n📋 PLAN:`);
