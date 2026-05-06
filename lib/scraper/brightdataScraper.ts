@@ -106,8 +106,8 @@ export async function runBrightdataScraper() {
     
     const page = await context.newPage();
     try {
-      await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-      await page.waitForTimeout(3000); // Allow dynamic content
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.waitForTimeout(5000); // Increased initial wait slightly to let React render
 
       const allCards = new Map(); // Use map to deduplicate by externalId
 
