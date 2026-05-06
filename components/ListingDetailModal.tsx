@@ -142,7 +142,10 @@ export function ListingDetailModal({
     if (desc.toLowerCase().includes("connectez-vous") || desc.toLowerCase().includes("log in to")) {
       return "Seller description is loading — deep scan in progress...";
     }
-    return desc.replace(/AutoPulse (local capture|v8 captured):\s*/i, "").trim() || "No description available.";
+    return desc
+      .split(/--- FULL PAGE SPECS ---|--- SPECS ---/i)[0]
+      .replace(/AutoPulse (local capture|v8 captured):\s*/i, "")
+      .trim() || "No description available.";
   })();
 
   return (
