@@ -258,14 +258,37 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
         )}
 
         {/* Description Preview */}
-        {listing.description && (
-          <div className="mb-6 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-            {listing.description
-              .split(/--- FULL PAGE SPECS ---|--- SPECS ---/i)[0]
-              .replace(/AutoPulse (local capture|v8 captured):\s*/i, "")
-              .trim()}
-          </div>
-        )}
+        {listing.description && (() => {
+          const cleanDesc = listing.description
+            .split(/--- FULL PAGE SPECS ---|--- SPECS ---/i)[0]
+            .replace(/AutoPulse (local capture|v8 captured):\s*/i, "")
+            .trim();
+          
+          if (!cleanDesc) return null;
+
+          return (
+            <div className="mb-6">
+              <div className={cn(
+                "text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap transition-all",
+                !showFullDesc && "line-clamp-2"
+              )}>
+                {cleanDesc}
+              </div>
+              {cleanDesc.length > 100 && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowFullDesc(!showFullDesc);
+                  }}
+                  className="text-xs text-primary font-medium hover:underline mt-1"
+                >
+                  {showFullDesc ? "Read less" : "Read more"}
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Footer Actions */}
         <div className="mt-auto pt-4 border-t border-border flex items-center justify-between gap-4 flex-wrap">
