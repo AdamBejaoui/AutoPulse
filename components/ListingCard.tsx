@@ -48,7 +48,6 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
   const { savedListingIds, toggleSaved } = require("@/components/SearchFiltersContext").useSearchFilters();
   const isSaved = savedListingIds.includes(listing.id);
   const [imgOk, setImgOk] = useState(true);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
 
   const src = (listing.imageUrls && listing.imageUrls.length > 0) && imgOk ? listing.imageUrls[0] : placeholderSvg;
@@ -139,19 +138,12 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
       
       {/* Image Section */}
       <div className="relative md:w-2/5 aspect-[16/10] md:aspect-auto overflow-hidden bg-surface-raised shrink-0">
-        {!imgLoaded && (
-          <div className="absolute inset-0 skeleton" />
-        )}
         <img
           src={src}
           alt={displayTitle}
           loading="lazy"
-          className={cn(
-            "absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]",
-            imgLoaded ? "opacity-100" : "opacity-0"
-          )}
-          onLoad={() => setImgLoaded(true)}
-          onError={() => { setImgOk(false); setImgLoaded(true); }}
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
+          onError={() => { setImgOk(false); }}
         />
 
         {/* Sold overlay */}
