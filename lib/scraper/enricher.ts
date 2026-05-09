@@ -124,6 +124,14 @@ export async function enrichListingDetails(listingId: string) {
   }
 } catch (err) {
   console.error(`Failed to enrich ${listingId}:`, err);
+  // Mark as attempted even on failure to avoid infinite loops on dead links
+  try {
+    const { prisma } = await import('../db');
+    await prisma.listing.update({
+      where: { id: listingId },
+      data: { parsedAt: new Date() }
+    });
+  } catch (e) {}
   return null;
 }
 }

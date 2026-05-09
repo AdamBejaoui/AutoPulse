@@ -20,7 +20,8 @@ async function bulkEnrich() {
                 { rawTitle: 'Vehicle' },
                 { description: 'Details pending deep scan...' }
             ],
-            isJunk: false
+            isJunk: false,
+            parsedAt: null
         },
         take: 200, // Processing a reasonable batch
         orderBy: { createdAt: 'desc' }
