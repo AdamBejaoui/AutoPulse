@@ -12,18 +12,23 @@ async function bulkEnrich() {
     // Find cars with "Unknown" or missing details or zero price
     const targets = await prisma.listing.findMany({
         where: {
-            OR: [
-                { make: 'Unknown' },
-                { mileage: null },
-                { price: 0 },
-                { rawTitle: '' },
-                { rawTitle: 'Vehicle' },
-                { description: 'Details pending deep scan...' }
-            ],
             isJunk: false,
-            parsedAt: null
+            OR: [
+                {
+                    description: 'Details pending deep scan...',
+                    OR: [
+                        { parsedAt: null },
+                        { parsedAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+                    ]
+                },
+                { make: 'Unknown', parsedAt: null },
+                { mileage: null, parsedAt: null },
+                { price: 0, parsedAt: null },
+                { rawTitle: 'Vehicle', parsedAt: null },
+                { rawTitle: '', parsedAt: null }
+            ]
         },
-        take: 200, // Processing a reasonable batch
+        take: 200,
         orderBy: { createdAt: 'desc' }
     });
 
