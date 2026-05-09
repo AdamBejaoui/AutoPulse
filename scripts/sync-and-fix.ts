@@ -54,11 +54,11 @@ async function runSyncCycle() {
 
     console.log(`\n🎯 Selected ${BATCH_SIZE} URLs for this chunk.`);
 
-    // 3. Configure Apify for CHEAP and FAST execution
+    // 3. Configure Apify for DEEP HARVESTING
     const input = {
         urls: finalUrls.map(u => u.url), 
-        maxPagesPerUrl: 1, // ONLY Page 1 for maximum freshness
-        maxItems: 200,     // Reduced to keep it fast
+        maxPagesPerUrl: 3, // 3 pages deep to balance harvesting with cost
+        maxItems: 1500,    // Reduced to balance volume
         proxyConfiguration: { 
             useApifyProxy: true,
             apifyProxyGroups: ['RESIDENTIAL'],
@@ -88,7 +88,7 @@ async function runSyncCycle() {
         for (const rawItem of items) {
             try {
                 // Throttle slightly to prevent hammering the database pooled connections
-                await delay(100);
+                await delay(25);
 
                 const item = rawItem as any;
                 const description = item.description || item.redacted_description?.text || '';
