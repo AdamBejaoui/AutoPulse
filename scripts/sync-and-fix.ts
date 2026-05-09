@@ -82,6 +82,7 @@ async function runSyncCycle() {
         // 5. Process and Save
         let processedCount = 0;
         const newListingIds: string[] = [];
+        const priorityListingIds: string[] = [];
         const perfectListingIds: string[] = [];
 
         for (const rawItem of items) {
@@ -152,7 +153,17 @@ async function runSyncCycle() {
                     // ONLY process (enrich & email) if this is the FIRST time we've seen this car
                     if (!existing) {
                         if (listing.make === 'Unknown' || listing.parseScore < 50 || !listing.mileage) {
-                            newListingIds.push(listing.id);
+                            const isHighPriority = subs.some(sub => {
+                                const makeMatch = !sub.make || sub.make.toLowerCase() === listing.make?.toLowerCase();
+                                const modelMatch = !sub.model || sub.model.toLowerCase() === listing.model?.toLowerCase();
+                                return makeMatch && modelMatch;
+                            });
+
+                            if (isHighPriority && listing.make !== 'Unknown') {
+                                priorityListingIds.push(listing.id);
+                            } else {
+                                newListingIds.push(listing.id);
+                            }
                         } else {
                             // It's already perfect, no enrichment needed
                             perfectListingIds.push(listing.id);
@@ -175,15 +186,16 @@ async function runSyncCycle() {
         }
 
         // 6. Enrich (Fix) Silently and Locally
-        if (newListingIds.length > 0) {
-            console.log(`\n🛠️ Starting silent enrichment...`);
+        const toEnrich = [...priorityListingIds, ...newListingIds];
+        if (toEnrich.length > 0) {
+            console.log(`\n🛠️ Starting silent enrichment (Priority: ${priorityListingIds.length}, Standard: ${newListingIds.length})...`);
             let fixCount = 0;
-            for (const id of newListingIds) {
+            for (const id of toEnrich) {
                 const success = await enrichListingDetails(id);
                 if (success) {
                     const updated = await prisma.listing.findUnique({ where: { id } });
                     if (updated) {
-                        console.log(`✅ [${++fixCount}/${newListingIds.length}] Fixed: ${updated.year} ${updated.make} ${updated.model}`);
+                        console.log(`✅ [${++fixCount}/${toEnrich.length}] Fixed: ${updated.year} ${updated.make} ${updated.model}`);
                         try { await matchListingToSubscriptions(updated); } catch(e){}
                     }
                 }
