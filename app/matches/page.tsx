@@ -7,7 +7,7 @@ import { ListingCard } from "@/components/ListingCard";
 import { useSearchFilters } from "@/components/SearchFiltersContext";
 
 export default function MatchesPage() {
-  const { syncEmail } = useSearchFilters();
+  const { syncEmail, setSyncEmail } = useSearchFilters();
   const [matches, setMatches] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [emailInput, setEmailInput] = React.useState(syncEmail || "");
@@ -37,6 +37,8 @@ export default function MatchesPage() {
   const handleManualSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (emailInput.includes("@")) {
+      setSyncEmail(emailInput);
+      localStorage.setItem("autopulse_sync_email", emailInput);
       fetchMatches(emailInput);
     }
   };
