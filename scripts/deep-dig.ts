@@ -5,7 +5,7 @@ import * as path from 'path';
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Force the scraper to go a bit deeper but conserve credits
-process.env.MAX_PAGES_PER_URL = '5';  // 5 pages deep per URL to find cars from a few weeks ago
+process.env.MAX_PAGES_PER_URL = '3';  // 3 pages deep per URL to find cars from a few weeks ago
 process.env.MAX_URLS_PER_RUN = '24';  // Stick to the normal 24 cities to save budget
 
 console.log('⛏️ DEEP DIG MODE ENGAGED');
