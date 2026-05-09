@@ -20,7 +20,7 @@ export function SaveSearchModal(): React.ReactElement {
   const { toast } = useToast();
 
   const [step, setStep] = React.useState(1);
-  const [email, setEmail] = React.useState(syncEmail || "eastcoastlogisticllc@gmail.com");
+  const [email, setEmail] = React.useState(syncEmail || "");
   const [loading, setLoading] = React.useState(false);
 
   const [make, setMake] = React.useState("");
@@ -59,7 +59,7 @@ export function SaveSearchModal(): React.ReactElement {
     setLoading(true);
     try {
       const body = {
-        email: email || "eastcoastlogisticllc@gmail.com",
+        email: email,
         make: make || undefined,
         model: model || undefined,
         yearMin: yearMin ? Number(yearMin) : undefined,

@@ -145,7 +145,7 @@ export function SearchFiltersProvider({
       } catch (e) {}
     }
 
-    const savedEmail = localStorage.getItem("autopulse_sync_email") || "eastcoastlogisticllc@gmail.com";
+    const savedEmail = localStorage.getItem("autopulse_sync_email") || "";
     setSyncEmail(savedEmail);
     
     // If we're on a search-related page with no params, try to restore

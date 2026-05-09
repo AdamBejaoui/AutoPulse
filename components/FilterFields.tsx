@@ -302,8 +302,7 @@ function CloudSyncSection({ currentValues }: { currentValues: any }) {
     setTimeout(() => setMsg(""), 3000);
   };
 
-  // If using the default shared account, hide the sync UI so it feels integrated
-  if (syncEmail === "eastcoastlogisticllc@gmail.com") return null;
+  // Cloud sync UI is always available
 
   return (
     <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">

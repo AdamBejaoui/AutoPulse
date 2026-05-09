@@ -50,6 +50,12 @@ export async function enrichListingDetails(listingId: string) {
             return el ? el.getAttribute('content') || '' : '';
         });
 
+        // Extract image
+        const metaImage = await page.evaluate(() => {
+            const el = document.querySelector('meta[property="og:image"]');
+            return el ? el.getAttribute('content') || '' : '';
+        });
+
         // Extract body text
         const cleanBodyText = await page.evaluate(() => {
             return document.body ? document.body.innerText.substring(0, 50000) : '';
@@ -95,6 +101,8 @@ export async function enrichListingDetails(listingId: string) {
         owners: parsed.owners || listing.owners,
         features: parsed.features && parsed.features.length > 0 ? parsed.features : listing.features,
         
+        imageUrls: metaImage ? Array.from(new Set([metaImage, ...(listing.imageUrls || [])])) : listing.imageUrls,
+
         parseScore: parsed.parseScore,
         parsedAt: new Date(),
     };

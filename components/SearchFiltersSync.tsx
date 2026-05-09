@@ -51,7 +51,7 @@ export function SearchFiltersSync(): null {
     localStorage.setItem("autopulse_last_filters", JSON.stringify(filters));
     
     // Auto-sync to cloud for the default shared account to keep everyone in sync
-    if (syncEmail === "eastcoastlogisticllc@gmail.com") {
+    if (syncEmail) {
       // We wrap in a small timeout to avoid double-syncing on mount
       const timer = setTimeout(() => {
         saveToCloud(syncEmail, filters);

@@ -35,14 +35,23 @@ function timeAgo(postedAt: string | Date, createdAt?: string | Date): string {
   return pDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-const placeholderSvg =
-  "data:image/svg+xml," +
-  encodeURIComponent(
+function getPlaceholderSvg(text: string) {
+  const safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return "data:image/svg+xml," + encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
-      <rect width="640" height="360" fill="#111113"/>
-      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#333" font-family="system-ui" font-weight="700" font-size="14" letter-spacing="0.1em">No image</text>
-    </svg>`,
+      <rect width="640" height="360" fill="#09090b"/>
+      <rect width="640" height="360" fill="url(#grad)" opacity="0.15"/>
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="#666" font-family="system-ui" font-weight="800" font-size="28" letter-spacing="0.02em">${safeText}</text>
+      <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="#333" font-family="system-ui" font-weight="700" font-size="12" letter-spacing="0.15em">NO IMAGE AVAILABLE</text>
+    </svg>`
   );
+}
 
 export const ListingCard = memo(function ListingCard({ listing }: { listing: any }): React.ReactElement {
   const { savedListingIds, toggleSaved } = require("@/components/SearchFiltersContext").useSearchFilters();
@@ -50,8 +59,6 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
   const [imgOk, setImgOk] = useState(true);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
-
-  const src = (listing.imageUrls && listing.imageUrls.length > 0) && imgOk ? listing.imageUrls[0] : placeholderSvg;
 
   const hasMake = listing.make && listing.make !== "Unknown";
   const hasModel = listing.model && listing.model !== "Unknown";
@@ -62,6 +69,8 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
     const model = hasModel ? ` ${listing.model}` : "";
     displayTitle = `${year}${listing.make}${model}`.trim();
   }
+
+  const src = (listing.imageUrls && listing.imageUrls.length > 0) && imgOk ? listing.imageUrls[0] : getPlaceholderSvg(displayTitle);
 
   const loc = [listing.city, listing.state].filter(Boolean).join(", ");
   const mileage = listing.mileage != null
