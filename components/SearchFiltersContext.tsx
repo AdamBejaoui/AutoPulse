@@ -81,10 +81,11 @@ export function SearchFiltersProvider({
     setSavedListingIds(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
       localStorage.setItem("saved_listings", JSON.stringify(next));
-      // Auto-sync if we have an email
+      // Auto-sync to cloud if we have an email
       if (syncEmail) {
         saveToCloud(syncEmail, filters, next);
       }
+      window.dispatchEvent(new Event("saved_listings_changed"));
       return next;
     });
   };
@@ -136,7 +137,7 @@ export function SearchFiltersProvider({
     return null;
   };
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (savedIds only — email comes from session)
   React.useEffect(() => {
     const localSaved = localStorage.getItem("saved_listings");
     if (localSaved) {
@@ -145,27 +146,28 @@ export function SearchFiltersProvider({
       } catch (e) {}
     }
 
-    const savedEmail = localStorage.getItem("autopulse_sync_email") || "";
-    setSyncEmail(savedEmail);
-    
-    // If we're on a search-related page with no params, try to restore
-    const hasParams = window.location.search.length > 0;
-    loadFromCloud(savedEmail).then(loaded => {
-      if (loaded && !hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
-        setFilters(loaded.filters);
-        if (window.location.pathname === "/search") {
-          const params = new URLSearchParams();
-          Object.entries(loaded.filters).forEach(([k, v]) => {
-            if (v) params.set(k, String(v));
-          });
-          const q = params.toString();
-          if (q) {
-            window.location.href = `/search?${q}`;
+    // We no longer rely on autopulse_sync_email from localStorage;
+    // syncEmail is now set from the session via AuthProvider context.
+    // Keep cloud load for initial filter restore if syncEmail is already set.
+    if (syncEmail) {
+      const hasParams = window.location.search.length > 0;
+      loadFromCloud(syncEmail).then(loaded => {
+        if (loaded && !hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
+          setFilters(loaded.filters);
+          if (window.location.pathname === "/search") {
+            const params = new URLSearchParams();
+            Object.entries(loaded.filters).forEach(([k, v]) => {
+              if (v) params.set(k, String(v));
+            });
+            const q = params.toString();
+            if (q) {
+              window.location.href = `/search?${q}`;
+            }
           }
         }
-      }
-    });
-  }, []);
+      });
+    }
+  }, [syncEmail]);
 
   const value = React.useMemo(
     () => ({

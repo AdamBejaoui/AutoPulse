@@ -3,8 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Menu, X, Bell, Search, Zap, Star } from "lucide-react";
+import { Moon, Sun, Menu, X, Bell, Search, Zap, Star, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
+import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSearchFilters } from "@/components/SearchFiltersContext";
@@ -16,6 +17,7 @@ export function Navbar(): React.ReactElement {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
+  const { data: session } = useSession();
 
   React.useEffect(() => { setMounted(true); }, []);
 
@@ -31,6 +33,10 @@ export function Navbar(): React.ReactElement {
     { label: "Matches", href: "/matches", icon: Zap },
     { label: "Saved", href: "/saved", icon: Star },
   ];
+
+  const userInitial = session?.user?.email
+    ? session.user.email[0].toUpperCase()
+    : "?";
 
   return (
     <header
@@ -86,7 +92,7 @@ export function Navbar(): React.ReactElement {
             {mounted && (theme === "dark" ? <Sun size={17} /> : <Moon size={17} />)}
           </button>
 
-          {/* CTA */}
+          {/* Set Alert CTA */}
           <button
             onClick={() => setAlertOpen(true)}
             className="hidden sm:flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-white text-sm font-semibold shadow-blue hover:bg-primary/90 active:scale-95 transition-all"
@@ -94,6 +100,27 @@ export function Navbar(): React.ReactElement {
             <Bell size={14} />
             Set Alert
           </button>
+
+          {/* User Avatar + Logout */}
+          {session?.user && (
+            <div className="flex items-center gap-1">
+              <div
+                title={session.user.email ?? ""}
+                className="h-8 w-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary select-none"
+              >
+                {userInitial}
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                title="Sign out"
+                className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                aria-label="Sign out"
+                id="navbar-logout"
+              >
+                <LogOut size={15} />
+              </button>
+            </div>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -133,6 +160,15 @@ export function Navbar(): React.ReactElement {
               <Bell size={16} />
               Set Alert
             </button>
+            {session?.user && (
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut size={16} />
+                Sign out ({session.user.email})
+              </button>
+            )}
           </div>
         </div>
       )}

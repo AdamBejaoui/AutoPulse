@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { ListingCard } from "@/components/ListingCard";
 import { Star, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -9,34 +10,34 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 export default function SavedPage() {
+  const { data: session, status } = useSession();
+  const email = session?.user?.email ?? "";
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [savedIds, setSavedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const loadSaved = async () => {
-      const saved = localStorage.getItem("saved_listings");
-      if (!saved) {
-        setListings([]);
-        setSavedIds([]);
-        setLoading(false);
-        return;
-      }
-      
-      const ids = JSON.parse(saved);
-      setSavedIds(ids);
-      
-      if (ids.length === 0) {
-        setListings([]);
-        setLoading(false);
-        return;
-      }
+    if (!email) return;
 
+    const loadSaved = async () => {
+      setLoading(true);
       try {
+        // Load saved IDs from DB (scoped to this user)
+        const prefRes = await fetch(`/api/preferences?email=${encodeURIComponent(email)}`);
+        const prefData = await prefRes.json();
+        const ids: string[] = prefData.savedListingIds ?? [];
+        setSavedIds(ids);
+
+        if (ids.length === 0) {
+          setListings([]);
+          setLoading(false);
+          return;
+        }
+
         const res = await fetch(`/api/listings?ids=${ids.join(",")}`);
-        if (!res.ok) throw new Error("Failed to fetch");
+        if (!res.ok) throw new Error("Failed to fetch listings");
         const data = await res.json();
-        setListings(data.listings);
+        setListings(data.listings ?? []);
       } catch (error) {
         console.error("Error fetching saved listings:", error);
       } finally {
@@ -46,16 +47,25 @@ export default function SavedPage() {
 
     loadSaved();
 
-    // Listen for changes from other tabs/actions
-    const handleStorageChange = () => {
-      const saved = localStorage.getItem("saved_listings");
-      const ids = saved ? JSON.parse(saved) : [];
+    // Listen for save/unsave events dispatched by ListingCard
+    const handleStorageChange = async () => {
+      const prefRes = await fetch(`/api/preferences?email=${encodeURIComponent(email)}`);
+      const prefData = await prefRes.json();
+      const ids: string[] = prefData.savedListingIds ?? [];
       setSavedIds(ids);
       setListings((prev) => prev.filter((item) => ids.includes(item.id)));
     };
     window.addEventListener("saved_listings_changed", handleStorageChange);
     return () => window.removeEventListener("saved_listings_changed", handleStorageChange);
-  }, []);
+  }, [email]);
+
+  if (status === "loading") {
+    return (
+      <div className="relative min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-background">

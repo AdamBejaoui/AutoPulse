@@ -13,14 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSearchFilters } from "@/components/SearchFiltersContext";
 import { useToast } from "@/components/ui/use-toast";
-import { Bell, ChevronLeft, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Bell, Loader2, Lock } from "lucide-react";
 
 export function SaveSearchModal(): React.ReactElement {
-  const { filters, alertOpen, setAlertOpen, syncEmail, setSyncEmail } = useSearchFilters();
+  const { filters, alertOpen, setAlertOpen } = useSearchFilters();
   const { toast } = useToast();
+  const { data: session } = useSession();
+  const sessionEmail = session?.user?.email ?? "";
 
-  const [step, setStep] = React.useState(1);
-  const [email, setEmail] = React.useState(syncEmail || "");
   const [loading, setLoading] = React.useState(false);
 
   const [make, setMake] = React.useState("");
@@ -47,19 +48,13 @@ export function SaveSearchModal(): React.ReactElement {
     }
   }, [alertOpen, filters]);
 
-  // Load sync email if present, otherwise fallback to default
-  React.useEffect(() => {
-    if (syncEmail) {
-      setEmail(syncEmail);
-    }
-  }, [syncEmail]);
-
   async function onSave(e: React.FormEvent): Promise<void> {
     if (e) e.preventDefault();
+    if (!sessionEmail) return;
     setLoading(true);
     try {
       const body = {
-        email: email,
+        email: sessionEmail,
         make: make || undefined,
         model: model || undefined,
         yearMin: yearMin ? Number(yearMin) : undefined,
@@ -84,8 +79,6 @@ export function SaveSearchModal(): React.ReactElement {
       }
 
       toast({ variant: "success", title: "Alert activated!", description: `Success! We're monitoring your search now.` });
-      setSyncEmail(email);
-      localStorage.setItem("autopulse_sync_email", email);
       setAlertOpen(false);
     } catch {
       toast({ variant: "destructive", title: "Error", description: "Network error. Please try again." });
@@ -93,19 +86,6 @@ export function SaveSearchModal(): React.ReactElement {
       setLoading(false);
     }
   }
-
-  // Summary chips for step 2
-  const chips = [
-    make && `Make: ${make}`,
-    model && `Model: ${model}`,
-    priceMin && `Min: $${priceMin}`,
-    priceMax && `Max: $${priceMax}`,
-    yearMin && `Min Yr: ${yearMin}`,
-    yearMax && `Max Yr: ${yearMax}`,
-    mileageMin && `Min Mi: ${mileageMin}`,
-    mileageMax && `Max Mi: ${mileageMax}`,
-    keywords && `"${keywords}"`,
-  ].filter(Boolean);
 
   return (
     <Dialog open={alertOpen} onOpenChange={setAlertOpen}>
@@ -128,14 +108,20 @@ export function SaveSearchModal(): React.ReactElement {
 
         <div className="px-6 pb-6 pt-2">
           <form onSubmit={onSave} className="space-y-4 animate-in fade-in duration-200">
-            <Field
-              label="Email address"
-              value={email}
-              onChange={setEmail}
-              placeholder="you@example.com"
-              type="email"
-              required
-            />
+            {/* Email — read-only, locked to session */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Email address</Label>
+              <div className="relative">
+                <Lock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="email"
+                  value={sessionEmail}
+                  readOnly
+                  className="w-full h-10 pl-8 pr-4 text-sm bg-surface/60 border border-border rounded-lg text-muted-foreground cursor-not-allowed"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <Field label="Make" value={make} onChange={setMake} placeholder="e.g. BMW" />
               <Field label="Model" value={model} onChange={setModel} placeholder="e.g. M3" />

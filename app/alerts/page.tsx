@@ -1,17 +1,24 @@
 import type { ReactElement } from "react";
 import { Bell, Plus } from "lucide-react";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { ClientAlertButton } from "@/components/ClientAlertButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function AlertsPage(): Promise<ReactElement> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) redirect("/login");
+
   const { prisma } = await import("@/lib/db");
   let subscriptions: any[] = [];
 
   try {
     subscriptions = await prisma.subscription.findMany({
+      where: { email: session.user.email },
       orderBy: { createdAt: "desc" },
     });
   } catch (e) {
@@ -30,8 +37,8 @@ export default async function AlertsPage(): Promise<ReactElement> {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {subscriptions.length > 0
-                ? `${subscriptions.length} active alert${subscriptions.length > 1 ? "s" : ""}`
-                : "No alerts yet"}
+                ? `${subscriptions.length} active alert${subscriptions.length > 1 ? "s" : ""} for ${session.user.email}`
+                : `No alerts yet for ${session.user.email}`}
             </p>
           </div>
           <ClientAlertButton />
