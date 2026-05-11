@@ -182,7 +182,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Drivetrain */}
-      <FilterSection label="Drivetrain">
+      <FilterSection label="Drivetrain" initialOpen={false}>
         <div className="flex flex-wrap gap-2">
           {["AWD", "4WD", "FWD", "RWD"].map(d => (
             <Chip key={d} active={driveType === d} onClick={() => setDriveType(driveType === d ? "" : d)}>{d}</Chip>
@@ -191,7 +191,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Transmission */}
-      <FilterSection label="Transmission">
+      <FilterSection label="Transmission" initialOpen={false}>
         <div className="flex gap-2">
           {["Automatic", "Manual"].map(t => (
             <Chip key={t} active={transmission === t.toLowerCase()} onClick={() => setTransmission(transmission === t.toLowerCase() ? "" : t.toLowerCase())}>{t}</Chip>
@@ -200,7 +200,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Fuel */}
-      <FilterSection label="Fuel type">
+      <FilterSection label="Fuel type" initialOpen={false}>
         <div className="flex flex-wrap gap-2">
           {["Gasoline", "Hybrid", "Electric"].map(f => (
             <Chip key={f} active={fuelType === f.toLowerCase()} onClick={() => setFuelType(fuelType === f.toLowerCase() ? "" : f.toLowerCase())}>{f}</Chip>
@@ -209,7 +209,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Body style */}
-      <FilterSection label="Body style">
+      <FilterSection label="Body style" initialOpen={false}>
         <div className="flex flex-wrap gap-2">
           {["SUV", "Truck", "Sedan", "Coupe"].map(b => (
             <Chip key={b} active={bodyStyle === b.toLowerCase()} onClick={() => setBodyStyle(bodyStyle === b.toLowerCase() ? "" : b.toLowerCase())}>{b}</Chip>
@@ -255,8 +255,8 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   );
 }
 
-function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(true);
+function FilterSection({ label, children, initialOpen = true }: { label: string; children: React.ReactNode; initialOpen?: boolean }) {
+  const [open, setOpen] = useState(initialOpen);
   return (
     <div className="border-b border-border/50 pb-5 last:border-0 last:pb-0 animate-in fade-in slide-in-from-top-1">
       <button

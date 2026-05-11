@@ -61,8 +61,8 @@ export function SearchLayout({
         <div className="flex gap-8 items-start">
 
           {/* Sidebar */}
-          <aside className="hidden lg:block w-85 shrink-0 sticky top-24">
-            <div className="rounded-3xl bg-surface/50 backdrop-blur-xl border border-border shadow-modal overflow-hidden max-h-[calc(100vh-140px)] flex flex-col">
+          <aside className="hidden lg:block w-85 shrink-0">
+            <div className="rounded-3xl bg-surface/50 backdrop-blur-xl border border-border shadow-modal flex flex-col">
               
               {/* Sidebar Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-background/50">
@@ -92,7 +92,7 @@ export function SearchLayout({
               </div>
 
               {/* Sidebar Content */}
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <div className="p-6">
                 <FilterSidebar initial={sidebarInitial} />
               </div>
             </div>
