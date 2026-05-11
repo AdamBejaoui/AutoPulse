@@ -182,7 +182,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Drivetrain */}
-      <FilterSection label="Drivetrain" initialOpen={false}>
+      <FilterSection label="Drivetrain">
         <div className="flex flex-wrap gap-2">
           {["AWD", "4WD", "FWD", "RWD"].map(d => (
             <Chip key={d} active={driveType === d} onClick={() => setDriveType(driveType === d ? "" : d)}>{d}</Chip>
@@ -191,7 +191,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Transmission */}
-      <FilterSection label="Transmission" initialOpen={false}>
+      <FilterSection label="Transmission">
         <div className="flex gap-2">
           {["Automatic", "Manual"].map(t => (
             <Chip key={t} active={transmission === t.toLowerCase()} onClick={() => setTransmission(transmission === t.toLowerCase() ? "" : t.toLowerCase())}>{t}</Chip>
@@ -200,7 +200,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Fuel */}
-      <FilterSection label="Fuel type" initialOpen={false}>
+      <FilterSection label="Fuel type">
         <div className="flex flex-wrap gap-2">
           {["Gasoline", "Hybrid", "Electric"].map(f => (
             <Chip key={f} active={fuelType === f.toLowerCase()} onClick={() => setFuelType(fuelType === f.toLowerCase() ? "" : f.toLowerCase())}>{f}</Chip>
@@ -209,7 +209,7 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
       </FilterSection>
 
       {/* Body style */}
-      <FilterSection label="Body style" initialOpen={false}>
+      <FilterSection label="Body style">
         <div className="flex flex-wrap gap-2">
           {["SUV", "Truck", "Sedan", "Coupe"].map(b => (
             <Chip key={b} active={bodyStyle === b.toLowerCase()} onClick={() => setBodyStyle(bodyStyle === b.toLowerCase() ? "" : b.toLowerCase())}>{b}</Chip>
