@@ -54,9 +54,6 @@ type SearchFiltersContextValue = {
   toggleSaved: (id: string) => void;
   syncEmail: string;
   setSyncEmail: (e: string) => void;
-  isSyncing: boolean;
-  saveToCloud: (email: string, filters: SearchFilterValues, savedIds?: string[]) => Promise<void>;
-  loadFromCloud: (email: string) => Promise<{ filters: SearchFilterValues; savedIds: string[] } | null>;
   alertOpen: boolean;
   setAlertOpen: (open: boolean) => void;
 };
@@ -74,67 +71,15 @@ export function SearchFiltersProvider({
   const [savedListingIds, setSavedListingIds] = React.useState<string[]>([]);
   const [alertOpen, setAlertOpen] = React.useState(false);
   const [syncEmail, setSyncEmail] = React.useState("");
-  const [isSyncing, setIsSyncing] = React.useState(false);
 
   // Toggle saved logic
   const toggleSaved = (id: string) => {
     setSavedListingIds(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
       localStorage.setItem("saved_listings", JSON.stringify(next));
-      // Auto-sync to cloud if we have an email
-      if (syncEmail) {
-        saveToCloud(syncEmail, filters, next);
-      }
       window.dispatchEvent(new Event("saved_listings_changed"));
       return next;
     });
-  };
-
-  // Persistence logic
-  const saveToCloud = async (email: string, f: SearchFilterValues, savedIds?: string[]) => {
-    if (!email) return;
-    setIsSyncing(true);
-    try {
-      const body: any = { email, filters: f };
-      if (savedIds) body.savedListingIds = savedIds;
-
-      await fetch("/api/preferences", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-      setSyncEmail(email);
-      localStorage.setItem("autopulse_sync_email", email);
-    } catch (e) {
-      console.error("Cloud save failed", e);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const loadFromCloud = async (email: string): Promise<{ filters: SearchFilterValues; savedIds: string[] } | null> => {
-    if (!email) return null;
-    setIsSyncing(true);
-    try {
-      const res = await fetch(`/api/preferences?email=${encodeURIComponent(email)}`);
-      const data = await res.json();
-      if (data.filters || data.savedListingIds) {
-        setSyncEmail(email);
-        localStorage.setItem("autopulse_sync_email", email);
-        if (data.savedListingIds) {
-          setSavedListingIds(data.savedListingIds);
-          localStorage.setItem("saved_listings", JSON.stringify(data.savedListingIds));
-        }
-        return { 
-          filters: data.filters || emptyFilters, 
-          savedIds: data.savedListingIds || [] 
-        };
-      }
-    } catch (e) {
-      console.error("Cloud load failed", e);
-    } finally {
-      setIsSyncing(false);
-    }
-    return null;
   };
 
   // Load from localStorage on mount (savedIds only — email comes from session)
@@ -145,29 +90,7 @@ export function SearchFiltersProvider({
         setSavedListingIds(JSON.parse(localSaved));
       } catch (e) {}
     }
-
-    // We no longer rely on autopulse_sync_email from localStorage;
-    // syncEmail is now set from the session via AuthProvider context.
-    // Keep cloud load for initial filter restore if syncEmail is already set.
-    if (syncEmail) {
-      const hasParams = window.location.search.length > 0;
-      loadFromCloud(syncEmail).then(loaded => {
-        if (loaded && !hasParams && (window.location.pathname === "/search" || window.location.pathname === "/")) {
-          setFilters(loaded.filters);
-          if (window.location.pathname === "/search") {
-            const params = new URLSearchParams();
-            Object.entries(loaded.filters).forEach(([k, v]) => {
-              if (v) params.set(k, String(v));
-            });
-            const q = params.toString();
-            if (q) {
-              window.location.href = `/search?${q}`;
-            }
-          }
-        }
-      });
-    }
-  }, [syncEmail]);
+  }, []);
 
   const value = React.useMemo(
     () => ({
@@ -177,14 +100,10 @@ export function SearchFiltersProvider({
       toggleSaved,
       syncEmail,
       setSyncEmail,
-      isSyncing,
-      saveToCloud,
-      loadFromCloud,
       alertOpen,
       setAlertOpen,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filters, savedListingIds, alertOpen, syncEmail, isSyncing],
+    [filters, savedListingIds, alertOpen, syncEmail],
   );
 
   return (

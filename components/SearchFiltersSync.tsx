@@ -9,7 +9,7 @@ import {
 
 export function SearchFiltersSync(): null {
   const sp = useSearchParams();
-  const { filters, setFilters, saveToCloud, syncEmail } = useSearchFilters();
+  const { filters, setFilters, syncEmail } = useSearchFilters();
   const router = require("next/navigation").useRouter();
   const firstLoad = React.useRef(true);
 
@@ -46,19 +46,10 @@ export function SearchFiltersSync(): null {
     firstLoad.current = false;
   }, [sp, setFilters, router]);
 
-  // 2. Sync FROM Context to LocalStorage & Cloud
+  // 2. Sync FROM Context to LocalStorage
   React.useEffect(() => {
     localStorage.setItem("autopulse_last_filters", JSON.stringify(filters));
-    
-    // Auto-sync to cloud for the default shared account to keep everyone in sync
-    if (syncEmail) {
-      // We wrap in a small timeout to avoid double-syncing on mount
-      const timer = setTimeout(() => {
-        saveToCloud(syncEmail, filters);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [filters, syncEmail, saveToCloud]);
+  }, [filters]);
 
   return null;
 }
