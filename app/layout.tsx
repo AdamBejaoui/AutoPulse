@@ -12,6 +12,7 @@ import { ComparisonProvider } from "@/context/ComparisonContext";
 import { ComparisonDock } from "@/components/ComparisonDock";
 import { AuthProvider } from "@/components/AuthProvider";
 import { SessionSync } from "@/components/SessionSync";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-outfit" }); // Keep var name for compatibility or rename (we'll keep it so we don't break existing tailwind config variables unexpectedly, wait we will rename in tailwind config)
@@ -40,6 +41,7 @@ export default function RootLayout({
                 <Footer />
                 <SaveSearchModal />
                 <ComparisonDock />
+                <MobileBottomNav />
                 <Toaster />
               </ComparisonProvider>
             </SearchFiltersProvider>

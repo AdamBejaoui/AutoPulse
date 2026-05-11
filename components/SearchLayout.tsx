@@ -26,7 +26,7 @@ export function SearchLayout({
   const hasFilters = searchParams.toString().length > 0;
 
   return (
-    <div className="min-h-screen bg-background pt-16 pb-20">
+    <div className="min-h-screen bg-background pt-16 pb-28 md:pb-20">
       <SearchFiltersSync />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
