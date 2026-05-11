@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSearchFilters } from "@/components/SearchFiltersContext";
 
-export function Navbar(): React.ReactElement {
+export function Navbar(): React.ReactElement | null {
   const pathname = usePathname();
   const { setAlertOpen } = useSearchFilters();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -37,6 +37,8 @@ export function Navbar(): React.ReactElement {
   const userInitial = session?.user?.email
     ? session.user.email[0].toUpperCase()
     : "?";
+
+  if (pathname === "/login") return null;
 
   return (
     <header
