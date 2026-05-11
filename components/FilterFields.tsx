@@ -95,44 +95,44 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, apply]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
 
       {/* Keywords */}
-      <div>
-        <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Search</label>
+      <div className="px-0.5">
+        <label className="block text-[10px] font-bold text-muted-foreground mb-1.5 uppercase tracking-widest opacity-70">Quick Search</label>
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
           <input
             value={keywords}
             onChange={e => setKeywords(e.target.value)}
             placeholder="Keywords..."
-            className="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/50"
+            className="w-full h-9 pl-9 pr-3 text-sm bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/40"
           />
         </div>
       </div>
 
       {/* Price */}
       <FilterSection label="Price">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-[10px]">$</span>
             <input
               type="number"
               value={priceMin}
               onChange={e => setPriceMin(e.target.value)}
               placeholder="Min"
-              className="w-full h-10 pl-6 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
+              className="w-full h-8 pl-5 pr-2 text-xs bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
             />
           </div>
-          <div className="text-muted-foreground text-sm">—</div>
+          <div className="text-muted-foreground/30 text-[10px]">to</div>
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-[10px]">$</span>
             <input
               type="number"
               value={priceMax}
               onChange={e => setPriceMax(e.target.value)}
               placeholder="Max"
-              className="w-full h-10 pl-6 pr-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
+              className="w-full h-8 pl-5 pr-2 text-xs bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
             />
           </div>
         </div>
@@ -140,10 +140,9 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
 
       {/* Make / Model */}
       <FilterSection label="Vehicle">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           <div>
-            <label className="block text-[10px] font-medium text-muted-foreground mb-1.5">Quick Makes</label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {["Toyota", "Honda", "Mazda", "Lexus"].map(m => {
                 const selected = make.toLowerCase().includes(m.toLowerCase());
                 return (
@@ -164,9 +163,9 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
               })}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            <InputField label="Make(s)" value={make} onChange={setMake} placeholder="Comma separated" />
-            <InputField label="Model(s)" value={model} onChange={setModel} placeholder="Comma separated" />
+          <div className="grid grid-cols-2 gap-1.5">
+            <InputField label="Make(s)" value={make} onChange={setMake} placeholder="Toyota..." />
+            <InputField label="Model(s)" value={model} onChange={setModel} placeholder="Camry..." />
           </div>
         </div>
       </FilterSection>
@@ -259,18 +258,18 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
-    <div>
+    <div className="border-b border-border/40 pb-3 last:border-0 last:pb-0">
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="flex items-center justify-between w-full mb-2.5 group"
+        className="flex items-center justify-between w-full mb-2 group"
       >
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors opacity-70">
           {label}
         </span>
-        <ChevronDown size={14} className={cn("text-muted-foreground transition-transform", open && "rotate-180")} />
+        <ChevronDown size={12} className={cn("text-muted-foreground/50 transition-transform", open && "rotate-180")} />
       </button>
-      {open && children}
+      {open && <div className="px-0.5">{children}</div>}
     </div>
   );
 }
@@ -280,13 +279,13 @@ function InputField({ label, value, onChange, placeholder, type = "text" }: {
 }) {
   return (
     <div>
-      <label className="block text-[10px] font-medium text-muted-foreground mb-1">{label}</label>
+      <label className="block text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tighter mb-1">{label}</label>
       <input
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-9 px-3 text-sm bg-background border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/40"
+        className="w-full h-8 px-2 text-xs bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/30"
       />
     </div>
   );
@@ -298,10 +297,10 @@ function Chip({ children, active, onClick }: { children: React.ReactNode; active
       type="button"
       onClick={onClick}
       className={cn(
-        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+        "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border",
         active
           ? "bg-primary text-white border-primary shadow-blue"
-          : "bg-background border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
+          : "bg-background/50 border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
       )}
     >
       {children}
