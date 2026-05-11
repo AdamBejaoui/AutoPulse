@@ -95,44 +95,44 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
   }, [keywords, make, model, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, city, transmission, fuelType, driveType, titleStatus, bodyStyle, apply]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
 
       {/* Keywords */}
-      <div className="px-0.5">
-        <label className="block text-[10px] font-bold text-muted-foreground mb-1.5 uppercase tracking-widest opacity-70">Quick Search</label>
-        <div className="relative">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+      <div>
+        <label className="block text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-widest opacity-60">Quick Search</label>
+        <div className="relative group">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <input
             value={keywords}
             onChange={e => setKeywords(e.target.value)}
-            placeholder="Keywords..."
-            className="w-full h-9 pl-9 pr-3 text-sm bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/40"
+            placeholder="Keywords (e.g. AWD, Leather)..."
+            className="w-full h-11 pl-10 pr-4 text-sm bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/10 focus:border-primary/40 focus:outline-none transition-all placeholder:text-muted-foreground/30"
           />
         </div>
       </div>
 
       {/* Price */}
-      <FilterSection label="Price">
-        <div className="flex items-center gap-1.5">
-          <div className="relative flex-1">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-[10px]">$</span>
+      <FilterSection label="Price Range">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 group">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-xs">$</span>
             <input
               type="number"
               value={priceMin}
               onChange={e => setPriceMin(e.target.value)}
               placeholder="Min"
-              className="w-full h-8 pl-5 pr-2 text-xs bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
+              className="w-full h-10 pl-7 pr-3 text-sm bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/10 focus:border-primary/40 focus:outline-none transition-all"
             />
           </div>
-          <div className="text-muted-foreground/30 text-[10px]">to</div>
-          <div className="relative flex-1">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-[10px]">$</span>
+          <div className="text-muted-foreground/30 text-xs font-bold uppercase tracking-tighter">to</div>
+          <div className="relative flex-1 group">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-xs">$</span>
             <input
               type="number"
               value={priceMax}
               onChange={e => setPriceMax(e.target.value)}
               placeholder="Max"
-              className="w-full h-8 pl-5 pr-2 text-xs bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors"
+              className="w-full h-10 pl-7 pr-3 text-sm bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/10 focus:border-primary/40 focus:outline-none transition-all"
             />
           </div>
         </div>
@@ -258,18 +258,18 @@ export function FilterFields({ initial, onApply }: Props): React.ReactElement {
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="border-b border-border/40 pb-3 last:border-0 last:pb-0">
+    <div className="border-b border-border/50 pb-5 last:border-0 last:pb-0 animate-in fade-in slide-in-from-top-1">
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="flex items-center justify-between w-full mb-2 group"
+        className="flex items-center justify-between w-full mb-3.5 group"
       >
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors opacity-70">
+        <span className="text-[11px] font-bold text-foreground uppercase tracking-[0.1em] group-hover:text-primary transition-colors">
           {label}
         </span>
-        <ChevronDown size={12} className={cn("text-muted-foreground/50 transition-transform", open && "rotate-180")} />
+        <ChevronDown size={14} className={cn("text-muted-foreground/40 transition-transform duration-300", open && "rotate-180")} />
       </button>
-      {open && <div className="px-0.5">{children}</div>}
+      {open && <div className="space-y-4">{children}</div>}
     </div>
   );
 }
@@ -278,14 +278,14 @@ function InputField({ label, value, onChange, placeholder, type = "text" }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
   return (
-    <div>
-      <label className="block text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tighter mb-1">{label}</label>
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-semibold text-muted-foreground/80 uppercase tracking-tight">{label}</label>
       <input
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-8 px-2 text-xs bg-background/50 border border-border rounded-lg focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground/30"
+        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/10 focus:border-primary/40 focus:outline-none transition-all placeholder:text-muted-foreground/30"
       />
     </div>
   );
@@ -297,10 +297,10 @@ function Chip({ children, active, onClick }: { children: React.ReactNode; active
       type="button"
       onClick={onClick}
       className={cn(
-        "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border",
+        "px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border",
         active
-          ? "bg-primary text-white border-primary shadow-blue"
-          : "bg-background/50 border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
+          ? "bg-primary text-white border-primary shadow-blue scale-105"
+          : "bg-background border-border text-muted-foreground hover:text-primary hover:border-primary/30 active:scale-95"
       )}
     >
       {children}

@@ -106,6 +106,9 @@ const config: Config = {
           "50%": { opacity: "0.4" },
         },
       },
+      spacing: {
+        "85": "21.25rem",
+      },
     },
   },
   plugins: [],

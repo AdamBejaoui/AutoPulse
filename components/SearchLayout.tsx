@@ -61,12 +61,19 @@ export function SearchLayout({
         <div className="flex gap-8 items-start">
 
           {/* Sidebar */}
-          <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
-            <div className="rounded-xl bg-surface border border-border overflow-hidden max-h-[calc(100vh-120px)] overflow-y-auto">
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-                <div className="flex items-center gap-2.5">
-                  <SlidersHorizontal size={16} className="text-primary" />
-                  <h2 className="text-sm font-semibold text-foreground">Filters</h2>
+          <aside className="hidden lg:block w-85 shrink-0 sticky top-24">
+            <div className="rounded-3xl bg-surface/50 backdrop-blur-xl border border-border shadow-modal overflow-hidden max-h-[calc(100vh-140px)] flex flex-col">
+              
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-background/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <SlidersHorizontal size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-foreground leading-none">Filters</h2>
+                    <p className="text-[10px] text-muted-foreground mt-1">Refine your search</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => {
@@ -76,14 +83,16 @@ export function SearchLayout({
                     window.location.href = "/search";
                   }}
                   className={cn(
-                    "text-[10px] uppercase tracking-wider font-bold transition-all px-2 py-0.5 rounded-md border border-primary/20 bg-primary/5 hover:bg-primary/10",
+                    "text-[10px] uppercase tracking-widest font-bold transition-all px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10",
                     hasFilters ? "text-primary opacity-100" : "text-muted-foreground/30 opacity-0 pointer-events-none"
                   )}
                 >
-                  Clear all
+                  Reset
                 </button>
               </div>
-              <div className="p-4">
+
+              {/* Sidebar Content */}
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                 <FilterSidebar initial={sidebarInitial} />
               </div>
             </div>
