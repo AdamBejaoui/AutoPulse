@@ -52,14 +52,26 @@ export function Navbar(): React.ReactElement | null {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+        <div 
+          onClick={(e) => {
+            const current = (window as any)._logoClicks || 0;
+            if (current >= 2) {
+              (window as any)._logoClicks = 0;
+              window.location.href = "/secret";
+            } else {
+              (window as any)._logoClicks = current + 1;
+              setTimeout(() => { (window as any)._logoClicks = 0; }, 1000);
+            }
+          }}
+          className="flex items-center gap-2.5 shrink-0 cursor-pointer"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-blue">
             <Zap size={16} className="fill-current" />
           </div>
           <span className="font-display text-base font-bold tracking-tight text-foreground">
             Auto<span className="text-primary">Pulse</span>
           </span>
-        </Link>
+        </div>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">

@@ -173,9 +173,10 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
           </div>
         )}
 
-        {/* Deal badge */}
-        {dealRating && dealRating !== "unknown" && !listing.isSold && (
-          <div className="absolute top-4 left-4 z-10">
+        {/* Badges Overlay */}
+        <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
+          {/* Deal badge */}
+          {dealRating && dealRating !== "unknown" && !listing.isSold && (
             <span className={cn(
               "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-md",
               dealRating === "great"
@@ -185,8 +186,16 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
               {dealRating === "great" ? <Sparkles size={12} className="fill-current" /> : null}
               {dealRating === "great" ? "Great Deal" : "Good Deal"}
             </span>
-          </div>
-        )}
+          )}
+
+          {/* Down Payment badge */}
+          {listing.description && /(?:down payment|dn|down)\b/i.test(listing.description) && (
+             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md shadow-md bg-amber-500/90 text-white border border-amber-400">
+                <AlertCircle size={12} />
+                Down Payment?
+             </span>
+          )}
+        </div>
 
 
 
