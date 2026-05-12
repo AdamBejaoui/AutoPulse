@@ -23,36 +23,57 @@ export async function GET(req: Request) {
       return NextResponse.json({ listings: [] });
     }
 
-    // 2. Fetch recent cars from DB (e.g. last 1000) to find matches
-    const recentCars = await prisma.listing.findMany({
-      where: { isJunk: false, isCar: true },
-      orderBy: { postedAt: "desc" },
-      take: 1000,
+    // 2. Build DB query conditions for each subscription
+    const orConditions = subs.map(sub => {
+      const cond: any = { isJunk: false, isCar: true };
+      if (sub.make) cond.make = { equals: sub.make.trim(), mode: 'insensitive' };
+      if (sub.model) cond.model = { equals: sub.model.trim(), mode: 'insensitive' };
+      
+      if (sub.yearMin != null || sub.yearMax != null) {
+        cond.year = {};
+        if (sub.yearMin != null) cond.year.gte = sub.yearMin;
+        if (sub.yearMax != null) cond.year.lte = sub.yearMax;
+      }
+      
+      if (sub.priceMin != null || sub.priceMax != null) {
+        cond.price = {};
+        if (sub.priceMin != null) cond.price.gte = sub.priceMin;
+        if (sub.priceMax != null) cond.price.lte = sub.priceMax;
+      }
+
+      if (sub.mileageMin != null || sub.mileageMax != null) {
+        cond.mileage = {};
+        if (sub.mileageMin != null) cond.mileage.gte = sub.mileageMin;
+        if (sub.mileageMax != null) cond.mileage.lte = sub.mileageMax;
+      }
+      return cond;
     });
 
-    // 3. Filter to only those that match at least one subscription
+    // 3. Fetch candidate cars from DB that match the broad criteria
+    const candidateCars = await prisma.listing.findMany({
+      where: {
+        OR: orConditions.length > 0 ? orConditions : [{ id: 'none' }]
+      },
+      orderBy: { postedAt: "desc" },
+      take: 500, // Look at the top 500 matches
+    });
+
+    // 4. In-memory filter for complex conditions (trim, keywords)
     const matchedListings = [];
-    for (const car of recentCars) {
-      // In-memory match
-      const candidates = subs.filter(sub => {
-          // make
+    for (const car of candidateCars) {
+      const isMatch = subs.some(sub => {
+          // Double check basic criteria just in case
           if (sub.make && (!car.make || car.make.toLowerCase() !== sub.make.toLowerCase())) return false;
-          // model
           if (sub.model && (!car.model || car.model.toLowerCase() !== sub.model.toLowerCase())) return false;
-          // year
           if (sub.yearMin != null && car.year < sub.yearMin) return false;
           if (sub.yearMax != null && car.year > sub.yearMax) return false;
-          // price
           if (sub.priceMin != null && car.price < sub.priceMin) return false;
           if (sub.priceMax != null && car.price > sub.priceMax) return false;
-          // mileage
-          if (sub.mileageMin != null && car.mileage != null && car.mileage < sub.mileageMin) return false;
-          if (sub.mileageMax != null && car.mileage != null && car.mileage > sub.mileageMax) return false;
           
           // Basic filters
           if (sub.trim && car.trim && !sub.trim.split(',').some(t => car.trim?.toLowerCase().includes(t.trim().toLowerCase()))) return false;
           
-          // Keywords (including down payment check logic if added to keywords)
+          // Keywords (down payment, negative keywords, etc)
           if (sub.keywords && sub.keywords.length > 0) {
             const haystack = `${car.description || ''} ${car.rawTitle || ''}`.toLowerCase();
             for (const kw of sub.keywords) {
@@ -63,17 +84,16 @@ export async function GET(req: Request) {
               }
             }
           }
-
           return true;
       });
 
-      if (candidates.length > 0) {
+      if (isMatch) {
         matchedListings.push({
           ...car,
-          matchedAt: car.postedAt // For UI purposes, pretend the match happened at post time
+          matchedAt: car.postedAt // For UI purposes
         });
       }
-      if (matchedListings.length >= 100) break; // limit to 100 max matches for performance
+      if (matchedListings.length >= 100) break;
     }
 
     return NextResponse.json({ listings: matchedListings });
