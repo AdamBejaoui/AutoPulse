@@ -53,7 +53,7 @@ function getPlaceholderSvg(text: string) {
   );
 }
 
-export const ListingCard = memo(function ListingCard({ listing }: { listing: any }): React.ReactElement {
+export const ListingCard = memo(function ListingCard({ listing, layout = "horizontal" }: { listing: any, layout?: "horizontal" | "vertical" }): React.ReactElement {
   const { savedListingIds, toggleSaved } = require("@/components/SearchFiltersContext").useSearchFilters();
   const isSaved = savedListingIds.includes(listing.id);
   const [imgOk, setImgOk] = useState(true);
@@ -144,10 +144,16 @@ export const ListingCard = memo(function ListingCard({ listing }: { listing: any
   ].filter(s => s.value != null && s.value !== "");
 
   return (
-    <article className="group relative flex flex-col md:flex-row overflow-hidden rounded-2xl bg-surface border border-border transition-all duration-300 hover:shadow-card-hover hover:border-primary/20 w-full bg-mesh">
+    <article className={cn(
+      "group relative flex overflow-hidden rounded-2xl bg-surface border border-border transition-all duration-300 hover:shadow-card-hover hover:border-primary/20 w-full bg-mesh",
+      layout === "horizontal" ? "flex-col md:flex-row" : "flex-col"
+    )}>
       
       {/* Image Section */}
-      <div className="relative md:w-2/5 aspect-[16/10] md:aspect-auto overflow-hidden bg-surface-raised shrink-0">
+      <div className={cn(
+        "relative shrink-0 overflow-hidden bg-surface-raised",
+        layout === "horizontal" ? "md:w-2/5 aspect-[16/10] md:aspect-auto" : "w-full aspect-[16/10]"
+      )}>
         {!imgLoaded && (
           <div className="absolute inset-0 skeleton" />
         )}

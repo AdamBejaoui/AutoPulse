@@ -34,7 +34,7 @@ export default function MatchesPage() {
 
   return (
     <div className="min-h-screen bg-background pt-16">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 py-10">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
@@ -52,22 +52,18 @@ export default function MatchesPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="grid grid-cols-1 gap-6">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-64 rounded-2xl border border-border skeleton" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="h-96 rounded-2xl border border-border skeleton" />
             ))}
           </div>
         ) : matches.length === 0 ? (
           <EmptyState email={email} />
         ) : (
-          <div className="grid grid-cols-1 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {matches.map(listing => (
               <div key={listing.id} className="relative">
-                <div className="absolute -top-3 left-6 z-30 px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-lg flex items-center gap-1">
-                  <Bell size={10} />
-                  Matched {new Date(listing.matchedAt).toLocaleDateString()}
-                </div>
-                <ListingCard listing={listing} />
+                <ListingCard listing={listing} layout="vertical" />
               </div>
             ))}
           </div>
